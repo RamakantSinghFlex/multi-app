@@ -1,0 +1,1006 @@
+{
+  "info": {
+    "_postman_id": "e5a7b8c9-d0f1-4e2f-8a3b-6c7d8e9f0a1b",
+    "name": "Milestone Learning API",
+    "description": "API collection for Milestone Learning platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "description": "Authenticate a user and get a JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "logout"]
+            },
+            "description": "Logout the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Get the currently authenticated user"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"parent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Create a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of users"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Get a user by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Update a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Delete a user"
+          },
+          "response": []
+        }
+      ],
+      "description": "User management endpoints"
+    },
+    {
+      "name": "Parents",
+      "item": [
+        {
+          "name": "Get Parents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parents?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parents"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of parents"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Parent by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parents/{{parentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parents", "{{parentId}}"]
+            },
+            "description": "Get a parent by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Parent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"parent@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"Parent\",\n    \"lastName\": \"User\",\n    \"role\": \"parent\",\n    \"phone\": \"123-456-7890\",\n    \"address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"New York\",\n        \"state\": \"NY\",\n        \"zipCode\": \"10001\",\n        \"country\": \"USA\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parents"]
+            },
+            "description": "Create a new parent"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Parent",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"987-654-3210\",\n    \"address\": {\n        \"street\": \"456 Oak St\",\n        \"city\": \"New York\",\n        \"state\": \"NY\",\n        \"zipCode\": \"10002\",\n        \"country\": \"USA\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parents/{{parentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parents", "{{parentId}}"]
+            },
+            "description": "Update a parent"
+          },
+          "response": []
+        }
+      ],
+      "description": "Parent management endpoints"
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "Get Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/students?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of students"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}"]
+            },
+            "description": "Get a student by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Student\",\n    \"lastName\": \"Name\",\n    \"parent\": \"{{parentId}}\",\n    \"gradeLevel\": \"high\",\n    \"subjects\": [\"{{subjectId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students"]
+            },
+            "description": "Create a new student"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"gradeLevel\": \"middle\",\n    \"subjects\": [\"{{subjectId1}}\", \"{{subjectId2}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}"]
+            },
+            "description": "Update a student"
+          },
+          "response": []
+        }
+      ],
+      "description": "Student management endpoints"
+    },
+    {
+      "name": "Tutors",
+      "item": [
+        {
+          "name": "Get Tutors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tutors?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tutors"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of tutors"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tutor by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tutors/{{tutorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tutors", "{{tutorId}}"]
+            },
+            "description": "Get a tutor by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tutor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"tutor@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"Tutor\",\n    \"lastName\": \"User\",\n    \"role\": \"tutor\",\n    \"bio\": \"Experienced tutor with 5+ years of teaching experience.\",\n    \"subjects\": [\"{{subjectId1}}\", \"{{subjectId2}}\"],\n    \"gradeLevel\": [\"middle\", \"high\"],\n    \"hourlyRate\": 50,\n    \"formats\": [\"virtual\", \"in-person\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tutors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tutors"]
+            },
+            "description": "Create a new tutor"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tutor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"bio\": \"Updated bio with 7+ years of teaching experience.\",\n    \"hourlyRate\": 60,\n    \"subjects\": [\"{{subjectId1}}\", \"{{subjectId2}}\", \"{{subjectId3}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tutors/{{tutorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tutors", "{{tutorId}}"]
+            },
+            "description": "Update a tutor"
+          },
+          "response": []
+        }
+      ],
+      "description": "Tutor management endpoints"
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Get Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of sessions"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"]
+            },
+            "description": "Get a session by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"tutor\": \"{{tutorId}}\",\n    \"student\": \"{{studentId}}\",\n    \"subject\": \"{{subjectId}}\",\n    \"startTime\": \"2023-05-15T14:00:00Z\",\n    \"endTime\": \"2023-05-15T15:00:00Z\",\n    \"format\": \"virtual\",\n    \"status\": \"scheduled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions"]
+            },
+            "description": "Create a new session"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"startTime\": \"2023-05-16T14:00:00Z\",\n    \"endTime\": \"2023-05-16T15:00:00Z\",\n    \"status\": \"rescheduled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"]
+            },
+            "description": "Update a session"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sessions", "{{sessionId}}"]
+            },
+            "description": "Cancel a session"
+          },
+          "response": []
+        }
+      ],
+      "description": "Session management endpoints"
+    },
+    {
+      "name": "Subjects",
+      "item": [
+        {
+          "name": "Get Subjects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects"]
+            },
+            "description": "Get a list of subjects"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subject by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects/{{subjectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects", "{{subjectId}}"]
+            },
+            "description": "Get a subject by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subject",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Calculus\",\n    \"category\": \"math\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects"]
+            },
+            "description": "Create a new subject"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Subject",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Advanced Calculus\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects/{{subjectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects", "{{subjectId}}"]
+            },
+            "description": "Update a subject"
+          },
+          "response": []
+        }
+      ],
+      "description": "Subject management endpoints"
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of conversations"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}"]
+            },
+            "description": "Get a conversation by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"participants\": [\"{{userId1}}\", \"{{userId2}}\"],\n    \"title\": \"Session Discussion\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations"]
+            },
+            "description": "Create a new conversation"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?limit=50&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}", "messages"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get messages for a conversation"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"Hello, this is a test message.\",\n    \"isSensitive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}", "messages"]
+            },
+            "description": "Send a message in a conversation"
+          },
+          "response": []
+        }
+      ],
+      "description": "Messaging endpoints"
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/file.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload"]
+            },
+            "description": "Upload a file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get a list of documents"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Document by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "Get a document by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Document management endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token",
+      "type": "string"
+    }
+  ]
+}
+
