@@ -62,6 +62,7 @@ export interface LoginCredentials {
 }
 
 export interface SignupCredentials {
+  tenants: {id: ObjectId; tenant: string}[];
   email: string
   password: string
   firstName?: string

@@ -13,6 +13,7 @@ import type {
   Tutor,
   User,
 } from "./types"
+import { ObjectId } from "bson";
 
 // Base URL for Payload CMS API
 const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "http://localhost:3000/api"
@@ -133,6 +134,10 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
 
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   try {
+    credentials.tenants = [{
+      "id": new ObjectId(),
+      "tenant": "67e96de1c71e8d565d305a82"
+    }];
     const response = await fetch(`${API_URL}/users`, {
       method: "POST",
       headers: {
