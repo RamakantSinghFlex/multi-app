@@ -7,6 +7,22 @@ export interface User {
   role: "admin" | "parent" | "tutor" | "student"
   createdAt: string
   updatedAt: string
+  roles?: string[]
+  tenants?: {
+    tenant: {
+      id: string
+      name: string
+      domain: string
+      slug: string
+      createdAt: string
+      updatedAt: string
+      allowPublicRead: boolean
+    }
+    roles: string[]
+    id: string
+  }[]
+  status?: string
+  token?: string
 }
 
 export interface Admin extends User {
@@ -62,13 +78,17 @@ export interface LoginCredentials {
 }
 
 export interface SignupCredentials {
-  tenants: {id: ObjectId; tenant: string}[];
+  tenants?: { id: ObjectId; tenant: string }[]
   email: string
   password: string
   firstName?: string
   lastName?: string
-  role: "parent" | "tutor"
+  role?: "parent" | "tutor"
+  roles?: ["parent" | "tutor"]
 }
+
+// Define ObjectId type
+type ObjectId = string
 
 export interface AuthResponse {
   user: User

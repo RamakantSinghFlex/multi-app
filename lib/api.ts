@@ -13,7 +13,7 @@ import type {
   Tutor,
   User,
 } from "./types"
-import { ObjectId } from "bson";
+import { ObjectId } from "bson"
 
 // Base URL for Payload CMS API
 const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "http://localhost:3000/api"
@@ -28,10 +28,17 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
       }
     }
 
-    const errorData = await response.json().catch(() => ({}))
-    return {
-      error: errorData.message || `Error: ${response.status} ${response.statusText}`,
-      statusCode: response.status,
+    try {
+      const errorData = await response.json()
+      return {
+        error: errorData.message || errorData.error || `Error: ${response.status} ${response.statusText}`,
+        statusCode: response.status,
+      }
+    } catch (e) {
+      return {
+        error: `Error: ${response.status} ${response.statusText}`,
+        statusCode: response.status,
+      }
     }
   }
 
@@ -132,12 +139,19 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
   }
 }
 
+// Update the signup function to properly handle the nested response structure
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   try {
-    credentials.tenants = [{
-      "id": new ObjectId(),
-      "tenant": "67e96de1c71e8d565d305a82"
-    }];
+    // Add tenants if not already provided
+    if (!credentials.tenants || credentials.tenants.length === 0) {
+      credentials.tenants = [
+        {
+          id: new ObjectId(),
+          tenant: "67e96de1c71e8d565d305a82",
+        },
+      ]
+    }
+
     const response = await fetch(`${API_URL}/users`, {
       method: "POST",
       headers: {
@@ -147,10 +161,37 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
       credentials: "include",
     })
 
-    const result = await handleResponse<AuthResponse>(response)
+    const result = await handleResponse<{ doc: User; message: string }>(response)
 
-    if (result.data?.token) {
-      setToken(result.data.token)
+    // If we have a successful response with the doc field
+    if (result.data?.doc) {
+      // Map the nested response to our expected AuthResponse format
+      const authResponse: AuthResponse = {
+        user: {
+          id: result.data.doc.id,
+          email: result.data.doc.email,
+          firstName: result.data.doc.firstName,
+          lastName: result.data.doc.lastName,
+          role: credentials.role, // Use the role from credentials since it might not be in the same format in response
+          createdAt: result.data.doc.createdAt,
+          updatedAt: result.data.doc.updatedAt,
+          // Map any additional fields needed from the response
+        },
+        token: result.data.doc.token || "", // The token might be in a different location
+      }
+
+      if (authResponse.token) {
+        setToken(authResponse.token)
+      }
+
+      return { data: authResponse }
+    }
+
+    // If there's no doc in the response but no error either, return an error
+    if (!result.error) {
+      return {
+        error: "Invalid response format from server",
+      }
     }
 
     return result
