@@ -109,7 +109,7 @@ export default function SignupPage() {
       lastName,
       email,
       password,
-      role,
+      roles: [role],
     })
   }
 
