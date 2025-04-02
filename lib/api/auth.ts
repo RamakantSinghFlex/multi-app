@@ -292,3 +292,14 @@ export async function getMe(): Promise<ApiResponse<User>> {
   }
 }
 
+// Google Sign-In
+export async function googleSignIn(): Promise<void> {
+  try {
+    // Redirect to our Google OAuth endpoint
+    window.location.href = "/api/auth/google"
+  } catch (error) {
+    console.error("Google sign-in error:", error)
+    throw error
+  }
+}
+
