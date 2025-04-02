@@ -70,6 +70,7 @@ export interface AuthState {
   isLoading: boolean
   isAuthenticated: boolean
   error: string | null
+  successMessage: string | null
 }
 
 export interface LoginCredentials {
@@ -94,6 +95,7 @@ export interface AuthResponse {
   user: User
   token: string
   exp?: number
+  message?: string
 }
 
 // API response types

@@ -14,9 +14,10 @@ import type {
   User,
 } from "./types"
 import { ObjectId } from "bson"
+import { logger } from "./monitoring"
 
-// Base URL for Payload CMS API
-const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "http://localhost:3000/api"
+// Update the API_URL to point to your actual API endpoint
+const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "https://ancient-yeti-453713-d0.uk.r.appspot.com/api"
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -95,6 +96,7 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
           updatedAt: new Date().toISOString(),
         },
         token: "mock-jwt-token",
+        message: "Authentication Passed",
       }
 
       // Store the token
@@ -139,6 +141,36 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
   }
 }
 
+// Create user (signup)
+export async function createUser(credentials: SignupCredentials): Promise<ApiResponse<User>> {
+  try {
+    // Add tenants if not already provided
+    if (!credentials.tenants || credentials.tenants.length === 0) {
+      credentials.tenants = [
+        {
+          id: new ObjectId(),
+          tenant: "67e96de1c71e8d565d305a82",
+        },
+      ]
+    }
+
+    const response = await fetch(`${API_URL}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(credentials),
+      credentials: "include",
+    })
+
+    return await handleResponse<User>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating user",
+    }
+  }
+}
+
 // Update the signup function to properly handle the nested response structure
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   try {
@@ -163,28 +195,34 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
 
     const result = await handleResponse<{ doc: User; message: string }>(response)
 
-    // If we have a successful response with the doc field
-    if (result.data?.doc) {
-      // Map the nested response to our expected AuthResponse format
-      const authResponse: AuthResponse = {
-        user: {
-          id: result.data.doc.id,
-          email: result.data.doc.email,
-          firstName: result.data.doc.firstName,
-          lastName: result.data.doc.lastName,
-          role: credentials.role, // Use the role from credentials since it might not be in the same format in response
-          createdAt: result.data.doc.createdAt,
-          updatedAt: result.data.doc.updatedAt,
-          // Map any additional fields needed from the response
+    // If signup was successful, automatically log the user in
+    if (result.data?.doc && !result.error) {
+      const loginCredentials: LoginCredentials = {
+        email: credentials.email,
+        password: credentials.password,
+      }
+
+      // Call login API with the same credentials
+      const loginResponse = await login(loginCredentials)
+
+      if (loginResponse.data) {
+        // Return the login response with the signup success message
+        return {
+          data: {
+            ...loginResponse.data,
+            message: result.data.message || "User successfully created and logged in.",
+          },
+        }
+      }
+
+      // If login fails, still return the signup success
+      return {
+        data: {
+          user: result.data.doc,
+          token: "",
+          message: result.data.message || "User successfully created.",
         },
-        token: result.data.doc.token || "", // The token might be in a different location
       }
-
-      if (authResponse.token) {
-        setToken(authResponse.token)
-      }
-
-      return { data: authResponse }
     }
 
     // If there's no doc in the response but no error either, return an error
@@ -202,43 +240,61 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
   }
 }
 
-export async function logout(): Promise<ApiResponse<{ success: boolean }>> {
+// Find the logout function and update it to match the curl request format
+export async function logout(): Promise<ApiResponse<{ success: boolean; message: string }>> {
   try {
     const token = getToken()
+    if (!token) {
+      clearToken()
+      return { data: { success: true, message: "Logged out successfully." } }
+    }
+
+    console.log("Logging out with token:", token)
+
     const response = await fetch(`${API_URL}/users/logout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `JWT ${token}` } : {}),
+        Authorization: `JWT ${token}`,
       },
       credentials: "include",
     })
 
     clearToken()
-    return await handleResponse<{ success: boolean }>(response)
+    const result = await handleResponse<{ message: string }>(response)
+
+    return {
+      data: {
+        success: true,
+        message: result.data?.message || "Logged out successfully.",
+      },
+    }
   } catch (error) {
+    console.error("Logout error:", error)
     clearToken()
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred during logout",
-      data: { success: true }, // Consider logout successful even if API call fails
+      data: { success: true, message: "Logged out successfully." }, // Consider logout successful even if API call fails
     }
   }
 }
 
 export async function getMe(): Promise<ApiResponse<User>> {
+  const startTime = performance.now()
   try {
     const token = getToken()
+    logger.info("getMe: Starting authentication check")
 
     if (!token) {
-      console.log("No token found, user is not authenticated")
+      logger.info("getMe: No token found, user is not authenticated")
       return { error: "Not authenticated" }
     }
 
-    console.log("Validating session with token")
+    logger.info("getMe: Token found, validating session")
 
     // For development/testing without an API
     if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
-      console.log("DEV MODE: Simulating successful session validation")
+      logger.info("getMe: DEV MODE - Simulating successful session validation")
 
       // Add a small delay to simulate network request
       await new Promise((resolve) => setTimeout(resolve, 300))
@@ -253,10 +309,11 @@ export async function getMe(): Promise<ApiResponse<User>> {
         updatedAt: new Date().toISOString(),
       }
 
+      logger.info("getMe: DEV MODE - Returning mock user", { email: mockUser.email })
       return { data: mockUser }
     }
 
-    console.log("Making API request to validate session:", `${API_URL}/users/me`)
+    logger.info("getMe: Making API request to validate session", { url: `${API_URL}/users/me` })
 
     const response = await fetch(`${API_URL}/users/me`, {
       headers: {
@@ -265,13 +322,53 @@ export async function getMe(): Promise<ApiResponse<User>> {
       credentials: "include",
     })
 
-    console.log("Session validation response status:", response.status)
+    logger.info("getMe: Session validation response received", { status: response.status })
 
-    return await handleResponse<User>(response)
+    const result = await handleResponse<User>(response)
+
+    if (result.error) {
+      logger.warn("getMe: Session validation failed", { error: result.error })
+    } else {
+      logger.info("getMe: Session validation successful", {
+        email: result.data?.email,
+        role: result.data?.role,
+      })
+    }
+
+    return result
   } catch (error) {
-    console.error("Session validation error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    logger.error("getMe: Session validation error", { error: errorMessage })
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching user data",
+      error: errorMessage,
+    }
+  } finally {
+    const duration = performance.now() - startTime
+    logger.info(`getMe: Completed in ${duration.toFixed(2)}ms`)
+  }
+}
+
+// Get users
+export async function getUsers(page = 1, limit = 10, query = {}): Promise<ApiResponse<PaginatedResponse<User>>> {
+  try {
+    const token = getToken()
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...query,
+    }).toString()
+
+    const response = await fetch(`${API_URL}/users?${queryString}`, {
+      headers: {
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      credentials: "include",
+    })
+
+    return await handleResponse<PaginatedResponse<User>>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching users",
     }
   }
 }
@@ -312,6 +409,26 @@ export async function updateUser(id: string, data: Partial<User>): Promise<ApiRe
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : `An unknown error occurred while updating user with ID ${id}`,
+    }
+  }
+}
+
+// Delete user
+export async function deleteUser(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/users/${id}`, {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting user with ID ${id}`,
     }
   }
 }
@@ -590,6 +707,69 @@ export async function getSubjects(): Promise<ApiResponse<Subject[]>> {
   }
 }
 
+// Get subject by ID
+export async function getSubject(id: string): Promise<ApiResponse<Subject>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/subjects/${id}`, {
+      headers: {
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      credentials: "include",
+    })
+
+    return await handleResponse<Subject>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while fetching subject with ID ${id}`,
+    }
+  }
+}
+
+// Create subject
+export async function createSubject(data: Partial<Subject>): Promise<ApiResponse<Subject>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/subjects`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<Subject>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating subject",
+    }
+  }
+}
+
+// Update subject
+export async function updateSubject(id: string, data: Partial<Subject>): Promise<ApiResponse<Subject>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/subjects/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<Subject>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while updating subject with ID ${id}",
+    }
+  }
+}
+
 // Session API calls
 export async function getSessions(page = 1, limit = 10, query = {}): Promise<ApiResponse<PaginatedResponse<Session>>> {
   try {
@@ -671,6 +851,29 @@ export async function updateSession(id: string, data: Partial<Session>): Promise
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : `An unknown error occurred while updating session with ID ${id}`,
+    }
+  }
+}
+
+// Cancel session
+export async function cancelSession(id: string): Promise<ApiResponse<Session>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/sessions/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      body: JSON.stringify({ status: "cancelled" }),
+      credentials: "include",
+    })
+
+    return await handleResponse<Session>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : `An unknown error occurred while cancelling session with ID ${id}`,
     }
   }
 }
@@ -813,6 +1016,49 @@ export async function uploadFile(file: File): Promise<ApiResponse<{ url: string;
   }
 }
 
+// Get documents
+export async function getDocuments(page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Document>>> {
+  try {
+    const token = getToken()
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    }).toString()
+
+    const response = await fetch(`${API_URL}/documents?${queryString}`, {
+      headers: {
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      credentials: "include",
+    })
+
+    return await handleResponse<PaginatedResponse<Document>>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching documents",
+    }
+  }
+}
+
+// Get document by ID
+export async function getDocument(id: string): Promise<ApiResponse<Document>> {
+  try {
+    const token = getToken()
+    const response = await fetch(`${API_URL}/documents/${id}`, {
+      headers: {
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+      },
+      credentials: "include",
+    })
+
+    return await handleResponse<Document>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while fetching document with ID ${id}`,
+    }
+  }
+}
+
 // Collection types
 export interface Collection {
   id: string
@@ -834,7 +1080,7 @@ export interface Content {
   collectionId?: string
 }
 
-// Collection API calls
+// Get collections
 export async function getCollections(): Promise<ApiResponse<Collection[]>> {
   try {
     const token = getToken()
@@ -853,7 +1099,7 @@ export async function getCollections(): Promise<ApiResponse<Collection[]>> {
   }
 }
 
-// Content API calls
+// Get content by collection
 export async function getContentByCollection(
   collectionSlug: string,
   page = 1,
@@ -861,7 +1107,12 @@ export async function getContentByCollection(
 ): Promise<ApiResponse<PaginatedResponse<Content>>> {
   try {
     const token = getToken()
-    const response = await fetch(`${API_URL}/${collectionSlug}?page=${page}&limit=${limit}`, {
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    }).toString()
+
+    const response = await fetch(`${API_URL}/${collectionSlug}?${queryString}`, {
       headers: {
         ...(token ? { Authorization: `JWT ${token}` } : {}),
       },
@@ -879,6 +1130,7 @@ export async function getContentByCollection(
   }
 }
 
+// Get content by ID
 export async function getContentById(collectionSlug: string, id: string): Promise<ApiResponse<Content>> {
   try {
     const token = getToken()
@@ -896,4 +1148,6 @@ export async function getContentById(collectionSlug: string, id: string): Promis
     }
   }
 }
+
+export type { User }
 

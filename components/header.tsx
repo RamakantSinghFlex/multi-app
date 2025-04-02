@@ -28,7 +28,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-card px-4 md:px-6">
-      <div className="flex flex-1 items-center md:ml-64">
+      <div className="flex flex-1 items-center">
         <form onSubmit={handleSearch} className="relative hidden md:block md:w-80">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -73,7 +73,15 @@ export function Header() {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>Sign out</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                console.log("Logout clicked")
+                logout()
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

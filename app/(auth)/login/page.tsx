@@ -2,10 +2,11 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,8 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
-  const { login, isLoading, error, resetAuthError } = useAuth()
+  const { login, isLoading, error, successMessage, resetAuthError, clearSuccessMessage, isAuthenticated, user } =
+    useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -24,6 +26,45 @@ export default function LoginPage() {
     email?: string
     password?: string
   }>({})
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams.get("redirect")
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log("User already authenticated, redirecting...")
+
+      // Check if there's a redirect path
+      if (redirectPath) {
+        router.push(redirectPath)
+      } else {
+        // Redirect based on user role
+        if (user.role === "admin") {
+          router.push("/admin/dashboard")
+        } else if (user.role === "parent") {
+          router.push("/parent/dashboard")
+        } else if (user.role === "tutor") {
+          router.push("/tutor/dashboard")
+        } else if (user.role === "student") {
+          router.push("/student/dashboard")
+        } else {
+          router.push("/dashboard")
+        }
+      }
+    }
+  }, [isAuthenticated, user, router, redirectPath])
+
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        clearSuccessMessage()
+      }, 5000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage, clearSuccessMessage])
 
   // Simple validation function
   const validateForm = () => {
@@ -63,6 +104,8 @@ export default function LoginPage() {
         email,
         password,
       })
+
+      // The redirection will be handled by the useEffect above
     } catch (err) {
       console.error("Unhandled login error:", err)
       // The error will be handled by the auth context
@@ -92,6 +135,13 @@ export default function LoginPage() {
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>{successMessage}</AlertDescription>
             </Alert>
           )}
 

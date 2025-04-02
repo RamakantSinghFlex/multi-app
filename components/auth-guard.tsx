@@ -5,7 +5,9 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { logger } from "@/lib/monitoring"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -15,55 +17,92 @@ interface AuthGuardProps {
 export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps) {
   const { isAuthenticated, isLoading, user } = useAuth()
   const [isChecking, setIsChecking] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
     // Skip auth check for public routes
-    const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"]
+    const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password"]
     const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/public")
 
-    if (!isLoading) {
-      if (!isAuthenticated && !isPublicRoute) {
-        // Redirect to login if not authenticated and not on a public route
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`)
-      } else if (isAuthenticated && isPublicRoute) {
-        // Redirect to dashboard if authenticated and on a public route
-        if (user?.role === "admin") {
-          router.push("/admin/dashboard")
-        } else if (user?.role === "parent") {
-          router.push("/parent/dashboard")
-        } else if (user?.role === "tutor") {
-          router.push("/tutor/dashboard")
-        } else if (user?.role === "student") {
-          router.push("/student/dashboard")
-        } else {
-          router.push("/dashboard")
+    const checkAuth = async () => {
+      try {
+        if (!isLoading) {
+          logger.info("AuthGuard checking access", {
+            pathname,
+            isAuthenticated,
+            isPublicRoute,
+            userRole: user?.role,
+            allowedRoles,
+          })
+
+          // Only redirect to login if not authenticated and on a protected route
+          if (!isAuthenticated && !isPublicRoute) {
+            logger.info("Not authenticated, redirecting to login", { pathname })
+            router.push(`/login?redirect=${encodeURIComponent(pathname)}`)
+            return
+          }
+
+          // Only redirect if user doesn't have the required role for a specific protected route
+          if (isAuthenticated && allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
+            logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
+              userRole: user.role,
+              allowedRoles,
+            })
+
+            if (user.role === "admin") {
+              router.push("/admin/dashboard")
+            } else if (user.role === "parent") {
+              router.push("/parent/dashboard")
+            } else if (user.role === "tutor") {
+              router.push("/tutor/dashboard")
+            } else if (user.role === "student") {
+              router.push("/student/dashboard")
+            } else {
+              router.push("/dashboard")
+            }
+            return
+          }
+
+          setIsChecking(false)
         }
-      } else if (isAuthenticated && allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-        // Redirect to appropriate dashboard if user doesn't have the required role
-        if (user.role === "admin") {
-          router.push("/admin/dashboard")
-        } else if (user.role === "parent") {
-          router.push("/parent/dashboard")
-        } else if (user.role === "tutor") {
-          router.push("/tutor/dashboard")
-        } else if (user.role === "student") {
-          router.push("/student/dashboard")
-        } else {
-          router.push("/dashboard")
-        }
+      } catch (err) {
+        logger.error("Auth check error:", err)
+        setError("Authentication check failed. Please try refreshing the page.")
+        setIsChecking(false)
       }
-      setIsChecking(false)
     }
+
+    checkAuth()
   }, [isAuthenticated, isLoading, pathname, router, user, allowedRoles])
+
+  // If there's an error during auth check
+  if (error) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+        >
+          Refresh Page
+        </button>
+      </div>
+    )
+  }
 
   if (isLoading || isChecking) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Checking authentication..." : "Preparing your dashboard..."}
+          </p>
         </div>
       </div>
     )

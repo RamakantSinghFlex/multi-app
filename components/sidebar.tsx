@@ -8,14 +8,9 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Home, BookOpen, Calendar, Users, Settings, HelpCircle, Menu, X, LogOut } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import type { Collection } from "@/lib/types"
 import Image from "next/image"
 
-interface SidebarProps {
-  collections?: Collection[]
-}
-
-export function Sidebar({ collections = [] }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
@@ -93,7 +88,7 @@ export function Sidebar({ collections = [] }: SidebarProps) {
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link href="/dashboard" onClick={closeSidebar}>
             <Image
-              src="/placeholder.svg?height=40&width=150"
+              src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
               alt="Milestone Learning Logo"
               width={150}
               height={40}
@@ -118,7 +113,7 @@ export function Sidebar({ collections = [] }: SidebarProps) {
                     className={cn(
                       "flex items-center rounded-md px-3 py-2 text-sm font-medium",
                       pathname === item.href
-                        ? "bg-secondary text-secondary-foreground"
+                        ? "bg-primary/10 text-primary"
                         : "text-foreground hover:bg-muted hover:text-primary",
                     )}
                   >
@@ -128,30 +123,6 @@ export function Sidebar({ collections = [] }: SidebarProps) {
                 ))}
               </nav>
             </div>
-
-            {collections.length > 0 && (
-              <div className="space-y-1">
-                <h3 className="px-3 text-xs font-medium uppercase text-muted-foreground">Collections</h3>
-                <nav className="space-y-1">
-                  {collections.map((collection) => (
-                    <Link
-                      key={collection.id}
-                      href={`/collections/${collection.slug}`}
-                      onClick={closeSidebar}
-                      className={cn(
-                        "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                        pathname === `/collections/${collection.slug}`
-                          ? "bg-secondary text-secondary-foreground"
-                          : "text-foreground hover:bg-muted hover:text-primary",
-                      )}
-                    >
-                      <BookOpen className="mr-2 h-5 w-5" />
-                      {collection.title}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            )}
           </div>
         </ScrollArea>
 
