@@ -78,6 +78,120 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
   }
 }
 
+// Forgot Password
+export async function forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+  try {
+    console.log("Forgot password request for email:", email)
+
+    // For development/testing, simulate a successful response
+    if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
+      console.log("DEV MODE: Simulating successful forgot password request")
+
+      // Add a small delay to simulate network request
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      return {
+        data: {
+          message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+        },
+      }
+    }
+
+    // Actual API call for production
+    console.log("Making API request to:", `${API_URL}/users/forgot-password`)
+
+    const response = await fetch(`${API_URL}/users/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+      credentials: "include",
+    })
+
+    console.log("Forgot password response status:", response.status)
+
+    // Handle non-OK responses
+    if (!response.ok) {
+      const errorData = await response.json()
+      const errorMessage = extractErrorMessage(errorData)
+      console.error("Forgot password request failed:", errorMessage)
+
+      // For security reasons, we don't want to reveal if an email exists or not
+      // So we return a success message even if there was an error
+      return {
+        data: {
+          message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+        },
+      }
+    }
+
+    const result = await response.json()
+    return { data: result }
+  } catch (error) {
+    console.error("Forgot password API error:", error)
+
+    // For security reasons, return a success message even if there was an error
+    return {
+      data: {
+        message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+      },
+    }
+  }
+}
+
+// Reset Password
+export async function resetPassword(token: string, password: string): Promise<ApiResponse<{ message: string }>> {
+  try {
+    console.log("Reset password request with token")
+
+    // For development/testing, simulate a successful response
+    if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
+      console.log("DEV MODE: Simulating successful password reset")
+
+      // Add a small delay to simulate network request
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      return {
+        data: {
+          message: "Password successfully reset. You can now log in with your new password.",
+        },
+      }
+    }
+
+    // Actual API call for production
+    console.log("Making API request to:", `${API_URL}/users/reset-password`)
+
+    const response = await fetch(`${API_URL}/users/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, password }),
+      credentials: "include",
+    })
+
+    console.log("Reset password response status:", response.status)
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      const errorMessage = extractErrorMessage(errorData)
+      console.error("Reset password request failed:", errorMessage)
+      return {
+        error: errorMessage,
+      }
+    }
+
+    const result = await response.json()
+    return { data: result }
+  } catch (error) {
+    console.error("Reset password API error:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while resetting your password",
+    }
+  }
+}
+
 // Logout
 export async function logout(): Promise<ApiResponse<{ success: boolean }>> {
   try {

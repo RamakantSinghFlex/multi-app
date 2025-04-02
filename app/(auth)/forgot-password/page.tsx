@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
+import { forgotPassword } from "@/lib/api/auth"
+import { logger } from "@/lib/monitoring"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -46,13 +48,19 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      // In a real app, you would call an API endpoint here
-      // For demo purposes, we'll simulate a successful response
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      logger.info("Submitting forgot password request", { email })
+      const response = await forgotPassword(email)
 
-      setSuccess(true)
+      if (response.error) {
+        logger.error("Forgot password request failed", { error: response.error })
+        setError(response.error)
+      } else {
+        logger.info("Forgot password request successful")
+        setSuccess(true)
+      }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      logger.error("Unexpected error during forgot password request", { error: err })
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
