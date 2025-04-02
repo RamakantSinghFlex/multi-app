@@ -35,9 +35,34 @@ export function clearToken(): void {
   }
 }
 
+// Helper function to extract error message from API response
+export function extractErrorMessage(responseData: any): string {
+  // Check for the specific error format: {"errors":[{"message":"..."}]}
+  if (responseData && responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+    const firstError = responseData.errors[0]
+    if (firstError && firstError.message) {
+      return firstError.message
+    }
+  }
+
+  // Fallback to other error formats
+  if (responseData && responseData.message) {
+    return responseData.message
+  }
+
+  if (responseData && responseData.error) {
+    return responseData.error
+  }
+
+  // Default error message
+  return "An unexpected error occurred"
+}
+
 // Helper function to handle API responses
 export async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   try {
+    const responseData = await response.json()
+
     if (!response.ok) {
       if (response.status === 401) {
         // Clear auth data on 401 Unauthorized
@@ -46,22 +71,14 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
         }
       }
 
-      try {
-        const errorData = await response.json()
-        return {
-          error: errorData.message || errorData.error || `Error: ${response.status} ${response.statusText}`,
-          statusCode: response.status,
-        }
-      } catch (e) {
-        return {
-          error: `Error: ${response.status} ${response.statusText}`,
-          statusCode: response.status,
-        }
+      const errorMessage = extractErrorMessage(responseData)
+      return {
+        error: errorMessage,
+        statusCode: response.status,
       }
     }
 
-    const data = await response.json()
-    return { data }
+    return { data: responseData }
   } catch (error) {
     console.error("API response handling error:", error)
     return {

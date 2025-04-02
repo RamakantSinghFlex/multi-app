@@ -1,4 +1,4 @@
-import { handleResponse, setToken, clearToken, createAuthHeaders } from "../api-utils"
+import { setToken, clearToken, createAuthHeaders, extractErrorMessage } from "../api-utils"
 import type { ApiResponse, AuthResponse, LoginCredentials, User } from "../types"
 import { API_URL } from "../config"
 
@@ -51,16 +51,25 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
 
     console.log("API response status:", response.status)
 
-    const result = await handleResponse<AuthResponse>(response)
-
-    console.log("API response processed:", result)
-
-    if (result.data?.token) {
-      console.log("Setting token in localStorage")
-      setToken(result.data.token)
+    // Handle non-OK responses
+    if (!response.ok) {
+      const errorData = await response.json()
+      const errorMessage = extractErrorMessage(errorData)
+      console.error("Login failed:", errorMessage)
+      return {
+        error: errorMessage,
+      }
     }
 
-    return result
+    const result = await response.json()
+    console.log("API response processed:", result)
+
+    if (result.token) {
+      console.log("Setting token in localStorage")
+      setToken(result.token)
+    }
+
+    return { data: result }
   } catch (error) {
     console.error("Login API error:", error)
     return {
@@ -83,7 +92,23 @@ export async function logout(): Promise<ApiResponse<{ success: boolean }>> {
     })
 
     clearToken()
-    return await handleResponse<{ success: boolean }>(response)
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      const errorMessage = extractErrorMessage(errorData)
+      return {
+        error: errorMessage,
+        data: { success: true }, // Consider logout successful even if API call fails
+      }
+    }
+
+    const result = await response.json()
+    return {
+      data: {
+        success: true,
+        ...result,
+      },
+    }
   } catch (error) {
     console.error("Logout error:", error)
     clearToken()
@@ -135,7 +160,16 @@ export async function getMe(): Promise<ApiResponse<User>> {
 
     console.log("Session validation response status:", response.status)
 
-    return await handleResponse<User>(response)
+    if (!response.ok) {
+      const errorData = await response.json()
+      const errorMessage = extractErrorMessage(errorData)
+      return {
+        error: errorMessage,
+      }
+    }
+
+    const userData = await response.json()
+    return { data: userData }
   } catch (error) {
     console.error("Session validation error:", error)
     return {
