@@ -10,10 +10,25 @@ import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function DashboardPage() {
-  const { user, successMessage, clearSuccessMessage } = useAuth()
+  const { user, successMessage, clearSuccessMessage, isLoading, checkAuth } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loadingTimeout, setLoadingTimeout] = useState(false)
+
+  useEffect(() => {
+    // Ensure user data is available after refresh
+    if (!user && !isLoading) {
+      const checkAuthCall = async () => {
+        try {
+          await checkAuth()
+        } catch (err) {
+          console.error("Error checking auth on dashboard:", err)
+        }
+      }
+
+      checkAuthCall()
+    }
+  }, [user, isLoading, checkAuth])
 
   useEffect(() => {
     // Simulate loading data
@@ -89,7 +104,7 @@ export default function DashboardPage() {
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-[#02342e] md:text-3xl">Dashboard</h1>
-          <p className="text-[#9d968d]">Welcome back, {user?.firstName || "User"}!</p>
+          <p className="text-[#9d968d]">Welcome back, {user?.firstName || user?.email || "User"}!</p>
         </div>
         <div className="flex space-x-2">
           <Button className="bg-[#095d40] hover:bg-[#02342e]">

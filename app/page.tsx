@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
@@ -43,8 +42,7 @@ export default function Home() {
   if (pageLoading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-lg">Loading...</p>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
       </div>
     )
   }

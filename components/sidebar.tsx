@@ -159,15 +159,17 @@ export function Sidebar() {
           <div className="border-t border-border p-4">
             <div className="flex items-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-                {user.firstName?.[0] || user.email[0].toUpperCase()}
+                {user.firstName && user.firstName.length > 0
+                  ? user.firstName[0]
+                  : user.email && user.email.length > 0
+                    ? user.email[0].toUpperCase()
+                    : "U"}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">
-                  {user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.email}
+                  {user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.email || "User"}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {user.roles?.includes("admin") ? "Administrator" : "User"}
-                </p>
+                <p className="text-xs text-muted-foreground">{user.role || "User"}</p>
               </div>
             </div>
           </div>

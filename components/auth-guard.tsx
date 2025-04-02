@@ -5,7 +5,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2, AlertCircle } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { logger } from "@/lib/monitoring"
 
@@ -99,10 +99,7 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Checking authentication..." : "Preparing your dashboard..."}
-          </p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
         </div>
       </div>
     )
