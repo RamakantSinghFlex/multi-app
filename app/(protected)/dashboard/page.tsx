@@ -8,12 +8,35 @@ import { useAuth } from "@/lib/auth-context"
 import { BookOpen, Clock, Award, ArrowRight, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useSearchParams } from "next/navigation"
 
 export default function DashboardPage() {
   const { user, successMessage, clearSuccessMessage, isLoading, checkAuth } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loadingTimeout, setLoadingTimeout] = useState(false)
+  const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null)
+
+  const searchParams = useSearchParams()
+  const welcomeParam = searchParams.get("welcome")
+
+  useEffect(() => {
+    // Check for welcome parameter
+    if (welcomeParam === "new") {
+      setWelcomeMessage("Welcome to Milestone Learning! Your account has been created successfully.")
+    } else if (welcomeParam === "returning") {
+      setWelcomeMessage("Welcome back! You've successfully signed in with Google.")
+    }
+
+    // Clear welcome message after 10 seconds
+    if (welcomeMessage) {
+      const timer = setTimeout(() => {
+        setWelcomeMessage(null)
+      }, 10000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [welcomeParam, welcomeMessage])
 
   useEffect(() => {
     // Ensure user data is available after refresh
@@ -113,6 +136,13 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {welcomeMessage && (
+        <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription>{welcomeMessage}</AlertDescription>
+        </Alert>
+      )}
 
       {successMessage && (
         <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">

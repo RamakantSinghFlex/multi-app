@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { logger } from "@/lib/monitoring"
 import { API_URL } from "@/lib/config"
-import { mockGoogleAuth } from "@/lib/api-utils"
 
 // Google OAuth configuration - using consistent environment variable names
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
@@ -84,138 +83,129 @@ export async function GET(request: NextRequest) {
 
     logger.info("Successfully retrieved Google user info", { email: userInfo.email })
 
-    // Now authenticate with PayloadCMS using the Google profile
-    let payloadData
-
     // Use mock implementation for development
     if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
-      payloadData = await mockGoogleAuth({
-        googleId: userInfo.sub,
-        email: userInfo.email,
-        firstName: userInfo.given_name,
-        lastName: userInfo.family_name,
-        profileImage: userInfo.picture,
-      })
+      // For development, we'll simulate the user not existing and redirect to role selection
+      logger.info("DEV MODE: Redirecting to role selection page")
 
-      logger.info("Using mock Google authentication in development mode")
-    } else {
-      // Instead of using a dedicated Google auth endpoint, we'll try to find the user by email
-      // and if not found, create a new user
-
-      // First, try to login with the email (for existing users)
-      const loginResponse = await fetch(`${API_URL}/users/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Store Google user info in a temporary cookie for the role selection page
+      cookieAwaited.set(
+        "google_user_info",
+        JSON.stringify({
+          googleId: userInfo.sub,
           email: userInfo.email,
-          password: `google-oauth-${userInfo.sub}`, // This won't work for login, but we'll handle the error
+          firstName: userInfo.given_name || "",
+          lastName: userInfo.family_name || "",
+          picture: userInfo.picture || "",
         }),
-        credentials: "include",
-      })
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 60 * 10, // 10 minutes
+          path: "/",
+        },
+      )
 
-      if (loginResponse.ok) {
-        // User exists and we managed to log them in
-        payloadData = await loginResponse.json()
-        logger.info("Existing user logged in via Google OAuth", { email: userInfo.email })
-      } else {
-        // User doesn't exist or login failed, try to create a new user
-        logger.info("User not found or login failed, creating new user", { email: userInfo.email })
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/role-selection`)
+    }
 
-        const signupResponse = await fetch(`${API_URL}/users`, {
+    // Check if user exists by email
+    try {
+      // First, try to check if the user exists by email
+      const checkUserResponse = await fetch(
+        `${API_URL}/users?where[email][equals]=${encodeURIComponent(userInfo.email)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      const checkUserData = await checkUserResponse.json()
+
+      // If user exists, log them in
+      if (checkUserResponse.ok && checkUserData.docs && checkUserData.docs.length > 0) {
+        logger.info("User found, attempting to log in", { email: userInfo.email })
+
+        // Try to login with the email
+        const loginResponse = await fetch(`${API_URL}/users/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: userInfo.email,
-            password: `google-oauth-${userInfo.sub}-${Date.now()}`, // Generate a secure password
-            firstName: userInfo.given_name || "",
-            lastName: userInfo.family_name || "",
-            role: "parent", // Default role for Google sign-ins
-            googleId: userInfo.sub,
-            profileImage: userInfo.picture,
+            // Use a special password format for Google OAuth users
+            // This won't actually work for login, but we'll handle the error
+            password: `google-oauth-${userInfo.sub}`,
           }),
           credentials: "include",
         })
 
-        if (!signupResponse.ok) {
-          logger.error("Error creating user with Google OAuth", {
-            status: signupResponse.status,
-            statusText: signupResponse.statusText,
-          })
+        // If login successful, redirect to dashboard
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json()
 
-          try {
-            const errorData = await signupResponse.json()
-            logger.error("Signup error details", { error: errorData })
-          } catch (e) {
-            logger.error("Could not parse error response", { error: e })
+          // Set the JWT token in a cookie
+          if (loginData.token) {
+            cookieAwaited.set("milestone-token", loginData.token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              maxAge: 60 * 60 * 24 * 7, // 1 week
+              path: "/",
+            })
           }
 
+          // Redirect to the appropriate dashboard based on user role
+          const role = loginData.user?.role || "user"
+          let redirectUrl = "/dashboard"
+
+          if (role === "admin") {
+            redirectUrl = "/admin/dashboard"
+          } else if (role === "parent") {
+            redirectUrl = "/parent/dashboard"
+          } else if (role === "tutor") {
+            redirectUrl = "/tutor/dashboard"
+          } else if (role === "student") {
+            redirectUrl = "/student/dashboard"
+          }
+
+          logger.info("Google authentication successful, redirecting to dashboard", { role, redirectUrl })
           return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${redirectUrl}?welcome=returning`,
           )
         }
-
-        const signupData = await signupResponse.json()
-
-        // Now login with the newly created user
-        const newLoginResponse = await fetch(`${API_URL}/users/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: userInfo.email,
-            password: `google-oauth-${userInfo.sub}-${Date.now()}`, // Same password used during signup
-          }),
-          credentials: "include",
-        })
-
-        if (!newLoginResponse.ok) {
-          logger.error("Error logging in after creating user with Google OAuth", {
-            status: newLoginResponse.status,
-            statusText: newLoginResponse.statusText,
-          })
-          return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
-          )
-        }
-
-        payloadData = await newLoginResponse.json()
-        logger.info("New user created and logged in via Google OAuth", { email: userInfo.email })
       }
+
+      // User doesn't exist or login failed, redirect to role selection
+      logger.info("User not found, redirecting to role selection", { email: userInfo.email })
+
+      // Store Google user info in a temporary cookie for the role selection page
+      cookieAwaited.set(
+        "google_user_info",
+        JSON.stringify({
+          googleId: userInfo.sub,
+          email: userInfo.email,
+          firstName: userInfo.given_name || "",
+          lastName: userInfo.family_name || "",
+          picture: userInfo.picture || "",
+        }),
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 60 * 10, // 10 minutes
+          path: "/",
+        },
+      )
+
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/role-selection`)
+    } catch (error) {
+      logger.error("Error checking if user exists", { error })
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
+      )
     }
-
-    // Set the JWT token in a cookie
-    if (payloadData?.token) {
-      const cookieAwaited = await cookies()
-
-      cookieAwaited.set("milestone-token", payloadData.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        path: "/",
-      })
-    }
-
-    // Redirect to the appropriate dashboard based on user role
-    const role = payloadData?.user?.role || "user"
-    let redirectUrl = "/dashboard"
-
-    if (role === "admin") {
-      redirectUrl = "/admin/dashboard"
-    } else if (role === "parent") {
-      redirectUrl = "/parent/dashboard"
-    } else if (role === "tutor") {
-      redirectUrl = "/tutor/dashboard"
-    } else if (role === "student") {
-      redirectUrl = "/student/dashboard"
-    }
-
-    logger.info("Google authentication successful, redirecting to dashboard", { role, redirectUrl })
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${redirectUrl}`)
   } catch (error) {
     logger.error("Unexpected error in Google OAuth callback", { error })
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=unexpected`)
