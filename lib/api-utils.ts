@@ -103,7 +103,7 @@ export function createAuthHeaders(contentType = true): HeadersInit {
   return headers
 }
 
-// Mock Google authentication for development
+// Enhanced mock Google authentication for development
 export async function mockGoogleAuth(googleData: {
   googleId: string
   email: string

@@ -83,16 +83,18 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// Auth context type
+// Update the AuthContextType interface to include setError
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>
   signup: (credentials: SignupCredentials) => Promise<void>
   logout: () => Promise<void>
   resetAuthError: () => void
   clearSuccessMessage: () => void
+  checkAuth: () => Promise<boolean>
+  setError: (error: string) => void
 }
 
-// Create auth context
+// Create auth context with the updated interface
 const AuthContext = createContext<AuthContextType>({
   ...initialState,
   login: async () => {},
@@ -100,6 +102,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   resetAuthError: () => {},
   clearSuccessMessage: () => {},
+  checkAuth: async () => false,
+  setError: () => {},
 })
 
 // Auth provider component
@@ -318,7 +322,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.successMessage])
 
-  // Provide a value to indicate if the initial auth check is complete
+  const checkAuth = useCallback(async () => {
+    try {
+      dispatch({ type: "AUTH_START" })
+      logger.info("Starting auth check...")
+
+      const token = localStorage.getItem("milestone-token")
+
+      if (!token) {
+        logger.info("No token found, user is not authenticated")
+        dispatch({ type: "AUTH_COMPLETE" })
+        setAuthCheckComplete(true)
+        return false
+      }
+
+      logger.info("Token found, validating session...")
+      const authResponse = await getMe()
+
+      if (authResponse.error || !authResponse.data) {
+        logger.warn("Session validation failed:", authResponse.error)
+        localStorage.removeItem("milestone-token")
+        dispatch({ type: "AUTH_COMPLETE" })
+        setAuthCheckComplete(true)
+        return false
+      }
+
+      logger.info("Session validation successful, user authenticated:", authResponse.data.email)
+      dispatch({
+        type: "AUTH_SUCCESS",
+        payload: { user: authResponse.data, token },
+      })
+      setAuthCheckComplete(true)
+      return true
+    } catch (error) {
+      logger.error("Auth check error:", error)
+      localStorage.removeItem("milestone-token")
+      dispatch({
+        type: "AUTH_FAILURE",
+        payload: error instanceof Error ? error.message : "Authentication check failed",
+      })
+      setAuthCheckComplete(true)
+      return false
+    }
+  }, [])
+
+  // Add setError to the contextValue in the AuthProvider component
+  // Find the contextValue object in the AuthProvider component and update it to:
   const contextValue = {
     ...state,
     login,
@@ -326,9 +375,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     resetAuthError,
     clearSuccessMessage,
+    checkAuth,
+    setError: (error: string) => dispatch({ type: "AUTH_FAILURE", payload: error }),
   }
 
-  // Show a loading indicator while the initial auth check is in progress
+  // Provide a value to indicate if the initial auth check is complete
   if (!authCheckComplete) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">

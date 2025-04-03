@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get("code")
     const incomingState = searchParams.get("state")
-    const cookieAwaited = await cookies();
+    const cookieAwaited = await cookies()
 
     // Get the state from the cookie for verification
     const storedState = cookieAwaited.get("google_oauth_state")?.value
@@ -99,35 +99,98 @@ export async function GET(request: NextRequest) {
 
       logger.info("Using mock Google authentication in development mode")
     } else {
-      // Real implementation for production
-      const payloadResponse = await fetch(`${API_URL}/users/google-auth`, {
+      // Instead of using a dedicated Google auth endpoint, we'll try to find the user by email
+      // and if not found, create a new user
+
+      // First, try to login with the email (for existing users)
+      const loginResponse = await fetch(`${API_URL}/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          googleId: userInfo.sub,
           email: userInfo.email,
-          firstName: userInfo.given_name,
-          lastName: userInfo.family_name,
-          profileImage: userInfo.picture,
+          password: `google-oauth-${userInfo.sub}`, // This won't work for login, but we'll handle the error
         }),
         credentials: "include",
       })
 
-      payloadData = await payloadResponse.json()
+      if (loginResponse.ok) {
+        // User exists and we managed to log them in
+        payloadData = await loginResponse.json()
+        logger.info("Existing user logged in via Google OAuth", { email: userInfo.email })
+      } else {
+        // User doesn't exist or login failed, try to create a new user
+        logger.info("User not found or login failed, creating new user", { email: userInfo.email })
 
-      if (!payloadResponse.ok) {
-        logger.error("Error authenticating with PayloadCMS", { error: payloadData })
-        return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
-        )
+        const signupResponse = await fetch(`${API_URL}/users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userInfo.email,
+            password: `google-oauth-${userInfo.sub}-${Date.now()}`, // Generate a secure password
+            firstName: userInfo.given_name || "",
+            lastName: userInfo.family_name || "",
+            role: "parent", // Default role for Google sign-ins
+            googleId: userInfo.sub,
+            profileImage: userInfo.picture,
+          }),
+          credentials: "include",
+        })
+
+        if (!signupResponse.ok) {
+          logger.error("Error creating user with Google OAuth", {
+            status: signupResponse.status,
+            statusText: signupResponse.statusText,
+          })
+
+          try {
+            const errorData = await signupResponse.json()
+            logger.error("Signup error details", { error: errorData })
+          } catch (e) {
+            logger.error("Could not parse error response", { error: e })
+          }
+
+          return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
+          )
+        }
+
+        const signupData = await signupResponse.json()
+
+        // Now login with the newly created user
+        const newLoginResponse = await fetch(`${API_URL}/users/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userInfo.email,
+            password: `google-oauth-${userInfo.sub}-${Date.now()}`, // Same password used during signup
+          }),
+          credentials: "include",
+        })
+
+        if (!newLoginResponse.ok) {
+          logger.error("Error logging in after creating user with Google OAuth", {
+            status: newLoginResponse.status,
+            statusText: newLoginResponse.statusText,
+          })
+          return NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
+          )
+        }
+
+        payloadData = await newLoginResponse.json()
+        logger.info("New user created and logged in via Google OAuth", { email: userInfo.email })
       }
     }
 
     // Set the JWT token in a cookie
     if (payloadData?.token) {
-      const cookieAwaited = await cookies();
+      const cookieAwaited = await cookies()
 
       cookieAwaited.set("milestone-token", payloadData.token, {
         httpOnly: true,

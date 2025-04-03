@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Generate a random state value for CSRF protection
     const state = Math.random().toString(36).substring(2, 15)
-    const cookieAwaited = await cookies();
+    const cookieAwaited = await cookies()
     // Store state in a cookie for verification later
     cookieAwaited.set("google_oauth_state", state, {
       httpOnly: true,
