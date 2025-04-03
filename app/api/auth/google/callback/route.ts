@@ -21,12 +21,13 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get("code")
     const incomingState = searchParams.get("state")
+    const cookieAwaited = await cookies();
 
     // Get the state from the cookie for verification
-    const storedState = cookies().get("google_oauth_state")?.value
+    const storedState = cookieAwaited.get("google_oauth_state")?.value
 
     // Clear the state cookie
-    cookies().delete("google_oauth_state")
+    cookieAwaited.delete("google_oauth_state")
 
     // Verify the state to prevent CSRF attacks
     if (!incomingState || !storedState || incomingState !== storedState) {
@@ -126,7 +127,9 @@ export async function GET(request: NextRequest) {
 
     // Set the JWT token in a cookie
     if (payloadData?.token) {
-      cookies().set("milestone-token", payloadData.token, {
+      const cookieAwaited = await cookies();
+
+      cookieAwaited.set("milestone-token", payloadData.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 7, // 1 week

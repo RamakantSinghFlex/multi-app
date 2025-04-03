@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "debug": "cross-env NODE_OPTIONS='--inspect --no-deprecation' next dev",
+    "debug": "cross-env NODE_OPTIONS='--inspect=5222 --no-deprecation' next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
