@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     logger.info("Checking for Google user info cookie")
 
     // Get the Google user info from the cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const googleUserInfoCookie = cookieStore.get("google_user_info")
 
     if (!googleUserInfoCookie) {

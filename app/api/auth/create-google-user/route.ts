@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     logger.info("Creating user from Google OAuth data")
 
     // Get the Google user info from the cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies();
     const googleUserInfoCookie = cookieStore.get("google_user_info")
 
     if (!googleUserInfoCookie) {
