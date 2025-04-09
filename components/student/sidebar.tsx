@@ -6,7 +6,20 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Home, BookOpen, Calendar, MessageSquare, FileText, Settings, HelpCircle, Menu, X, LogOut } from "lucide-react"
+import {
+  Home,
+  BookOpen,
+  Calendar,
+  MessageSquare,
+  FileText,
+  Settings,
+  HelpCircle,
+  Menu,
+  X,
+  LogOut,
+  GraduationCap,
+  User,
+} from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
 
@@ -35,8 +48,18 @@ export default function StudentSidebar() {
       icon: Home,
     },
     {
+      title: "Schedule",
+      href: "/student/schedule",
+      icon: Calendar,
+    },
+    {
       title: "Sessions",
       href: "/student/sessions",
+      icon: Calendar,
+    },
+    {
+      title: "Appointments",
+      href: "/student/appointments",
       icon: Calendar,
     },
     {
@@ -54,9 +77,19 @@ export default function StudentSidebar() {
       href: "/student/documents",
       icon: FileText,
     },
+    {
+      title: "Progress",
+      href: "/student/progress",
+      icon: GraduationCap,
+    },
   ]
 
   const bottomNavItems = [
+    {
+      title: "Profile",
+      href: "/student/profile",
+      icon: User,
+    },
     {
       title: "Settings",
       href: "/student/settings",

@@ -6,7 +6,7 @@ import { getAppointments } from "@/lib/api/appointments"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { format, parseISO, isSameDay } from "date-fns"
 import { CalendarIcon, Plus, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -76,6 +76,7 @@ export default function TutorSchedulePage() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl">
+            <DialogTitle>Schedule an Appointment</DialogTitle>
             <AppointmentCalendar
               onSuccess={() => {
                 setCreateDialogOpen(false)

@@ -7,27 +7,24 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { format, parseISO, isAfter, isBefore } from "date-fns"
-import { Calendar, Clock, User, Users, AlertCircle, Loader2, Plus } from "lucide-react"
+import { Calendar, Clock, User, AlertCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import AppointmentCalendar from "@/components/appointment/appointment-calendar"
 import { sanitizeHtml } from "@/lib/utils"
 
-export default function ParentAppointmentsPage() {
+export default function StudentAppointmentsPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const fetchAppointments = async () => {
     if (!user?.id) return
 
     setLoading(true)
     try {
-      const response = await getAppointments(1, 100, { parent: user.id })
+      const response = await getAppointments(1, 100, { student: user.id })
 
       if (response.error) {
         throw new Error(response.error)
@@ -148,26 +145,8 @@ export default function ParentAppointmentsPage() {
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Appointments</h1>
-          <p className="text-muted-foreground">Manage your tutoring appointments</p>
+          <p className="text-muted-foreground">View your tutoring appointments</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Book Appointment
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogTitle>Book an Appointment</DialogTitle>
-            <AppointmentCalendar
-              onSuccess={() => {
-                setCreateDialogOpen(false)
-                fetchAppointments()
-              }}
-              onCancel={() => setCreateDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-4">
@@ -184,10 +163,6 @@ export default function ParentAppointmentsPage() {
                 <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium">No upcoming appointments</h3>
                 <p className="text-muted-foreground mb-4">You don't have any upcoming appointments scheduled.</p>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Book Appointment
-                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -218,15 +193,6 @@ export default function ParentAppointmentsPage() {
                         <div>
                           <p className="text-sm">
                             Tutor: {appointment.tutor.firstName} {appointment.tutor.lastName}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-2">
-                        <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm">
-                            Student: {appointment.student.firstName} {appointment.student.lastName}
                           </p>
                         </div>
                       </div>
@@ -298,15 +264,6 @@ export default function ParentAppointmentsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-start space-x-2">
-                        <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm">
-                            Student: {appointment.student.firstName} {appointment.student.lastName}
-                          </p>
-                        </div>
-                      </div>
-
                       {appointment.notes && (
                         <div className="pt-2 text-sm">
                           <p className="font-medium">Notes:</p>
@@ -361,15 +318,6 @@ export default function ParentAppointmentsPage() {
                         <div>
                           <p className="text-sm">
                             Tutor: {appointment.tutor.firstName} {appointment.tutor.lastName}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-2">
-                        <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm">
-                            Student: {appointment.student.firstName} {appointment.student.lastName}
                           </p>
                         </div>
                       </div>

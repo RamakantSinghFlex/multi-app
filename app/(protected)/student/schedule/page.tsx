@@ -1,32 +1,31 @@
 "use client"
 
+import Link from "next/link"
+
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { getAppointments } from "@/lib/api/appointments"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { format, parseISO, isSameDay } from "date-fns"
-import { CalendarIcon, Plus, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import AppointmentCalendar from "@/components/appointment/appointment-calendar"
 import { Badge } from "@/components/ui/badge"
 
-export default function ParentSchedulePage() {
+export default function StudentSchedulePage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const fetchAppointments = async () => {
     if (!user?.id) return
 
     setLoading(true)
     try {
-      const response = await getAppointments(1, 100, { parent: user.id })
+      const response = await getAppointments(1, 100, { student: user.id })
 
       if (response.error) {
         throw new Error(response.error)
@@ -66,26 +65,8 @@ export default function ParentSchedulePage() {
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Schedule</h1>
-          <p className="text-muted-foreground">Manage your tutoring schedule and appointments</p>
+          <p className="text-muted-foreground">View your tutoring schedule and appointments</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Appointment
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogTitle>Schedule an Appointment</DialogTitle>
-            <AppointmentCalendar
-              onSuccess={() => {
-                setCreateDialogOpen(false)
-                fetchAppointments()
-              }}
-              onCancel={() => setCreateDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -152,9 +133,6 @@ export default function ParentSchedulePage() {
                       <p>
                         Tutor: {appointment.tutor?.firstName} {appointment.tutor?.lastName}
                       </p>
-                      <p>
-                        Student: {appointment.student?.firstName} {appointment.student?.lastName}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -162,9 +140,8 @@ export default function ParentSchedulePage() {
             ) : (
               <div className="flex h-64 flex-col items-center justify-center space-y-4">
                 <p>No appointments scheduled for this date</p>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Appointment
+                <Button asChild>
+                  <Link href="/student/appointments">View All Appointments</Link>
                 </Button>
               </div>
             )}

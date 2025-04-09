@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { format, parseISO, isAfter, isBefore } from "date-fns"
 import { Calendar, Clock, User, AlertCircle, Loader2, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -158,6 +158,7 @@ export default function TutorAppointmentsPage() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl">
+            <DialogTitle>Create New Appointment</DialogTitle>
             <AppointmentCalendar
               onSuccess={() => {
                 setCreateDialogOpen(false)
