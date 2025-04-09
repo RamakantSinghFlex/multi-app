@@ -94,3 +94,20 @@ export async function cancelSession(id: string): Promise<ApiResponse<Session>> {
     }
   }
 }
+
+// Delete session
+export async function deleteSession(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/sessions/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting session with ID ${id}`,
+    }
+  }
+}

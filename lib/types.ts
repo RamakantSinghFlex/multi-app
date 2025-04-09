@@ -1,111 +1,47 @@
-// User types
+// API Response Types
+export interface ApiResponse<T = any> {
+  data?: T
+  error?: string
+  statusCode?: number
+}
+
+// User Types
 export interface User {
   id: string
   email: string
   firstName?: string
   lastName?: string
-  roles: string[] // Changed from role: string to roles: string[]
+  role?: string
+  roles?: string[]
   createdAt: string
   updatedAt: string
-  tenants?: {
-    tenant: {
-      id: string
-      name: string
-      domain: string
-      slug: string
-      createdAt: string
-      updatedAt: string
-      allowPublicRead: boolean
-    }
-    roles: string[]
-    id: string
-  }[]
-  status?: string
-  token?: string
+  [key: string]: any
 }
 
-// Update the extended user interfaces
-export interface Admin extends User {
-  roles: ["admin"] // Changed from role: "admin"
-}
-
-export interface Parent extends User {
-  roles: ["parent"] // Changed from role: "parent"
-  students: Student[]
-  paymentMethods?: PaymentMethod[]
-  address?: Address
-  phone?: string
-}
-
-export interface Tutor extends User {
-  roles: ["tutor"] // Changed from role: "tutor"
-  bio?: string
-  subjects: Subject[]
-  gradeLevel: GradeLevel[]
-  availability: Availability[]
-  hourlyRate?: number
-  rating?: number
-  reviews?: Review[]
-  education?: Education[]
-  certifications?: Certification[]
-  profileImage?: string
-  location?: Location
-  formats: ("virtual" | "in-person")[]
-}
-
-export interface Student extends User {
-  roles: ["student"] // Changed from role: "student"
-  parent: string // Parent ID
-  gradeLevel: GradeLevel
-  subjects?: Subject[]
-  documents?: Document[]
-  testScores?: TestScore[]
-  sessions?: Session[]
-}
-
-// Auth types
-export interface AuthState {
-  user: User | null
-  token: string | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  error: string | null
-  successMessage: string | null
-}
-
+// Auth Types
 export interface LoginCredentials {
   email: string
   password: string
 }
 
 export interface SignupCredentials {
-  tenants?: { id: ObjectId; tenant: string }[]
   email: string
   password: string
   firstName?: string
   lastName?: string
-  role?: "parent" | "tutor"
-  roles?: ["parent" | "tutor"]
+  role?: string
+  roles?: string[]
+  tenants?: Array<{ id: any; tenant: string }>
+  [key: string]: any
 }
-
-// Define ObjectId type
-type ObjectId = string
 
 export interface AuthResponse {
   user: User
   token: string
-  exp?: number
   message?: string
 }
 
-// API response types
-export interface ApiResponse<T> {
-  data?: T
-  error?: string
-  message?: string
-  statusCode?: number
-}
-
+// Pagination Types
 export interface PaginatedResponse<T> {
   docs: T[]
   totalDocs: number
@@ -119,163 +55,127 @@ export interface PaginatedResponse<T> {
   nextPage: number | null
 }
 
-// Domain types
-export type GradeLevel = "elementary" | "middle" | "high"
-
-export interface Subject {
+// Content Types
+export interface Content {
   id: string
-  name: string
-  category: "math" | "science" | "writing" | "humanities" | "languages" | "social" | "test-prep" | "college-essays"
+  title: string
+  slug?: string
+  description?: string
+  content?: any
+  thumbnail?: string
+  createdAt: string
+  updatedAt: string
+  [key: string]: any
 }
 
-export interface Availability {
+// Appointment Types
+export interface Appointment {
   id: string
-  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
+  title: string
   startTime: string
   endTime: string
-  isRecurring: boolean
-}
-
-export interface Session {
-  id: string
-  tutor: string // Tutor ID
-  student: string // Student ID
-  subject: Subject
-  startTime: string
-  endTime: string
-  status: "scheduled" | "completed" | "cancelled" | "rescheduled"
-  format: "virtual" | "in-person"
-  location?: Location
-  notes?: SessionNote[]
-  documents?: Document[]
-  payment?: Payment
-  zoomLink?: string
+  status: "pending" | "confirmed" | "cancelled" | "completed"
+  notes?: string
+  student: User | string
+  tutor: User | string
+  subject?: Subject | string
   createdAt: string
   updatedAt: string
 }
 
-export interface SessionNote {
-  id: string
-  session: string // Session ID
-  author: string // User ID
-  content: string
-  visibility: "parent" | "student" | "tutor" | "admin" | "all"
-  createdAt: string
-}
-
-export interface Document {
+// Subject Types
+export interface Subject {
   id: string
   name: string
-  url: string
-  type: string
-  size: number
-  uploadedBy: string // User ID
+  description?: string
+  gradeLevel?: string
   createdAt: string
+  updatedAt: string
 }
 
-export interface TestScore {
+// Session Types
+export interface Session {
   id: string
-  student: string // Student ID
-  testName: string
-  score: number
-  date: string
+  title: string
+  startTime: string
+  endTime: string
+  status: "scheduled" | "in-progress" | "completed" | "cancelled"
   notes?: string
-}
-
-export interface Payment {
-  id: string
-  session: string // Session ID
-  amount: number
-  status: "pending" | "completed" | "refunded" | "failed"
-  method: string
+  student: User | string
+  tutor: User | string
+  subject?: Subject | string
   createdAt: string
+  updatedAt: string
 }
 
-export interface PaymentMethod {
-  id: string
-  type: "credit" | "debit" | "paypal"
-  lastFour?: string
-  expiryDate?: string
-  isDefault: boolean
-}
-
-export interface Address {
-  street: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-}
-
-export interface Location {
-  address?: Address
-  latitude?: number
-  longitude?: number
-}
-
-export interface Review {
-  id: string
-  tutor: string // Tutor ID
-  author: string // User ID
-  rating: number
-  comment?: string
-  createdAt: string
-}
-
-export interface Education {
-  id: string
-  institution: string
-  degree: string
-  fieldOfStudy: string
-  startYear: number
-  endYear?: number
-}
-
-export interface Certification {
-  id: string
-  name: string
-  issuingOrganization: string
-  issueDate: string
-  expirationDate?: string
-}
-
+// Message Types
 export interface Message {
   id: string
-  conversation: string // Conversation ID
-  sender: string // User ID
   content: string
-  attachments?: Document[]
-  isRead: boolean
+  sender: User | string
+  conversation: Conversation | string
+  attachments?: string[]
   isSensitive?: boolean
   createdAt: string
+  updatedAt: string
 }
 
 export interface Conversation {
   id: string
-  participants: string[] // User IDs
-  lastMessage?: Message
   title?: string
+  participants: User[] | string[]
+  lastMessage?: Message | string
   createdAt: string
   updatedAt: string
 }
 
-// Collection types
-export interface Collection {
+// Parent Types
+export interface Parent {
   id: string
-  title: string
-  slug: string
-  description?: string
-  thumbnail?: string
-}
-
-export interface Content {
-  id: string
-  title: string
-  slug: string
-  description?: string
-  content?: any
+  user: User | string
+  students: (Student | string)[]
+  phone?: string
+  address?: string
   createdAt: string
   updatedAt: string
-  thumbnail?: string
-  collectionId?: string
+}
+
+// Student Types
+export interface Student {
+  id: string
+  user?: User | string
+  parent?: Parent | string
+  gradeLevel?: string
+  school?: string
+  subjects?: (Subject | string)[]
+  createdAt: string
+  updatedAt: string
+}
+
+// Tutor Types
+export interface Tutor {
+  id: string
+  user: User | string
+  subjects: (Subject | string)[]
+  bio?: string
+  education?: string
+  experience?: string
+  hourlyRate?: number
+  availability?: any
+  createdAt: string
+  updatedAt: string
+}
+
+// Document Types
+export interface Document {
+  id: string
+  title: string
+  description?: string
+  fileUrl: string
+  fileType: string
+  fileSize: number
+  owner: User | string
+  sharedWith?: (User | string)[]
+  createdAt: string
+  updatedAt: string
 }

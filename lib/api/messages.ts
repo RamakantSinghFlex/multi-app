@@ -1,9 +1,75 @@
 import { handleResponse, createAuthHeaders } from "../api-utils"
-import type { ApiResponse, PaginatedResponse, Conversation, Message } from "../types"
+import type { ApiResponse, Message, Conversation } from "../types"
 import { API_URL } from "../config"
 
+// Get messages for a conversation
+export async function getMessages(conversationId: string, page = 1, limit = 50): Promise<ApiResponse<Message[]>> {
+  try {
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    }).toString()
+
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages?${queryString}`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<Message[]>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching messages",
+    }
+  }
+}
+
+// Send a message
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  isSensitive = false,
+): Promise<ApiResponse<Message>> {
+  try {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify({ content, isSensitive }),
+      credentials: "include",
+    })
+
+    return await handleResponse<Message>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while sending message",
+    }
+  }
+}
+
+// Delete a message
+export async function deleteMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages/${messageId}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : `An unknown error occurred while deleting message with ID ${messageId}`,
+    }
+  }
+}
+
 // Get conversations
-export async function getConversations(page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Conversation>>> {
+export async function getConversations(page = 1, limit = 10): Promise<ApiResponse<Conversation[]>> {
   try {
     const queryString = new URLSearchParams({
       page: page.toString(),
@@ -15,7 +81,7 @@ export async function getConversations(page = 1, limit = 10): Promise<ApiRespons
       credentials: "include",
     })
 
-    return await handleResponse<PaginatedResponse<Conversation>>(response)
+    return await handleResponse<Conversation[]>(response)
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred while fetching conversations",
@@ -40,16 +106,13 @@ export async function getConversation(id: string): Promise<ApiResponse<Conversat
   }
 }
 
-// Create conversation
-export async function createConversation(data: {
-  participants: string[]
-  title?: string
-}): Promise<ApiResponse<Conversation>> {
+// Create a new conversation
+export async function createConversation(participants: string[], title?: string): Promise<ApiResponse<Conversation>> {
   try {
     const response = await fetch(`${API_URL}/conversations`, {
       method: "POST",
       headers: createAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify({ participants, title }),
       credentials: "include",
     })
 
@@ -57,58 +120,6 @@ export async function createConversation(data: {
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred while creating conversation",
-    }
-  }
-}
-
-// Get messages for a conversation
-export async function getMessages(
-  conversationId: string,
-  page = 1,
-  limit = 50,
-): Promise<ApiResponse<PaginatedResponse<Message>>> {
-  try {
-    const queryString = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    }).toString()
-
-    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages?${queryString}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<PaginatedResponse<Message>>(response)
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : `An unknown error occurred while fetching messages for conversation ${conversationId}`,
-    }
-  }
-}
-
-// Send message in a conversation
-export async function sendMessage(
-  conversationId: string,
-  data: { content: string; attachments?: string[]; isSensitive?: boolean },
-): Promise<ApiResponse<Message>> {
-  try {
-    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
-      method: "POST",
-      headers: createAuthHeaders(),
-      body: JSON.stringify(data),
-      credentials: "include",
-    })
-
-    return await handleResponse<Message>(response)
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : `An unknown error occurred while sending message to conversation ${conversationId}`,
     }
   }
 }

@@ -1,84 +1,62 @@
-import { handleResponse, createAuthHeaders } from "../api-utils"
-import type { ApiResponse, PaginatedResponse } from "../types"
-import { API_URL } from "../config"
+import { handleApiResponse } from "../api-utils"
 
-// Collection types
-export interface Collection {
-  id: string
-  title: string
-  slug: string
-  description?: string
-  thumbnail?: string
-}
-
-export interface Content {
-  id: string
-  title: string
-  slug: string
-  description?: string
-  content?: any
-  createdAt: string
-  updatedAt: string
-  thumbnail?: string
-  collectionId?: string
-}
-
-// Get collections
-export async function getCollections(): Promise<ApiResponse<Collection[]>> {
+export async function getContentByCollection(collectionSlug: string, page = 1, limit = 10) {
   try {
-    const response = await fetch(`${API_URL}/collections`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<Collection[]>(response)
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching collections",
+    // This is a placeholder implementation
+    // In a real app, you would fetch from your API
+    const mockResponse = {
+      docs: Array(limit)
+        .fill(0)
+        .map((_, i) => ({
+          id: `item-${i}`,
+          title: `Content Item ${i + 1}`,
+          description: `This is a description for content item ${i + 1} in the ${collectionSlug} collection.`,
+          thumbnail: `/placeholder.svg?height=200&width=400&text=Item ${i + 1}`,
+          updatedAt: new Date().toISOString(),
+        })),
+      totalDocs: 24,
+      totalPages: 3,
+      page,
     }
+
+    return handleApiResponse({ data: mockResponse })
+  } catch (error) {
+    return handleApiResponse({ error: error instanceof Error ? error.message : "Failed to fetch collection content" })
   }
 }
 
-// Get content by collection
-export async function getContentByCollection(
-  collectionSlug: string,
-  page = 1,
-  limit = 10,
-): Promise<ApiResponse<PaginatedResponse<Content>>> {
+export async function getContentById(collection: string, id: string) {
   try {
-    const queryString = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    }).toString()
-
-    const response = await fetch(`${API_URL}/${collectionSlug}?${queryString}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<PaginatedResponse<Content>>(response)
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : `An unknown error occurred while fetching content for ${collectionSlug}`,
+    // This is a placeholder implementation
+    // In a real app, you would fetch from your API
+    const mockResponse = {
+      id,
+      title: `Content Item ${id}`,
+      description: `This is a description for content item ${id} in the ${collection} collection.`,
+      content: `
+        <h2>Introduction</h2>
+        <p>This is the introduction to the content. It provides an overview of what will be covered.</p>
+        <h3>Key Concepts</h3>
+        <ul>
+          <li>First key concept</li>
+          <li>Second key concept</li>
+          <li>Third key concept</li>
+        </ul>
+        <h2>Main Content</h2>
+        <p>This is the main content section. It goes into detail about the topic.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <h3>Subsection</h3>
+        <p>This is a subsection of the main content.</p>
+        <h2>Conclusion</h2>
+        <p>This is the conclusion of the content. It summarizes what was covered.</p>
+      `,
+      thumbnail: `/placeholder.svg?height=400&width=800&text=Content ${id}`,
+      collectionId: collection,
+      updatedAt: new Date().toISOString(),
     }
-  }
-}
 
-// Get content by ID
-export async function getContentById(collectionSlug: string, id: string): Promise<ApiResponse<Content>> {
-  try {
-    const response = await fetch(`${API_URL}/${collectionSlug}/${id}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<Content>(response)
+    return handleApiResponse({ data: mockResponse })
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : `An unknown error occurred while fetching content with ID ${id}`,
-    }
+    return handleApiResponse({ error: error instanceof Error ? error.message : "Failed to fetch content" })
   }
 }

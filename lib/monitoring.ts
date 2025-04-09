@@ -1,115 +1,84 @@
-// Simple monitoring and logging utility
+import { ENABLE_LOGGING } from "./config"
 
-type LogLevel = "debug" | "info" | "warn" | "error"
-
-interface LogEntry {
-  timestamp: string
-  level: LogLevel
-  message: string
-  data?: any
-}
-
+// Simple logger for client-side logging
 class Logger {
-  private logs: LogEntry[] = []
-  private maxLogs = 100
-  private enabled = true
+  private enabled: boolean
 
-  constructor() {
-    // Initialize with environment-specific settings
-    this.enabled = process.env.NODE_ENV !== "production" || !!process.env.NEXT_PUBLIC_ENABLE_LOGGING
+  constructor(enabled = true) {
+    this.enabled = enabled && ENABLE_LOGGING
   }
 
-  public debug(message: string, data?: any): void {
-    this.log("debug", message, data)
-  }
-
-  public info(message: string, data?: any): void {
-    this.log("info", message, data)
-  }
-
-  public warn(message: string, data?: any): void {
-    this.log("warn", message, data)
-  }
-
-  public error(message: string, data?: any): void {
-    this.log("error", message, data)
-  }
-
-  private log(level: LogLevel, message: string, data?: any): void {
+  info(message: string, data?: any): void {
     if (!this.enabled) return
-
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      data,
-    }
-
-    // Add to in-memory logs
-    this.logs.push(entry)
-
-    // Trim logs if they exceed the maximum
-    if (this.logs.length > this.maxLogs) {
-      this.logs = this.logs.slice(-this.maxLogs)
-    }
-
-    // Log to console in development
-    if (process.env.NODE_ENV !== "production") {
-      const consoleMethod = level === "debug" ? "log" : level
-      console[consoleMethod as keyof Console](`[${entry.timestamp}] [${level.toUpperCase()}] ${message}`, data || "")
-    }
-
-    // In a real app, you might send critical logs to a service like Sentry
-    if (level === "error") {
-      this.reportError(message, data)
+    if (data) {
+      console.info(`[INFO] ${message}`, data)
+    } else {
+      console.info(`[INFO] ${message}`)
     }
   }
 
-  private reportError(message: string, data?: any): void {
-    // In a real app, you would send this to an error reporting service
-    // Example: Sentry.captureException(new Error(message), { extra: data });
-    console.error("[REPORT]", message, data)
-  }
-
-  public getLogs(): LogEntry[] {
-    return [...this.logs]
-  }
-
-  public clearLogs(): void {
-    this.logs = []
-  }
-
-  // Performance monitoring
-  public startTimer(label: string): () => void {
-    if (!this.enabled) return () => {}
-
-    const start = performance.now()
-    return () => {
-      const duration = performance.now() - start
-      this.info(`Timer [${label}] completed in ${duration.toFixed(2)}ms`)
+  warn(message: string, data?: any): void {
+    if (!this.enabled) return
+    if (data) {
+      console.warn(`[WARN] ${message}`, data)
+    } else {
+      console.warn(`[WARN] ${message}`)
     }
+  }
+
+  error(message: string, error?: any): void {
+    if (!this.enabled) return
+    if (error) {
+      console.error(`[ERROR] ${message}`, error)
+    } else {
+      console.error(`[ERROR] ${message}`)
+    }
+  }
+
+  debug(message: string, data?: any): void {
+    if (!this.enabled) return
+    if (data) {
+      console.debug(`[DEBUG] ${message}`, data)
+    } else {
+      console.debug(`[DEBUG] ${message}`)
+    }
+  }
+
+  // Track page views
+  pageView(path: string): void {
+    if (!this.enabled) return
+    this.info(`Page view: ${path}`)
+    // In a real app, you would send this to an analytics service
+  }
+
+  // Track events
+  event(category: string, action: string, label?: string, value?: number): void {
+    if (!this.enabled) return
+    this.info(`Event: ${category} - ${action}${label ? ` - ${label}` : ""}${value !== undefined ? ` - ${value}` : ""}`)
+    // In a real app, you would send this to an analytics service
   }
 }
 
-// Create a singleton instance
+// Export a singleton instance
 export const logger = new Logger()
 
-// Performance monitoring utility
-export function measurePerformance<T>(fn: () => T, label: string): T {
-  const endTimer = logger.startTimer(label)
-  try {
-    const result = fn()
+// Error reporting
+export function reportError(error: Error, context?: any): void {
+  if (!ENABLE_LOGGING) return
 
-    // Handle promises
-    if (result instanceof Promise) {
-      return result.finally(endTimer) as T
-    }
+  logger.error("Error reported", { error, context })
+  // In a real app, you would send this to an error reporting service like Sentry
+}
 
-    endTimer()
-    return result
-  } catch (error) {
-    logger.error(`Error in ${label}`, error)
-    endTimer()
-    throw error
+// Performance monitoring
+export function trackPerformance(name: string, callback: () => void): void {
+  if (!ENABLE_LOGGING) {
+    callback()
+    return
   }
+
+  const start = performance.now()
+  callback()
+  const end = performance.now()
+  logger.debug(`Performance: ${name} took ${end - start}ms`)
 }

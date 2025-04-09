@@ -302,3 +302,31 @@ export async function googleSignIn(): Promise<void> {
     throw error
   }
 }
+
+// Register user
+export async function register(userData: any): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return {
+        error: errorData.message || `Error: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    const data = await response.json()
+    return { data }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred during registration",
+    }
+  }
+}

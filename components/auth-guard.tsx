@@ -33,7 +33,7 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
             pathname,
             isAuthenticated,
             isPublicRoute,
-            userRoles: user?.roles,
+            userRoles: user?.roles || (user?.role ? [user.role] : []),
             allowedRoles,
           })
 
@@ -45,18 +45,21 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
           }
 
           // Only redirect if user doesn't have the required role for a specific protected route
-          if (isAuthenticated && allowedRoles.length > 0 && user && user.roles) {
+          if (isAuthenticated && allowedRoles.length > 0 && user) {
+            // Get user roles from either roles array or single role property
+            const userRoles = user.roles || (user.role ? [user.role] : [])
+
             // Check if any of the user's roles match the allowed roles
-            const hasAllowedRole = user.roles.some((role) => allowedRoles.includes(role))
+            const hasAllowedRole = userRoles.some((role) => allowedRoles.includes(role))
 
             if (!hasAllowedRole) {
               logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
-                userRoles: user.roles,
+                userRoles,
                 allowedRoles,
               })
 
               // Redirect based on the user's first role
-              const primaryRole = user.roles[0]
+              const primaryRole = userRoles[0]
 
               if (primaryRole === "admin") {
                 router.push("/admin/dashboard")

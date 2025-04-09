@@ -69,3 +69,20 @@ export async function updateSubject(id: string, data: Partial<Subject>): Promise
     }
   }
 }
+
+// Delete subject
+export async function deleteSubject(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/subjects/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting subject with ID ${id}`,
+    }
+  }
+}

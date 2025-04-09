@@ -75,3 +75,20 @@ export async function updateStudent(id: string, data: Partial<Student>): Promise
     }
   }
 }
+
+// Delete student
+export async function deleteStudent(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/students/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting student with ID ${id}`,
+    }
+  }
+}

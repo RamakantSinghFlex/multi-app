@@ -1,5 +1,12 @@
-import { setToken, clearToken, createAuthHeaders, extractErrorMessage } from "./api-utils"
-import type { ApiResponse, AuthResponse, LoginCredentials, User } from "./types"
+import {
+  setToken,
+  clearToken,
+  createAuthHeaders,
+  extractErrorMessage,
+  handleResponse,
+  type ApiResponse,
+} from "./api-utils"
+import type { AuthResponse, LoginCredentials, User } from "./types"
 import { API_URL } from "./config"
 import type { PaginatedResponse, SignupCredentials, Content } from "./types"
 import { ObjectId } from "bson"
@@ -294,7 +301,6 @@ export async function getMe(): Promise<ApiResponse<User>> {
   }
 }
 
-// Remove the googleSignIn function
 // Create user (signup)
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   try {
@@ -365,6 +371,24 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred during signup",
+    }
+  }
+}
+
+// Create user (admin)
+export async function createUser(userData: Partial<User>): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(userData),
+      credentials: "include",
+    })
+
+    return await handleResponse<User>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating user",
     }
   }
 }
@@ -508,6 +532,28 @@ export async function getTutors(page = 1, limit = 10, query = {}): Promise<ApiRe
   }
 }
 
+// Get appointments
+export async function getAppointments(page = 1, limit = 10, query = {}): Promise<ApiResponse<any>> {
+  try {
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...query,
+    }).toString()
+
+    const response = await fetch(`${API_URL}/appointments?${queryString}`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching appointments",
+    }
+  }
+}
+
 // Create appointment
 export async function createAppointment(data: any): Promise<ApiResponse<any>> {
   try {
@@ -522,6 +568,44 @@ export async function createAppointment(data: any): Promise<ApiResponse<any>> {
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred while creating appointment",
+    }
+  }
+}
+
+// Update appointment
+export async function updateAppointment(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/appointments/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : `An unknown error occurred while updating appointment with ID ${id}`,
+    }
+  }
+}
+
+// Cancel appointment
+export async function cancelAppointment(id: string): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/appointments/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify({ status: "cancelled" }),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : `An unknown error occurred while cancelling appointment with ID ${id}`,
     }
   }
 }
@@ -544,6 +628,287 @@ export async function getSessions(page = 1, limit = 10, query = {}): Promise<Api
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred while fetching sessions",
+    }
+  }
+}
+
+// Create session
+export async function createSession(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/sessions`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating session",
+    }
+  }
+}
+
+// Update session
+export async function updateSession(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/sessions/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while updating session with ID ${id}`,
+    }
+  }
+}
+
+// Delete session
+export async function deleteSession(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/sessions/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting session with ID ${id}`,
+    }
+  }
+}
+
+// Create parent
+export async function createParent(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/parents`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating parent",
+    }
+  }
+}
+
+// Update parent
+export async function updateParent(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/parents/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while updating parent with ID ${id}`,
+    }
+  }
+}
+
+// Delete parent
+export async function deleteParent(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/parents/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting parent with ID ${id}`,
+    }
+  }
+}
+
+// Create student
+export async function createStudent(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/students`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating student",
+    }
+  }
+}
+
+// Update student
+export async function updateStudent(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/students/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while updating student with ID ${id}`,
+    }
+  }
+}
+
+// Delete student
+export async function deleteStudent(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/students/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting student with ID ${id}`,
+    }
+  }
+}
+
+// Get subjects
+export async function getSubjects(): Promise<ApiResponse<any[]>> {
+  try {
+    const response = await fetch(`${API_URL}/subjects`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<any[]>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching subjects",
+    }
+  }
+}
+
+// Create subject
+export async function createSubject(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/subjects`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating subject",
+    }
+  }
+}
+
+// Update subject
+export async function updateSubject(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/subjects/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while updating subject with ID ${id}`,
+    }
+  }
+}
+
+// Delete subject
+export async function deleteSubject(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/subjects/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting subject with ID ${id}`,
+    }
+  }
+}
+
+// Create tutor
+export async function createTutor(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/tutors`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating tutor",
+    }
+  }
+}
+
+// Update tutor
+export async function updateTutor(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/tutors/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while updating tutor with ID ${id}`,
+    }
+  }
+}
+
+// Delete tutor
+export async function deleteTutor(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/tutors/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting tutor with ID ${id}`,
     }
   }
 }
@@ -592,35 +957,149 @@ export async function getContentById(collectionSlug: string, id: string): Promis
   }
 }
 
-// Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Clear auth data on 401 Unauthorized
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("milestone-token")
-      }
-    }
+// Get messages
+export async function getMessages(conversationId: string, page = 1, limit = 50): Promise<ApiResponse<any>> {
+  try {
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    }).toString()
 
-    try {
-      const errorData = await response.json()
-      return {
-        error: errorData.message || errorData.error || `Error: ${response.status} ${response.statusText}`,
-        statusCode: response.status,
-      }
-    } catch (e) {
-      return {
-        error: `Error: ${response.status} ${response.statusText}`,
-        statusCode: response.status,
-      }
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages?${queryString}`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching messages",
     }
   }
+}
 
+// Send message
+export async function sendMessage(conversationId: string, data: any): Promise<ApiResponse<any>> {
   try {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while sending message",
+    }
+  }
+}
+
+// Delete message
+export async function deleteMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages/${messageId}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : `An unknown error occurred while deleting message with ID ${messageId}`,
+    }
+  }
+}
+
+// Get conversations
+export async function getConversations(page = 1, limit = 10): Promise<ApiResponse<any>> {
+  try {
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    }).toString()
+
+    const response = await fetch(`${API_URL}/conversations?${queryString}`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching conversations",
+    }
+  }
+}
+
+// Get conversation by ID
+export async function getConversation(id: string): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/conversations/${id}`, {
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : `An unknown error occurred while fetching conversation with ID ${id}`,
+    }
+  }
+}
+
+// Create conversation
+export async function createConversation(data: any): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`${API_URL}/conversations`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating conversation",
+    }
+  }
+}
+
+// Register user
+export async function register(userData: any): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return {
+        error: errorData.message || `Error: ${response.status} ${response.statusText}`,
+      }
+    }
+
     const data = await response.json()
     return { data }
   } catch (error) {
-    return { error: "Failed to parse response" }
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred during registration",
+    }
   }
 }
 

@@ -1,3 +1,4 @@
+// Fix the API index file to avoid circular dependencies
 // Re-export all API functions
 export * from "./auth"
 export * from "./users"
@@ -9,3 +10,4 @@ export * from "./subjects"
 export * from "./messages"
 export * from "./documents"
 export * from "./collections"
+export * from "./appointments"

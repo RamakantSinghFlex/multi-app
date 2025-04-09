@@ -62,3 +62,55 @@ export async function getDocument(id: string): Promise<ApiResponse<Document>> {
     }
   }
 }
+
+// Upload document
+export async function uploadDocument(file: File, metadata: any): Promise<ApiResponse<Document>> {
+  try {
+    // First upload the file
+    const uploadResult = await uploadFile(file)
+
+    if (uploadResult.error) {
+      return { error: uploadResult.error }
+    }
+
+    // Then create the document with the file URL
+    const documentData = {
+      ...metadata,
+      fileUrl: uploadResult.data?.url,
+      fileId: uploadResult.data?.id,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    }
+
+    const response = await fetch(`${API_URL}/documents`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(documentData),
+      credentials: "include",
+    })
+
+    return await handleResponse<Document>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while uploading document",
+    }
+  }
+}
+
+// Delete document
+export async function deleteDocument(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  try {
+    const response = await fetch(`${API_URL}/documents/${id}`, {
+      method: "DELETE",
+      headers: createAuthHeaders(false),
+      credentials: "include",
+    })
+
+    return await handleResponse<{ success: boolean }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while deleting document with ID ${id}`,
+    }
+  }
+}
