@@ -69,4 +69,3 @@ export async function updateSubject(id: string, data: Partial<Subject>): Promise
     }
   }
 }
-

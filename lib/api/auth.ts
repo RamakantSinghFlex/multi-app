@@ -302,4 +302,3 @@ export async function googleSignIn(): Promise<void> {
     throw error
   }
 }
-

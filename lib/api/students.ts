@@ -75,4 +75,3 @@ export async function updateStudent(id: string, data: Partial<Student>): Promise
     }
   }
 }
-

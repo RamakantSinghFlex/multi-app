@@ -94,4 +94,3 @@ export async function cancelSession(id: string): Promise<ApiResponse<Session>> {
     }
   }
 }
-

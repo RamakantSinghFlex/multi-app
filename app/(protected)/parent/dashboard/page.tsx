@@ -55,6 +55,9 @@ export default function ParentDashboardPage() {
           <Button asChild>
             <Link href="/parent/book">Book a Session</Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link href="/parent/appointments">View Appointments</Link>
+          </Button>
         </div>
       </div>
 
@@ -308,4 +311,3 @@ export default function ParentDashboardPage() {
     </div>
   )
 }
-

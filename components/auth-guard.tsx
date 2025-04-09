@@ -33,7 +33,7 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
             pathname,
             isAuthenticated,
             isPublicRoute,
-            userRole: user?.role,
+            userRoles: user?.roles,
             allowedRoles,
           })
 
@@ -45,24 +45,32 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
           }
 
           // Only redirect if user doesn't have the required role for a specific protected route
-          if (isAuthenticated && allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-            logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
-              userRole: user.role,
-              allowedRoles,
-            })
+          if (isAuthenticated && allowedRoles.length > 0 && user && user.roles) {
+            // Check if any of the user's roles match the allowed roles
+            const hasAllowedRole = user.roles.some((role) => allowedRoles.includes(role))
 
-            if (user.role === "admin") {
-              router.push("/admin/dashboard")
-            } else if (user.role === "parent") {
-              router.push("/parent/dashboard")
-            } else if (user.role === "tutor") {
-              router.push("/tutor/dashboard")
-            } else if (user.role === "student") {
-              router.push("/student/dashboard")
-            } else {
-              router.push("/dashboard")
+            if (!hasAllowedRole) {
+              logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
+                userRoles: user.roles,
+                allowedRoles,
+              })
+
+              // Redirect based on the user's first role
+              const primaryRole = user.roles[0]
+
+              if (primaryRole === "admin") {
+                router.push("/admin/dashboard")
+              } else if (primaryRole === "parent") {
+                router.push("/parent/dashboard")
+              } else if (primaryRole === "tutor") {
+                router.push("/tutor/dashboard")
+              } else if (primaryRole === "student") {
+                router.push("/student/dashboard")
+              } else {
+                router.push("/dashboard")
+              }
+              return
             }
-            return
           }
 
           setIsChecking(false)
@@ -108,4 +116,3 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
   // For public routes, or when authenticated on protected routes with correct role
   return <>{children}</>
 }
-

@@ -75,4 +75,3 @@ export async function updateTutor(id: string, data: Partial<Tutor>): Promise<Api
     }
   }
 }
-

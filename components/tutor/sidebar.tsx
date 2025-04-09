@@ -41,6 +41,7 @@ export default function TutorSidebar() {
     closeSidebar()
   }
 
+  // Update the mainNavItems array to ensure "Schedule" is included
   const mainNavItems = [
     {
       title: "Dashboard",
@@ -53,8 +54,13 @@ export default function TutorSidebar() {
       icon: Users,
     },
     {
-      title: "Sessions",
-      href: "/tutor/sessions",
+      title: "Schedule",
+      href: "/tutor/schedule",
+      icon: Calendar,
+    },
+    {
+      title: "Appointments",
+      href: "/tutor/appointments",
       icon: Calendar,
     },
     {
@@ -194,4 +200,3 @@ export default function TutorSidebar() {
     </>
   )
 }
-

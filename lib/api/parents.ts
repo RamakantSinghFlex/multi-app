@@ -75,4 +75,3 @@ export async function updateParent(id: string, data: Partial<Parent>): Promise<A
     }
   }
 }
-

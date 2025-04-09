@@ -40,6 +40,7 @@ export default function ParentSidebar() {
     closeSidebar()
   }
 
+  // Update the mainNavItems array to ensure "Schedule" is included
   const mainNavItems = [
     {
       title: "Dashboard",
@@ -52,8 +53,13 @@ export default function ParentSidebar() {
       icon: Users,
     },
     {
-      title: "Sessions",
-      href: "/parent/sessions",
+      title: "Schedule",
+      href: "/parent/schedule",
+      icon: Calendar,
+    },
+    {
+      title: "Appointments",
+      href: "/parent/appointments",
       icon: Calendar,
     },
     {
@@ -183,4 +189,3 @@ export default function ParentSidebar() {
     </>
   )
 }
-

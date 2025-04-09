@@ -4,10 +4,9 @@ export interface User {
   email: string
   firstName?: string
   lastName?: string
-  role: "admin" | "parent" | "tutor" | "student"
+  roles: string[] // Changed from role: string to roles: string[]
   createdAt: string
   updatedAt: string
-  roles?: string[]
   tenants?: {
     tenant: {
       id: string
@@ -25,12 +24,13 @@ export interface User {
   token?: string
 }
 
+// Update the extended user interfaces
 export interface Admin extends User {
-  role: "admin"
+  roles: ["admin"] // Changed from role: "admin"
 }
 
 export interface Parent extends User {
-  role: "parent"
+  roles: ["parent"] // Changed from role: "parent"
   students: Student[]
   paymentMethods?: PaymentMethod[]
   address?: Address
@@ -38,7 +38,7 @@ export interface Parent extends User {
 }
 
 export interface Tutor extends User {
-  role: "tutor"
+  roles: ["tutor"] // Changed from role: "tutor"
   bio?: string
   subjects: Subject[]
   gradeLevel: GradeLevel[]
@@ -54,7 +54,7 @@ export interface Tutor extends User {
 }
 
 export interface Student extends User {
-  role: "student"
+  roles: ["student"] // Changed from role: "student"
   parent: string // Parent ID
   gradeLevel: GradeLevel
   subjects?: Subject[]
@@ -259,3 +259,23 @@ export interface Conversation {
   updatedAt: string
 }
 
+// Collection types
+export interface Collection {
+  id: string
+  title: string
+  slug: string
+  description?: string
+  thumbnail?: string
+}
+
+export interface Content {
+  id: string
+  title: string
+  slug: string
+  description?: string
+  content?: any
+  createdAt: string
+  updatedAt: string
+  thumbnail?: string
+  collectionId?: string
+}

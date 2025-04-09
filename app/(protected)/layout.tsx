@@ -8,4 +8,3 @@ export default function ProtectedLayout({
 }>) {
   return <AuthGuard>{children}</AuthGuard>
 }
-

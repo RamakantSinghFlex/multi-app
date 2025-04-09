@@ -13,11 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
-
-// Update the imports to include the googleSignIn function
-import { googleSignIn } from "@/lib/api/auth"
 
 export default function LoginPage() {
   const {
@@ -51,15 +47,21 @@ export default function LoginPage() {
       if (redirectPath) {
         router.push(redirectPath)
       } else {
-        // Redirect based on user role
-        if (user.role === "admin") {
-          router.push("/admin/dashboard")
-        } else if (user.role === "parent") {
-          router.push("/parent/dashboard")
-        } else if (user.role === "tutor") {
-          router.push("/tutor/dashboard")
-        } else if (user.role === "student") {
-          router.push("/student/dashboard")
+        // Redirect based on user roles
+        if (user.roles && user.roles.length > 0) {
+          const primaryRole = user.roles[0]
+
+          if (primaryRole === "admin") {
+            router.push("/admin/dashboard")
+          } else if (primaryRole === "parent") {
+            router.push("/parent/dashboard")
+          } else if (primaryRole === "tutor") {
+            router.push("/tutor/dashboard")
+          } else if (primaryRole === "student") {
+            router.push("/student/dashboard")
+          } else {
+            router.push("/dashboard")
+          }
         } else {
           router.push("/dashboard")
         }
@@ -160,7 +162,7 @@ export default function LoginPage() {
       const newUrl = window.location.pathname
       window.history.replaceState({}, document.title, newUrl)
     }
-  }, [])
+  }, [setError])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -254,36 +256,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="relative mt-6 flex items-center justify-center">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <span className="relative bg-card px-2 text-xs text-muted-foreground">Or continue with</span>
-          </div>
-
-          {/* Update the button in the "Or continue with" section */}
-          <div className="mt-6 grid grid-cols-1 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-input"
-              disabled={isLoading}
-              onClick={() => {
-                try {
-                  googleSignIn()
-                } catch (err) {
-                  console.error("Google sign-in error:", err)
-                  setError("Failed to initiate Google sign-in. Please try again.")
-                }
-              }}
-            >
-              <svg className="mr-2 h-5 w-5 text-[#4285f4]" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-              </svg>
-              Sign in with Google
-            </Button>
-          </div>
         </CardContent>
 
         <CardFooter className="flex justify-center border-t p-6">
@@ -298,4 +270,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

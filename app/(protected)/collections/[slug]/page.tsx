@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { getContentByCollection, type Content } from "@/lib/api"
+import { getContentByCollection } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,12 +16,13 @@ import {
 import { BookOpen, Filter } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { sanitizeHtml } from "@/lib/utils" // We'll create this utility
 
 export default function CollectionPage() {
   const params = useParams()
   const slug = params.slug as string
 
-  const [content, setContent] = useState<Content[]>([])
+  const [content, setContent] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -31,10 +32,15 @@ export default function CollectionPage() {
     const fetchContent = async () => {
       try {
         setLoading(true)
-        const data = await getContentByCollection(slug, currentPage, 12)
-        setContent(data.docs)
-        setTotalPages(data.totalPages)
-        setTotalItems(data.totalDocs)
+        const response = await getContentByCollection(slug, currentPage, 12)
+
+        if (response.data) {
+          setContent(response.data.docs)
+          setTotalPages(response.data.totalPages)
+          setTotalItems(response.data.totalDocs)
+        } else {
+          throw new Error(response.error || "Failed to fetch content")
+        }
       } catch (error) {
         console.error(`Error fetching content for collection ${slug}:`, error)
       } finally {
@@ -99,10 +105,18 @@ export default function CollectionPage() {
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-medium text-[#02342e]">{item.title}</h3>
-                    <p className="mt-1 text-sm text-[#9d968d]">
-                      {item.description?.substring(0, 100) || "No description available"}
-                      {item.description && item.description.length > 100 ? "..." : ""}
-                    </p>
+                    {item.description && (
+                      <div
+                        className="mt-1 text-sm text-[#9d968d]"
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeHtml(
+                            item.description.length > 100
+                              ? item.description.substring(0, 100) + "..."
+                              : item.description,
+                          ),
+                        }}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               </Link>
@@ -154,4 +168,3 @@ export default function CollectionPage() {
     </div>
   )
 }
-

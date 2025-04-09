@@ -2,19 +2,20 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { getContentById, type Content } from "@/lib/api"
+import { getContentById } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, BookOpen, Clock, Download, Share2, Bookmark } from "lucide-react"
 import Image from "next/image"
+import { sanitizeHtml } from "@/lib/utils" // We'll create this utility
 
 export default function ContentPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
 
-  const [content, setContent] = useState<Content | null>(null)
+  const [content, setContent] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -23,8 +24,12 @@ export default function ContentPage() {
         setLoading(true)
         // Assuming we know which collection this content belongs to
         // In a real app, you might need to query multiple collections or have a unified endpoint
-        const data = await getContentById("content", id)
-        setContent(data)
+        const response = await getContentById("content", id)
+        if (response.data) {
+          setContent(response.data)
+        } else {
+          throw new Error(response.error || "Failed to fetch content")
+        }
       } catch (error) {
         console.error(`Error fetching content with ID ${id}:`, error)
       } finally {
@@ -121,7 +126,11 @@ export default function ContentPage() {
               <TabsContent value="content" className="mt-6">
                 <div className="prose max-w-none text-[#2c2c2c]">
                   {content.content ? (
-                    <div dangerouslySetInnerHTML={{ __html: content.content }} />
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeHtml(content.content),
+                      }}
+                    />
                   ) : (
                     <div>
                       <h2>About this content</h2>
@@ -250,4 +259,3 @@ export default function ContentPage() {
     </div>
   )
 }
-

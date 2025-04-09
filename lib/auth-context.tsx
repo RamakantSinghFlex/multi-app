@@ -4,12 +4,12 @@ import type React from "react"
 
 import { createContext, useCallback, useContext, useEffect, useReducer, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { AuthState, LoginCredentials, SignupCredentials, User } from "./types"
+import type { AuthState as AuthStateType, LoginCredentials, SignupCredentials, User } from "./types"
 import { getMe, login as apiLogin, logout as apiLogout, signup as apiSignup } from "./api"
 import { logger } from "./monitoring"
 
 // Initial auth state
-const initialState: AuthState = {
+const initialState: AuthStateType = {
   user: null,
   token: null,
   isLoading: true,
@@ -29,7 +29,7 @@ type AuthAction =
   | { type: "CLEAR_SUCCESS_MESSAGE" }
 
 // Auth reducer
-function authReducer(state: AuthState, action: AuthAction): AuthState {
+function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
   switch (action.type) {
     case "AUTH_START":
       return {
@@ -81,6 +81,16 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
     default:
       return state
   }
+}
+
+// Update the AuthState interface to ensure roles is an array
+export interface AuthState extends AuthStateType {
+  user: User | null
+  token: string | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  error: string | null
+  successMessage: string | null
 }
 
 // Update the AuthContextType interface to include setError
@@ -159,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  // Login function
+  // In the login function, update the redirection logic
   const login = async (credentials: LoginCredentials) => {
     dispatch({ type: "AUTH_START" })
 
@@ -192,16 +202,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       })
 
-      // Redirect based on user role
-      if (response.data.user.role === "admin") {
-        router.push("/admin/dashboard")
-      } else if (response.data.user.role === "parent") {
-        router.push("/parent/dashboard")
-      } else if (response.data.user.role === "tutor") {
-        router.push("/tutor/dashboard")
-      } else if (response.data.user.role === "student") {
-        router.push("/student/dashboard")
+      // Redirect based on user roles
+      if (response.data.user.roles && response.data.user.roles.length > 0) {
+        const userRole = response.data.user.roles[0] // Use the first role for redirection
+
+        if (userRole === "admin") {
+          router.push("/admin/dashboard")
+        } else if (userRole === "parent") {
+          router.push("/parent/dashboard")
+        } else if (userRole === "tutor") {
+          router.push("/tutor/dashboard")
+        } else if (userRole === "student") {
+          router.push("/student/dashboard")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
+        // Fallback if no roles
         router.push("/dashboard")
       }
     } catch (error) {
@@ -213,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Update the signup function to handle success message
+  // Update the signup function with the same redirection logic
   const signup = async (credentials: SignupCredentials) => {
     dispatch({ type: "AUTH_START" })
 
@@ -241,16 +258,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       })
 
-      // Redirect based on user role
-      if (response.data.user.role === "admin") {
-        router.push("/admin/dashboard")
-      } else if (response.data.user.role === "parent") {
-        router.push("/parent/dashboard")
-      } else if (response.data.user.role === "tutor") {
-        router.push("/tutor/dashboard")
-      } else if (response.data.user.role === "student") {
-        router.push("/student/dashboard")
+      // Redirect based on user roles
+      if (response.data.user.roles && response.data.user.roles.length > 0) {
+        const userRole = response.data.user.roles[0] // Use the first role for redirection
+
+        if (userRole === "admin") {
+          router.push("/admin/dashboard")
+        } else if (userRole === "parent") {
+          router.push("/parent/dashboard")
+        } else if (userRole === "tutor") {
+          router.push("/tutor/dashboard")
+        } else if (userRole === "student") {
+          router.push("/student/dashboard")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
+        // Fallback if no roles
         router.push("/dashboard")
       }
     } catch (error) {
@@ -395,4 +419,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 // Auth hook
 export const useAuth = () => useContext(AuthContext)
-

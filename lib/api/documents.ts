@@ -62,4 +62,3 @@ export async function getDocument(id: string): Promise<ApiResponse<Document>> {
     }
   }
 }
-

@@ -82,4 +82,3 @@ export async function getContentById(collectionSlug: string, id: string): Promis
     }
   }
 }
-
