@@ -304,7 +304,7 @@ export async function getMe(): Promise<ApiResponse<User>> {
 // Create user (signup)
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
-        credentials.tenantName = "Tenant 1"
+        credentials.tenantName = process.env.TENANT_NAME
 
         // Ensure roles is an array
         if (credentials.role && !credentials.roles) {

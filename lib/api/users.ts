@@ -6,7 +6,7 @@ import { ObjectId } from "bson"
 // Create user (signup)
 export async function createUser(credentials: SignupCredentials): Promise<ApiResponse<User>> {
     try {
-        credentials.tenantName = "Tenant 1"
+        credentials.tenantName = process.env.TENANT_NAME
         const response = await fetch(`${API_URL}/users`, {
             method: "POST",
             headers: {

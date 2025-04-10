@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
             role: role,
             googleId: googleUserInfo.googleId,
             profileImage: googleUserInfo.picture || "",
-            tenantName: "Tenant 1",
+            tenantName: process.env.TENANT_NAME,
         }
 
         // For development mode without API
