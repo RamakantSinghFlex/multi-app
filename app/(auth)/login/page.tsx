@@ -43,8 +43,8 @@ export default function LoginPage() {
     if (isAuthenticated && user) {
       console.log("User already authenticated, redirecting...")
 
-      // Check if there's a redirect path
-      if (redirectPath) {
+      // Check if there's a redirect path -- //TODO remove false later
+      if (false && redirectPath) {
         router.push(redirectPath)
       } else {
         // Redirect based on user roles
@@ -59,11 +59,9 @@ export default function LoginPage() {
             router.push("/tutor/dashboard")
           } else if (primaryRole === "student") {
             router.push("/student/dashboard")
-          } else {
-            router.push("/dashboard")
           }
         } else {
-          router.push("/dashboard")
+          console.error('no role');
         }
       }
     }

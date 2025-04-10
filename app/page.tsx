@@ -11,14 +11,13 @@ export default function Home() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
-
   // Set up page loading state
   useEffect(() => {
     if (!isLoading) {
-      logger.info("Home page: Auth check complete", { isAuthenticated: isAuthenticated })
+      logger.info("Home page: Auth check complete", { isAuthenticated: isAuthenticated, user: user })
       setPageLoading(false)
     }
-  }, [isLoading, isAuthenticated])
+  }, [isLoading, isAuthenticated, user])
 
   // If there's an error during navigation
   if (error) {
@@ -64,7 +63,7 @@ export default function Home() {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <Button asChild>
-              <Link href="/dashboard">Go to Dashboard</Link>
+              <Link href={user.roles[0] + '/dashboard'}>Go to Dashboard</Link>
             </Button>
           ) : (
             <>

@@ -31,7 +31,7 @@ export interface SignupCredentials {
   lastName?: string
   role?: string
   roles?: string[]
-  tenants?: Array<{ id: any; tenant: string }>
+  tenantName?: string
   [key: string]: any
 }
 

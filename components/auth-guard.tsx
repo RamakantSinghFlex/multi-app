@@ -55,6 +55,7 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
             if (!hasAllowedRole) {
               logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
                 userRoles,
+                user,
                 allowedRoles,
               })
 
