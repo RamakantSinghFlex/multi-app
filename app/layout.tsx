@@ -23,10 +23,11 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
+        <Analytics/>
         <ErrorBoundary>
             <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+
                 <AuthProvider>{children}</AuthProvider>
-                <Analytics/>
             </ThemeProvider>
         </ErrorBoundary>
         </body>
