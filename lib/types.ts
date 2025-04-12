@@ -61,7 +61,6 @@ export interface Student {
   id: string
   firstName?: string
   lastName?: string
-  fullName?: string
   email?: string
   gradeLevel?: string
   tenantName?: string
