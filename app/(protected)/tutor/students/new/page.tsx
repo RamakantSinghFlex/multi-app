@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, ArrowLeft, Eye, EyeOff, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,10 +17,34 @@ import { createStudent } from "@/lib/api/students"
 import { useToast } from "@/hooks/use-toast"
 import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
 import { generateSecurePassword } from "@/lib/utils/password-generator"
+import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
 
 export default function NewStudentPage() {
   const router = useRouter()
   const { toast } = useToast()
+
+  // Use state to store the user ID
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userLoading, setUserLoading] = useState(true)
+
+  // Fetch the current user on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data } = await getMe()
+        const userData = data;
+        if (userData && userData.id) {
+          setUserId(userData.id)
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error)
+      } finally {
+        setUserLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -31,6 +55,8 @@ export default function NewStudentPage() {
     gradeLevel: "",
     school: "",
     notes: "",
+    tenantName: "Tenant 1", // Add default tenant name
+    roles: ["student"],
   })
 
   // UI state
@@ -68,12 +94,13 @@ export default function NewStudentPage() {
         return
       }
 
-      // Create student
-      const response = await createStudent({
+      // Create student with the userId from state
+      const studentData = {
         ...formData,
-        role: "student",
-        roles: ["student"],
-      })
+        tutors: userId ? [userId] : [],
+      }
+
+      const response = await createStudent(studentData)
 
       if (response.error) {
         try {
@@ -259,11 +286,16 @@ export default function NewStudentPage() {
           <Button variant="outline" onClick={() => router.back()} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
+              </>
+            ) : userLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
               </>
             ) : (
               "Create Student"

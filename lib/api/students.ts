@@ -1,5 +1,7 @@
+"use client"
+
 import { handleResponse, createAuthHeaders } from "../api-utils"
-import type { ApiResponse, PaginatedResponse, Student } from "../types"
+import type { ApiResponse, Student } from "../types"
 import { API_URL } from "../config"
 
 // Get students
@@ -9,10 +11,15 @@ import { API_URL } from "../config"
 // Create student
 export async function createStudent(data: Partial<Student>): Promise<ApiResponse<Student>> {
   try {
-    data.tenantName = "Tenant 1";
+    // Remove the direct hook call
+    // const { user } = useAuth() <- This was causing the error
+    const headers = {};
+    headers["Content-Type"] = "application/json"
+
+    // Use the data as provided by the component
     const response = await fetch(`${API_URL}/users`, {
       method: "POST",
-      headers: createAuthHeaders(),
+      headers,
       body: JSON.stringify(data),
       credentials: "include",
     })
