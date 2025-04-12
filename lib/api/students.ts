@@ -3,47 +3,14 @@ import type { ApiResponse, PaginatedResponse, Student } from "../types"
 import { API_URL } from "../config"
 
 // Get students
-export async function getStudents(page = 1, limit = 10, query = {}): Promise<ApiResponse<PaginatedResponse<Student>>> {
-  try {
-    const queryString = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...query,
-    }).toString()
-
-    const response = await fetch(`${API_URL}/students?${queryString}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<PaginatedResponse<Student>>(response)
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching students",
-    }
-  }
-}
 
 // Get student by ID
-export async function getStudent(id: string): Promise<ApiResponse<Student>> {
-  try {
-    const response = await fetch(`${API_URL}/students/${id}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
-
-    return await handleResponse<Student>(response)
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : `An unknown error occurred while fetching student with ID ${id}`,
-    }
-  }
-}
 
 // Create student
 export async function createStudent(data: Partial<Student>): Promise<ApiResponse<Student>> {
   try {
-    const response = await fetch(`${API_URL}/students`, {
+    data.tenantName = "Tenant 1";
+    const response = await fetch(`${API_URL}/users`, {
       method: "POST",
       headers: createAuthHeaders(),
       body: JSON.stringify(data),

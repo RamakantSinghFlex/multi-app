@@ -48,11 +48,6 @@ export default function StudentSidebar() {
       icon: Home,
     },
     {
-      title: "Schedule",
-      href: "/student/schedule",
-      icon: Calendar,
-    },
-    {
       title: "Sessions",
       href: "/student/sessions",
       icon: Calendar,

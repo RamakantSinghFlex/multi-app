@@ -1,46 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Home,
-  Users,
   BookOpen,
   Calendar,
+  Home,
   MessageSquare,
   Settings,
+  Users,
+  FileText,
   HelpCircle,
-  Menu,
-  X,
-  LogOut,
   CreditCard,
 } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
-import Image from "next/image"
 
-export default function ParentSidebar() {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export default function ParentSidebar({ className, ...props }: SidebarProps) {
   const pathname = usePathname()
-  const { logout } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen)
-  }
-
-  const closeSidebar = () => {
-    setIsOpen(false)
-  }
-
-  const handleLogout = async () => {
-    await logout()
-    closeSidebar()
-  }
-
-  // Update the mainNavItems array to ensure "Schedule" is included
   const mainNavItems = [
     {
       title: "Dashboard",
@@ -53,19 +34,9 @@ export default function ParentSidebar() {
       icon: Users,
     },
     {
-      title: "Schedule",
-      href: "/parent/schedule",
-      icon: Calendar,
-    },
-    {
       title: "Appointments",
       href: "/parent/appointments",
       icon: Calendar,
-    },
-    {
-      title: "Book a Session",
-      href: "/parent/book",
-      icon: BookOpen,
     },
     {
       title: "Messages",
@@ -73,119 +44,75 @@ export default function ParentSidebar() {
       icon: MessageSquare,
     },
     {
-      title: "Payments",
-      href: "/parent/payments",
+      title: "Materials",
+      href: "/parent/materials",
+      icon: BookOpen,
+    },
+    {
+      title: "Documents",
+      href: "/parent/documents",
+      icon: FileText,
+    },
+    {
+      title: "Billing",
+      href: "/parent/billing",
       icon: CreditCard,
     },
   ]
 
-  const bottomNavItems = [
+  const secondaryNavItems = [
     {
       title: "Settings",
       href: "/parent/settings",
       icon: Settings,
     },
     {
-      title: "Help & Support",
+      title: "Help",
       href: "/parent/help",
       icon: HelpCircle,
     },
   ]
 
   return (
-    <>
-      {/* Mobile menu button */}
-      <div className="fixed left-4 top-4 z-50 block md:hidden">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 rounded-full border-border bg-card"
-          onClick={toggleSidebar}
-        >
-          <Menu className="h-5 w-5 text-primary" />
-        </Button>
-      </div>
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-card shadow-md transition-transform duration-300 ease-in-out md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <Link href="/parent/dashboard" onClick={closeSidebar}>
-            <Image
-              src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
-              alt="Milestone Learning Logo"
-              width={150}
-              height={40}
-              className="h-auto w-auto"
-            />
-          </Link>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={closeSidebar}>
-            <X className="h-5 w-5 text-primary" />
-          </Button>
-        </div>
-
-        <ScrollArea className="flex-1 px-3 py-4">
-          <div className="space-y-6">
-            <div className="space-y-1">
-              <h3 className="px-3 text-xs font-medium uppercase text-muted-foreground">Main</h3>
-              <nav className="space-y-1">
-                {mainNavItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={closeSidebar}
-                    className={cn(
-                      "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                      pathname === item.href
-                        ? "bg-secondary text-secondary-foreground"
-                        : "text-foreground hover:bg-muted hover:text-primary",
-                    )}
-                  >
-                    <item.icon className="mr-2 h-5 w-5" />
-                    {item.title}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </ScrollArea>
-
-        <div className="border-t border-border p-4">
-          <nav className="space-y-1">
-            {bottomNavItems.map((item) => (
+    <div className={cn("pb-12", className)} {...props}>
+      <div className="space-y-4 py-4">
+        <div className="px-4 py-2">
+          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Main Menu</h2>
+          <div className="space-y-1">
+            {mainNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={closeSidebar}
                 className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                  pathname === item.href
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-foreground hover:bg-muted hover:text-primary",
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  pathname === item.href ? "bg-accent text-accent-foreground" : "transparent",
                 )}
               >
-                <item.icon className="mr-2 h-5 w-5" />
-                {item.title}
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
               </Link>
             ))}
-            <Button
-              variant="ghost"
-              className="w-full justify-start rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted hover:text-primary"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              Sign out
-            </Button>
-          </nav>
+          </div>
+        </div>
+        <div className="px-4 py-2">
+          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Support</h2>
+          <div className="space-y-1">
+            {secondaryNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  pathname === item.href ? "bg-accent text-accent-foreground" : "transparent",
+                )}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Overlay */}
-      {isOpen && <div className="fixed inset-0 z-30 bg-black/20 md:hidden" onClick={closeSidebar} />}
-    </>
+    </div>
   )
 }

@@ -1,40 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/lib/auth-context"
-import { getSessions } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BookOpen, Calendar, Clock, GraduationCap } from "lucide-react"
 
 export default function StudentDashboardPage() {
   const { user } = useAuth()
-  const [sessions, setSessions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("upcoming")
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
+  // Get sessions directly from the user object
+  const sessions = user?.sessions || []
 
-        // Fetch sessions
-        const sessionsResponse = await getSessions(1, 10, { student: user?.id })
-        if (sessionsResponse.data) {
-          setSessions(sessionsResponse.data.docs)
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  // Filter sessions by status
+  const upcomingSessions = sessions.filter(
+    (session) =>
+      session.status !== "cancelled" && session.status !== "completed" && new Date(session.startTime) > new Date(),
+  )
 
-    if (user?.id) {
-      fetchData()
-    }
-  }, [user?.id])
+  const pastSessions = sessions.filter(
+    (session) => session.status === "completed" || new Date(session.startTime) <= new Date(),
+  )
 
   return (
     <div className="space-y-6">
@@ -45,7 +34,7 @@ export default function StudentDashboardPage() {
         </div>
         <div className="flex space-x-2">
           <Button asChild>
-            <Link href="/student/schedule">View Schedule</Link>
+            <Link href="/student/appointments">View Appointments</Link>
           </Button>
         </div>
       </div>
@@ -56,7 +45,7 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                <h3 className="text-2xl font-bold">{loading ? "..." : sessions.length}</h3>
+                <h3 className="text-2xl font-bold">{sessions.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Calendar className="h-5 w-5" />
@@ -70,9 +59,7 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Upcoming Sessions</p>
-                <h3 className="text-2xl font-bold">
-                  {loading ? "..." : sessions.filter((session) => new Date(session.startTime) > new Date()).length}
-                </h3>
+                <h3 className="text-2xl font-bold">{upcomingSessions.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Clock className="h-5 w-5" />
@@ -86,9 +73,7 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Subjects</p>
-                <h3 className="text-2xl font-bold">
-                  {loading ? "..." : new Set(sessions.map((session) => session.subject?.name)).size}
-                </h3>
+                <h3 className="text-2xl font-bold">{new Set(sessions.map((session) => session.subject?.name)).size}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <BookOpen className="h-5 w-5" />
@@ -103,11 +88,9 @@ export default function StudentDashboardPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Progress</p>
                 <h3 className="text-2xl font-bold">
-                  {loading
-                    ? "..."
-                    : Math.round(
-                        (sessions.filter((s) => s.status === "completed").length / Math.max(sessions.length, 1)) * 100,
-                      )}
+                  {Math.round(
+                    (sessions.filter((s) => s.status === "completed").length / Math.max(sessions.length, 1)) * 100,
+                  )}
                   %
                 </h3>
               </div>
@@ -119,7 +102,7 @@ export default function StudentDashboardPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="upcoming" className="space-y-4">
+      <Tabs defaultValue="upcoming" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="upcoming">Upcoming Sessions</TabsTrigger>
           <TabsTrigger value="past">Past Sessions</TabsTrigger>
@@ -133,11 +116,7 @@ export default function StudentDashboardPage() {
               <CardDescription>Your scheduled tutoring sessions</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <p>Loading upcoming sessions...</p>
-                </div>
-              ) : sessions.filter((session) => new Date(session.startTime) > new Date()).length > 0 ? (
+              {upcomingSessions.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-4 gap-4 p-4 font-medium">
@@ -147,28 +126,28 @@ export default function StudentDashboardPage() {
                       <div>Actions</div>
                     </div>
                     <div className="divide-y">
-                      {sessions
-                        .filter((session) => new Date(session.startTime) > new Date())
-                        .map((session) => (
-                          <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
-                            <div>
-                              {session.tutor?.firstName} {session.tutor?.lastName}
-                            </div>
-                            <div>{session.subject?.name}</div>
-                            <div>
-                              {new Date(session.startTime).toLocaleDateString()}{" "}
-                              {new Date(session.startTime).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
-                            <div>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/student/sessions/${session.id}`}>View</Link>
-                              </Button>
-                            </div>
+                      {upcomingSessions.map((session) => (
+                        <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
+                          <div>
+                            {typeof session.tutor === "object"
+                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
+                              : session.tutor}
                           </div>
-                        ))}
+                          <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
+                          <div>
+                            {new Date(session.startTime).toLocaleDateString()}{" "}
+                            {new Date(session.startTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                          <div>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/student/sessions/${session.id}`}>View</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex justify-end">
@@ -193,11 +172,7 @@ export default function StudentDashboardPage() {
               <CardDescription>Your completed tutoring sessions</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <p>Loading past sessions...</p>
-                </div>
-              ) : sessions.filter((session) => new Date(session.startTime) <= new Date()).length > 0 ? (
+              {pastSessions.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-4 gap-4 p-4 font-medium">
@@ -207,28 +182,28 @@ export default function StudentDashboardPage() {
                       <div>Actions</div>
                     </div>
                     <div className="divide-y">
-                      {sessions
-                        .filter((session) => new Date(session.startTime) <= new Date())
-                        .map((session) => (
-                          <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
-                            <div>
-                              {session.tutor?.firstName} {session.tutor?.lastName}
-                            </div>
-                            <div>{session.subject?.name}</div>
-                            <div>
-                              {new Date(session.startTime).toLocaleDateString()}{" "}
-                              {new Date(session.startTime).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
-                            <div>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/student/sessions/${session.id}`}>View</Link>
-                              </Button>
-                            </div>
+                      {pastSessions.map((session) => (
+                        <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
+                          <div>
+                            {typeof session.tutor === "object"
+                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
+                              : session.tutor}
                           </div>
-                        ))}
+                          <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
+                          <div>
+                            {new Date(session.startTime).toLocaleDateString()}{" "}
+                            {new Date(session.startTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                          <div>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/student/sessions/${session.id}`}>View</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex justify-end">

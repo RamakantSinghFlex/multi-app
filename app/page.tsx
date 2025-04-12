@@ -63,7 +63,7 @@ export default function Home() {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <Button asChild>
-              <Link href={user.roles[0] + '/dashboard'}>Go to Dashboard</Link>
+              <Link href={user.roles[0] + "/dashboard"}>Go to Dashboard</Link>
             </Button>
           ) : (
             <>

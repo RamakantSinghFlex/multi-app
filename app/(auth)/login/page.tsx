@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
+import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
 
 export default function LoginPage() {
   const {
@@ -34,6 +35,9 @@ export default function LoginPage() {
     email?: string
     password?: string
   }>({})
+  const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get("redirect")
@@ -61,7 +65,7 @@ export default function LoginPage() {
             router.push("/student/dashboard")
           }
         } else {
-          console.error('no role');
+          console.error("no role")
         }
       }
     }
@@ -120,7 +124,17 @@ export default function LoginPage() {
       // The redirection will be handled by the useEffect above
     } catch (err) {
       console.error("Unhandled login error:", err)
-      // The error will be handled by the auth context
+
+      // Parse and display API errors in the modal
+      if (err) {
+        try {
+          const parsedErrors = parseApiError(err)
+          setApiErrors(parsedErrors)
+          setShowErrorModal(true)
+        } catch (e) {
+          // The error will be handled by the auth context
+        }
+      }
     }
   }
 
@@ -265,6 +279,14 @@ export default function LoginPage() {
           </p>
         </CardFooter>
       </Card>
+
+      <ErrorModal
+        open={showErrorModal}
+        onOpenChange={setShowErrorModal}
+        errors={apiErrors}
+        title="Login Error"
+        description="There was a problem signing you in."
+      />
     </div>
   )
 }

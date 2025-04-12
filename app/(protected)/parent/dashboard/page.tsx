@@ -1,48 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/lib/auth-context"
-import { getSessions, getStudents } from "@/lib/api"
 import { Users, BookOpen, Calendar, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import type { Session, Student } from "@/lib/types"
 
 export default function ParentDashboardPage() {
   const { user } = useAuth()
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [students, setStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-
-        // Fetch sessions
-        const sessionsResponse = await getSessions(1, 10, { parent: user?.id })
-        if (sessionsResponse.data) {
-          setSessions(sessionsResponse.data.docs)
-        }
-
-        // Fetch students
-        const studentsResponse = await getStudents(1, 10, { parent: user?.id })
-        if (studentsResponse.data) {
-          setStudents(studentsResponse.data.docs)
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (user?.id) {
-      fetchData()
-    }
-  }, [user?.id])
+  // Get data directly from the user object
+  const sessions = user?.sessions || []
+  const students = user?.students || []
 
   return (
     <div className="space-y-6">
@@ -67,7 +37,7 @@ export default function ParentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                <h3 className="text-2xl font-bold">{loading ? "..." : sessions.length}</h3>
+                <h3 className="text-2xl font-bold">{sessions.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Calendar className="h-5 w-5" />
@@ -82,7 +52,7 @@ export default function ParentDashboardPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Upcoming Sessions</p>
                 <h3 className="text-2xl font-bold">
-                  {loading ? "..." : sessions.filter((session) => new Date(session.startTime) > new Date()).length}
+                  {sessions.filter((session) => new Date(session.startTime) > new Date()).length}
                 </h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
@@ -97,7 +67,7 @@ export default function ParentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Students</p>
-                <h3 className="text-2xl font-bold">{loading ? "..." : students.length}</h3>
+                <h3 className="text-2xl font-bold">{students.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Users className="h-5 w-5" />
@@ -111,9 +81,7 @@ export default function ParentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Subjects</p>
-                <h3 className="text-2xl font-bold">
-                  {loading ? "..." : new Set(sessions.map((session) => session.subject.name)).size}
-                </h3>
+                <h3 className="text-2xl font-bold">{new Set(sessions.map((session) => session.subject.name)).size}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <BookOpen className="h-5 w-5" />
@@ -137,11 +105,7 @@ export default function ParentDashboardPage() {
               <CardDescription>Your scheduled tutoring sessions</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <p>Loading upcoming sessions...</p>
-                </div>
-              ) : sessions.filter((session) => new Date(session.startTime) > new Date()).length > 0 ? (
+              {sessions.filter((session) => new Date(session.startTime) > new Date()).length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-5 gap-4 p-4 font-medium">
@@ -156,9 +120,11 @@ export default function ParentDashboardPage() {
                         .filter((session) => new Date(session.startTime) > new Date())
                         .map((session) => (
                           <div key={session.id} className="grid grid-cols-5 gap-4 p-4">
-                            <div>{session.student}</div>
-                            <div>{session.tutor}</div>
-                            <div>{session.subject.name}</div>
+                            <div>
+                              {typeof session.student === "object" ? session.student.firstName : session.student}
+                            </div>
+                            <div>{typeof session.tutor === "object" ? session.tutor.firstName : session.tutor}</div>
+                            <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
                             <div>
                               {new Date(session.startTime).toLocaleDateString()}{" "}
                               {new Date(session.startTime).toLocaleTimeString([], {
@@ -200,11 +166,7 @@ export default function ParentDashboardPage() {
               <CardDescription>Your completed tutoring sessions</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <p>Loading past sessions...</p>
-                </div>
-              ) : sessions.filter((session) => new Date(session.startTime) <= new Date()).length > 0 ? (
+              {sessions.filter((session) => new Date(session.startTime) <= new Date()).length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-5 gap-4 p-4 font-medium">
@@ -219,9 +181,11 @@ export default function ParentDashboardPage() {
                         .filter((session) => new Date(session.startTime) <= new Date())
                         .map((session) => (
                           <div key={session.id} className="grid grid-cols-5 gap-4 p-4">
-                            <div>{session.student}</div>
-                            <div>{session.tutor}</div>
-                            <div>{session.subject.name}</div>
+                            <div>
+                              {typeof session.student === "object" ? session.student.firstName : session.student}
+                            </div>
+                            <div>{typeof session.tutor === "object" ? session.tutor.firstName : session.tutor}</div>
+                            <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
                             <div>
                               {new Date(session.startTime).toLocaleDateString()}{" "}
                               {new Date(session.startTime).toLocaleTimeString([], {
@@ -260,11 +224,7 @@ export default function ParentDashboardPage() {
               <CardDescription>Manage your students' profiles</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex h-40 items-center justify-center">
-                  <p>Loading students...</p>
-                </div>
-              ) : students.length > 0 ? (
+              {students.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-4 gap-4 p-4 font-medium">

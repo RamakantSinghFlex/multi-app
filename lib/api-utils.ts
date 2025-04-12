@@ -1,103 +1,59 @@
-import { API_URL } from "./config"
+import type { ApiResponse } from "./types"
 
-// Define ApiResponse type
-export type ApiResponse<T> = {
-  data?: T
-  error?: string
-  statusCode?: number
-}
-
-// Set token in localStorage
-export function setToken(token: string): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("milestone-token", token)
-  }
-}
-
-// Get token from localStorage
+// Token management
 export function getToken(): string | null {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("milestone-token")
-  }
-  return null
+  if (typeof window === "undefined") return null
+  return localStorage.getItem("auth_token")
 }
 
-// Clear token from localStorage
+export function setToken(token: string): void {
+  if (typeof window === "undefined") return
+  localStorage.setItem("auth_token", token)
+}
+
 export function clearToken(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("milestone-token")
-  }
+  if (typeof window === "undefined") return
+  localStorage.removeItem("auth_token")
 }
 
-// Create headers with Authorization token
+// Headers creation
 export function createAuthHeaders(includeContentType = true): Record<string, string> {
   const headers: Record<string, string> = {}
+  const token = getToken()
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
 
   if (includeContentType) {
     headers["Content-Type"] = "application/json"
   }
 
-  const token = getToken()
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
   return headers
 }
 
-// Extract error message from API response
+// Error handling
 export function extractErrorMessage(errorData: any): string {
-  if (typeof errorData === "string") {
-    return errorData
-  }
+  if (typeof errorData === "string") return errorData
 
-  if (errorData.message) {
-    return errorData.message
-  }
-
-  if (errorData.error) {
-    if (typeof errorData.error === "string") {
-      return errorData.error
-    }
-    if (errorData.error.message) {
-      return errorData.error.message
-    }
-  }
-
-  if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-    const firstError = errorData.errors[0]
-    if (typeof firstError === "string") {
-      return firstError
-    }
-    if (firstError.message) {
-      return firstError.message
-    }
+  if (errorData.message) return errorData.message
+  if (errorData.error) return typeof errorData.error === "string" ? errorData.error : JSON.stringify(errorData.error)
+  if (errorData.errors && Array.isArray(errorData.errors)) {
+    return errorData.errors.map((e: any) => e.message || e).join(", ")
   }
 
   return "An unknown error occurred"
 }
 
-// Helper function to handle API responses
+// Response handling
 export async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   if (!response.ok) {
-    if (response.status === 401) {
-      // Clear auth data on 401 Unauthorized
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("milestone-token")
-      }
-    }
-
     try {
       const errorData = await response.json()
-      return {
-        error: errorData.message || errorData.error || `Error: ${response.status} ${response.statusText}`,
-        statusCode: response.status,
-      }
-    } catch (e) {
-      return {
-        error: `Error: ${response.status} ${response.statusText}`,
-        statusCode: response.status,
-      }
+      const errorMessage = extractErrorMessage(errorData)
+      return { error: errorMessage }
+    } catch (error) {
+      return { error: `Error: ${response.status} ${response.statusText}` }
     }
   }
 
@@ -105,23 +61,17 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
     const data = await response.json()
     return { data }
   } catch (error) {
-    return { error: "Failed to parse response" }
+    return { error: "Failed to parse response data" }
   }
 }
 
-// Format API URL
-export function formatApiUrl(endpoint: string): string {
-  return `${API_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`
-}
-
-// Sanitize HTML to prevent XSS attacks
-export function sanitizeHtml(html: string): string {
-  if (!html) return ""
-
-  // Basic sanitization - remove script tags and on* attributes
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/on\w+="[^"]*"/gi, "")
-    .replace(/on\w+='[^']*'/gi, "")
-    .replace(/on\w+=\w+/gi, "")
+// API response helper
+export function handleApiResponse<T>({ data, error }: { data?: T; error?: string }): ApiResponse<T> {
+  if (error) {
+    return { error }
+  }
+  if (data) {
+    return { data }
+  }
+  return { error: "No data or error provided" }
 }

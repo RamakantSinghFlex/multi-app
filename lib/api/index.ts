@@ -1,13 +1,7 @@
-// Fix the API index file to avoid circular dependencies
-// Re-export all API functions
+// Re-export all API functions from their respective modules
 export * from "./auth"
 export * from "./users"
-export * from "./parents"
-export * from "./students"
-export * from "./tutors"
-export * from "./sessions"
-export * from "./subjects"
-export * from "./messages"
-export * from "./documents"
-export * from "./collections"
 export * from "./appointments"
+
+// Export types
+export type { User, Appointment } from "../types"

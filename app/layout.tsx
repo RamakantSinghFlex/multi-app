@@ -10,30 +10,33 @@ import { Analytics } from "@vercel/analytics/react"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-    title: "Milestone Learning",
-    description: "Personalized tutoring services for high-achieving students",
-    generator: "v0.dev",
+  title: "Milestone Learning",
+  description: "Personalized tutoring services for high-achieving students",
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
-    children: React.ReactNode
+  children,
+}: Readonly<{
+  children: React.ReactNode
 }>) {
-    return (
-        <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-        <Analytics/>
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <Analytics />
         <ErrorBoundary>
-            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-
-                <AuthProvider>{children}</AuthProvider>
-            </ThemeProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
         </ErrorBoundary>
-        </body>
-        </html>
-    )
+      </body>
+    </html>
+  )
 }
+
+import "./globals.css"
+
+import "./globals.css"
 
 
 import './globals.css'

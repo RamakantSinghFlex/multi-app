@@ -1,47 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { getSessions } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { format, parseISO, isAfter, isBefore } from "date-fns"
-import { Calendar, Clock, User, AlertCircle, Loader2 } from "lucide-react"
+import { Calendar, Clock, User, AlertCircle } from "lucide-react"
 
 export default function StudentSessionsPage() {
   const { user } = useAuth()
-  const [sessions, setSessions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchSessions = async () => {
-    if (!user?.id) return
+  // Get sessions directly from the user object
+  const sessions = user?.sessions || []
 
-    setLoading(true)
-    try {
-      const response = await getSessions(1, 100, { student: user.id })
+  // Filter sessions by status
+  const upcomingSessions = sessions.filter(
+    (session) =>
+      session.status !== "cancelled" &&
+      session.status !== "completed" &&
+      isAfter(parseISO(session.startTime), new Date()),
+  )
 
-      if (response.error) {
-        throw new Error(response.error)
-      }
+  const pastSessions = sessions.filter(
+    (session) => session.status === "completed" || isBefore(parseISO(session.startTime), new Date()),
+  )
 
-      if (response.data) {
-        setSessions(response.data.docs)
-      }
-    } catch (error) {
-      console.error("Error fetching sessions:", error)
-      setError(error instanceof Error ? error.message : "Failed to load sessions")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchSessions()
-  }, [user?.id])
+  const cancelledSessions = sessions.filter((session) => session.status === "cancelled")
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -74,36 +62,13 @@ export default function StudentSessionsPage() {
     }
   }
 
-  // Filter sessions by status
-  const upcomingSessions = sessions.filter(
-    (session) =>
-      session.status !== "cancelled" &&
-      session.status !== "completed" &&
-      isAfter(parseISO(session.startTime), new Date()),
-  )
-
-  const pastSessions = sessions.filter(
-    (session) => session.status === "completed" || isBefore(parseISO(session.startTime), new Date()),
-  )
-
-  const cancelledSessions = sessions.filter((session) => session.status === "cancelled")
-
-  if (loading) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading sessions...</span>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="flex h-64 w-full flex-col items-center justify-center">
         <AlertCircle className="h-12 w-12 text-destructive mb-4" />
         <h3 className="text-lg font-medium">Failed to load sessions</h3>
         <p className="text-muted-foreground mb-4">{error}</p>
-        <Button onClick={fetchSessions}>Try Again</Button>
+        <Button onClick={() => setError(null)}>Try Again</Button>
       </div>
     )
   }
@@ -139,7 +104,11 @@ export default function StudentSessionsPage() {
                 <Card key={session.id}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between">
-                      <CardTitle className="text-lg">{session.subject?.name || "Tutoring Session"}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {typeof session.subject === "object"
+                          ? session.subject.name
+                          : session.subject || "Tutoring Session"}
+                      </CardTitle>
                       {getStatusBadge(session.status)}
                     </div>
                     <CardDescription>{format(parseISO(session.startTime), "EEEE, MMMM d, yyyy")}</CardDescription>
@@ -160,7 +129,10 @@ export default function StudentSessionsPage() {
                         <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
                         <div>
                           <p className="text-sm">
-                            Tutor: {session.tutor?.firstName} {session.tutor?.lastName}
+                            Tutor:{" "}
+                            {typeof session.tutor === "object"
+                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
+                              : session.tutor}
                           </p>
                         </div>
                       </div>
@@ -193,7 +165,11 @@ export default function StudentSessionsPage() {
                 <Card key={session.id}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between">
-                      <CardTitle className="text-lg">{session.subject?.name || "Tutoring Session"}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {typeof session.subject === "object"
+                          ? session.subject.name
+                          : session.subject || "Tutoring Session"}
+                      </CardTitle>
                       {getStatusBadge(session.status)}
                     </div>
                     <CardDescription>{format(parseISO(session.startTime), "EEEE, MMMM d, yyyy")}</CardDescription>
@@ -214,7 +190,10 @@ export default function StudentSessionsPage() {
                         <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
                         <div>
                           <p className="text-sm">
-                            Tutor: {session.tutor?.firstName} {session.tutor?.lastName}
+                            Tutor:{" "}
+                            {typeof session.tutor === "object"
+                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
+                              : session.tutor}
                           </p>
                         </div>
                       </div>
@@ -247,7 +226,11 @@ export default function StudentSessionsPage() {
                 <Card key={session.id}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between">
-                      <CardTitle className="text-lg">{session.subject?.name || "Tutoring Session"}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {typeof session.subject === "object"
+                          ? session.subject.name
+                          : session.subject || "Tutoring Session"}
+                      </CardTitle>
                       {getStatusBadge(session.status)}
                     </div>
                     <CardDescription>{format(parseISO(session.startTime), "EEEE, MMMM d, yyyy")}</CardDescription>
@@ -268,7 +251,10 @@ export default function StudentSessionsPage() {
                         <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
                         <div>
                           <p className="text-sm">
-                            Tutor: {session.tutor?.firstName} {session.tutor?.lastName}
+                            Tutor:{" "}
+                            {typeof session.tutor === "object"
+                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
+                              : session.tutor}
                           </p>
                         </div>
                       </div>
