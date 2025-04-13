@@ -80,7 +80,8 @@ export default function NewStudentPage() {
     setFormData((prev) => ({ ...prev, password }))
   }
 
-  // Update the handleSubmit function to properly handle the API response format
+  // Update the handleSubmit function to use the router.refresh() method after successful creation
+  // This will ensure the student list is updated when the user is redirected
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,14 +124,30 @@ export default function NewStudentPage() {
 
       // Success - handle the specific response format
       let successMessage = "Student created successfully"
+      let createdStudent = null
 
       // Check if the response has the expected format with doc property
       if (response.data && "doc" in response.data) {
-        const studentDoc = response.data.doc
+        createdStudent = response.data.doc
         successMessage = response.data.message || successMessage
 
-        // You could do additional processing with the student data here if needed
-        console.log("Created student:", studentDoc)
+        // Store the newly created student in localStorage for immediate access
+        if (createdStudent && createdStudent.id) {
+          try {
+            // Get existing students from localStorage or initialize empty array
+            const existingStudentsJson = localStorage.getItem("recentlyCreatedStudents") || "[]"
+            const existingStudents = JSON.parse(existingStudentsJson)
+
+            // Add the new student and keep only the 5 most recent
+            existingStudents.unshift(createdStudent)
+            const recentStudents = existingStudents.slice(0, 5)
+
+            // Save back to localStorage
+            localStorage.setItem("recentlyCreatedStudents", JSON.stringify(recentStudents))
+          } catch (err) {
+            console.error("Error storing student in localStorage:", err)
+          }
+        }
       }
 
       // Show success message
@@ -138,6 +155,9 @@ export default function NewStudentPage() {
         title: "Success",
         description: successMessage,
       })
+
+      // Refresh the router cache before redirecting
+      router.refresh()
 
       // Redirect to students list
       router.push("/tutor/students")

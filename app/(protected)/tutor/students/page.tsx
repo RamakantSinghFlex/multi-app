@@ -8,13 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
 import { Search, Plus, MoreHorizontal, MessageSquare, Columns, ArrowUpDown } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function TutorStudentsPage() {
   const { user } = useAuth()
+  const router = useRouter() // Add router
   const [searchQuery, setSearchQuery] = useState("")
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,11 +23,33 @@ export default function TutorStudentsPage() {
   const [sortDirection, setSortDirection] = useState("desc") // Default to newest first
   const [sortIndicator, setSortIndicator] = useState({ field: "updatedAt", direction: "desc" })
 
-  // Get students directly from the user object
+  // Get students directly from the user object and check for recently created students
   useEffect(() => {
     if (user) {
       // Extract students from the user object
       const studentsList = user.students || []
+
+      // Check localStorage for recently created students
+      try {
+        const recentlyCreatedStudentsJson = localStorage.getItem("recentlyCreatedStudents")
+        if (recentlyCreatedStudentsJson) {
+          const recentlyCreatedStudents = JSON.parse(recentlyCreatedStudentsJson)
+
+          // Add any recently created students that aren't already in the list
+          if (Array.isArray(recentlyCreatedStudents) && recentlyCreatedStudents.length > 0) {
+            const existingIds = new Set(studentsList.map((student) => student.id))
+
+            recentlyCreatedStudents.forEach((newStudent) => {
+              if (newStudent && newStudent.id && !existingIds.has(newStudent.id)) {
+                studentsList.push(newStudent)
+                existingIds.add(newStudent.id)
+              }
+            })
+          }
+        }
+      } catch (err) {
+        console.error("Error retrieving recently created students:", err)
+      }
 
       // Sort students by the current sort field and direction
       const sortedStudents = sortStudentsByField(studentsList, sortField, sortDirection)
@@ -34,6 +57,11 @@ export default function TutorStudentsPage() {
       setLoading(false)
     }
   }, [user, sortField, sortDirection])
+
+  // Add a refresh function that can be called to force a refresh of the data
+  const refreshStudentsList = () => {
+    router.refresh()
+  }
 
   // Function to sort students by a specific field
   const sortStudentsByField = (studentsArray, field, direction) => {
@@ -232,9 +260,6 @@ export default function TutorStudentsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-10 h-8">
-                        <Checkbox className="h-3.5 w-3.5" />
-                      </TableHead>
                       <TableHead
                         className="cursor-pointer h-8 text-xs font-medium"
                         onClick={() => handleSort("firstName")}
@@ -282,9 +307,6 @@ export default function TutorStudentsPage() {
                       filteredStudents.map((student) => (
                         <TableRow key={student.id} className="h-10 hover:bg-muted/30">
                           <TableCell className="py-1">
-                            <Checkbox className="h-3.5 w-3.5" />
-                          </TableCell>
-                          <TableCell className="py-1">
                             <div className="flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
                                 {student.firstName?.charAt(0) || student.email?.charAt(0) || "S"}
@@ -315,7 +337,7 @@ export default function TutorStudentsPage() {
                               .join(", ") || "-"}
                           </TableCell>
                           <TableCell className="py-1 text-xs">-</TableCell>
-                          <TableCell className="py-1 text-xs">0/0/0</TableCell>
+                          <TableCell className="py-1 text-xs">-</TableCell>
                           <TableCell className="py-1 text-xs">{formatDate(student.updatedAt)}</TableCell>
                           <TableCell className="py-1">
                             <DropdownMenu>

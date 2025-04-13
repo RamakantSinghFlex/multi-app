@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
 import ErrorBoundary from "@/components/error-boundary"
 import "./globals.css"
+import "./sidebar-transitions.css"
 import { Analytics } from "@vercel/analytics/react"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -33,16 +34,6 @@ export default function RootLayout({
     </html>
   )
 }
-
-import "./globals.css"
-
-import "./globals.css"
-
-import "./globals.css"
-
-import "./globals.css"
-
-import "./globals.css"
 
 
 import './globals.css'

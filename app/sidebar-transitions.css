@@ -1,0 +1,18 @@
+/* Smooth transitions for sidebar and content */
+.sidebar-transition {
+  transition: width 0.3s ease, transform 0.3s ease;
+}
+
+.content-transition {
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* Ensure content fills available space */
+.content-expand {
+  width: 100%;
+}
+
+/* Prevent content from jumping during transition */
+.layout-container {
+  overflow-x: hidden;
+}
