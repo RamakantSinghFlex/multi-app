@@ -13,7 +13,7 @@ export async function createStudent(data: Partial<Student>): Promise<ApiResponse
   try {
     // Remove the direct hook call
     // const { user } = useAuth() <- This was causing the error
-    const headers = {};
+    const headers = {}
     headers["Content-Type"] = "application/json"
 
     // Use the data as provided by the component

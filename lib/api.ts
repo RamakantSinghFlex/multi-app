@@ -512,4 +512,124 @@ export async function register(userData: any): Promise<ApiResponse<User>> {
   }
 }
 
+// Get content by collection
+export async function getContentByCollection(collection: string): Promise<ApiResponse<any[]>> {
+  try {
+    const headers = createAuthHeaders(false)
+
+    // For development/testing without an API
+    if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
+      console.log(`DEV MODE: Simulating content fetch for collection: ${collection}`)
+
+      // Add a small delay to simulate network request
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      return {
+        data: [
+          { id: "1", title: "Sample Content 1", description: "This is sample content for development" },
+          { id: "2", title: "Sample Content 2", description: "More sample content for testing" },
+        ],
+      }
+    }
+
+    const response = await fetch(`${API_URL}/${collection}`, {
+      headers,
+      credentials: "include",
+    })
+
+    return await handleResponse<any[]>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : `An unknown error occurred while fetching content from collection ${collection}`,
+    }
+  }
+}
+
+// Get content by ID
+export async function getContentById(collection: string, id: string): Promise<ApiResponse<any>> {
+  try {
+    const headers = createAuthHeaders(false)
+
+    // For development/testing without an API
+    if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
+      console.log(`DEV MODE: Simulating content fetch for ${collection} with ID: ${id}`)
+
+      // Add a small delay to simulate network request
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      return {
+        data: {
+          id,
+          title: "Sample Content Item",
+          description: "This is a sample content item for development",
+          content: "<p>This is the full content of the sample item.</p>",
+        },
+      }
+    }
+
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
+      headers,
+      credentials: "include",
+    })
+
+    return await handleResponse<any>(response)
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : `An unknown error occurred while fetching ${collection} with ID ${id}`,
+    }
+  }
+}
+
+// Get sessions
+export async function getSessions(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
+  try {
+    const headers = createAuthHeaders()
+
+    // Build query string from params
+    const queryString = params ? "?" + new URLSearchParams(params).toString() : ""
+
+    // For development/testing without an API
+    if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
+      console.log(`DEV MODE: Simulating sessions fetch with params: ${queryString}`)
+
+      // Add a small delay to simulate network request
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      return {
+        data: [
+          {
+            id: "1",
+            title: "Math Session",
+            date: new Date().toISOString(),
+            duration: 60,
+            status: "completed",
+          },
+          {
+            id: "2",
+            title: "Science Session",
+            date: new Date(Date.now() + 86400000).toISOString(), // tomorrow
+            duration: 45,
+            status: "scheduled",
+          },
+        ],
+      }
+    }
+
+    const response = await fetch(`${API_URL}/sessions${queryString}`, {
+      headers,
+      credentials: "include",
+    })
+
+    return await handleResponse<any[]>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching sessions",
+    }
+  }
+}
+
 export type { User }

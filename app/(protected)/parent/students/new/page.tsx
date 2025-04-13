@@ -32,7 +32,7 @@ export default function NewStudentPage() {
     const fetchUser = async () => {
       try {
         const { data } = await getMe()
-        const userData = data;
+        const userData = data
         if (userData && userData.id) {
           setUserId(userData.id)
         }
@@ -80,6 +80,8 @@ export default function NewStudentPage() {
     setFormData((prev) => ({ ...prev, password }))
   }
 
+  // Update the handleSubmit function to properly handle the API response format
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -119,10 +121,22 @@ export default function NewStudentPage() {
         return
       }
 
-      // Success
+      // Success - handle the specific response format
+      let successMessage = "Student created successfully"
+
+      // Check if the response has the expected format with doc property
+      if (response.data && "doc" in response.data) {
+        const studentDoc = response.data.doc
+        successMessage = response.data.message || successMessage
+
+        // You could do additional processing with the student data here if needed
+        console.log("Created student:", studentDoc)
+      }
+
+      // Show success message
       toast({
         title: "Success",
-        description: "Student created successfully",
+        description: successMessage,
       })
 
       // Redirect to students list

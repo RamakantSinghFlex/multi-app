@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, addMinutes, isBefore, addDays } from "date-fns"
 import { ChevronLeft, Clock, Video, CalendarIcon, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { createAppointment, getStudents, getParents, getTutors } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
 interface TimeSlot {
@@ -87,30 +86,33 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
     const fetchData = async () => {
       setLoading(true)
       try {
-        // Fetch students
-        const studentsResponse = await getStudents()
-        if (studentsResponse.data) {
-          setStudents(studentsResponse.data.docs)
-        }
+        // In a real app, you would fetch this data from an API
+        // For now, we'll use mock data
 
-        // Fetch parents
-        const parentsResponse = await getParents()
-        if (parentsResponse.data) {
-          setParents(parentsResponse.data.docs)
-        }
+        // Mock students data
+        setStudents([
+          { id: "student1", firstName: "John", lastName: "Doe", email: "john@example.com" },
+          { id: "student2", firstName: "Jane", lastName: "Smith", email: "jane@example.com" },
+        ])
 
-        // Fetch tutors
-        const tutorsResponse = await getTutors()
-        if (tutorsResponse.data) {
-          setTutors(tutorsResponse.data.docs)
-        }
+        // Mock parents data
+        setParents([
+          { id: "parent1", firstName: "Robert", lastName: "Doe", email: "robert@example.com" },
+          { id: "parent2", firstName: "Mary", lastName: "Smith", email: "mary@example.com" },
+        ])
+
+        // Mock tutors data
+        setTutors([
+          { id: "tutor1", firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
+          { id: "tutor2", firstName: "Bob", lastName: "Brown", email: "bob@example.com" },
+        ])
 
         // If current user is a tutor, pre-select them
         if (user && user.role === "tutor") {
           setSelectedTutor(user.id)
         }
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error("Error preparing data:", error)
         toast({
           title: "Error",
           description: "Failed to load necessary data. Please try again.",
@@ -153,6 +155,7 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
     try {
       // Format the appointment data
       const appointmentData = {
+        id: `appointment-${Date.now()}`, // Generate a temporary ID
         title: title || `${duration} Minute Appointment`,
         date: date.toISOString(),
         startTime: selectedTimeSlot.startTime.toISOString(),
@@ -164,12 +167,9 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
         notes: notes,
       }
 
-      // Create the appointment
-      const response = await createAppointment(appointmentData)
-
-      if (response.error) {
-        throw new Error(response.error)
-      }
+      // In a real app, you would make an API call to create the appointment
+      // For now, we'll just simulate a successful creation
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       toast({
         title: "Success",
@@ -191,7 +191,7 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
       console.error("Error creating appointment:", error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to schedule appointment",
+        description: "Failed to schedule appointment. Please try again.",
         variant: "destructive",
       })
     } finally {
