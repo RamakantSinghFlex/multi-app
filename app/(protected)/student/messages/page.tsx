@@ -87,23 +87,23 @@ export default function StudentMessagesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Messages</h1>
-        <p className="text-muted-foreground">Communicate with your tutors</p>
+        <p className="text-[#858585]">Communicate with your tutors</p>
       </div>
 
       <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle>Conversations</CardTitle>
+              <CardTitle className="text-sm font-medium">Conversations</CardTitle>
               <Button variant="ghost" size="icon">
                 <PlusCircle className="h-5 w-5" />
               </Button>
             </div>
             <div className="relative mt-2">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#858585]" />
               <Input
                 type="search"
                 placeholder="Search conversations..."
@@ -125,13 +125,13 @@ export default function StudentMessagesPage() {
                     filteredConversations.map((conversation) => (
                       <div
                         key={conversation.id}
-                        className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-muted ${
-                          selectedConversation === conversation.id ? "bg-muted" : ""
+                        className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-[#f4f4f4] ${
+                          selectedConversation === conversation.id ? "bg-[#f4f4f4]" : ""
                         }`}
                         onClick={() => setSelectedConversation(conversation.id)}
                       >
                         <Avatar>
-                          <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                          <AvatarImage src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
                           <AvatarFallback>
                             {conversation.name
                               .split(" ")
@@ -141,19 +141,19 @@ export default function StudentMessagesPage() {
                         </Avatar>
                         <div className="flex-1 overflow-hidden">
                           <div className="flex items-center justify-between">
-                            <h3 className="font-medium">{conversation.name}</h3>
-                            <span className="text-xs text-muted-foreground">{conversation.timestamp}</span>
+                            <h3 className="text-sm font-medium">{conversation.name}</h3>
+                            <span className="text-xs text-[#858585]">{conversation.timestamp}</span>
                           </div>
-                          <p className="truncate text-sm text-muted-foreground">{conversation.lastMessage}</p>
+                          <p className="truncate text-xs text-[#858585]">{conversation.lastMessage}</p>
                         </div>
                         {conversation.unread && (
-                          <div className="h-2 w-2 rounded-full bg-primary" aria-label="Unread message"></div>
+                          <div className="h-2 w-2 rounded-full bg-[#095d40]" aria-label="Unread message"></div>
                         )}
                       </div>
                     ))
                   ) : (
                     <div className="flex h-32 items-center justify-center">
-                      <p className="text-muted-foreground">No conversations found</p>
+                      <p className="text-[#858585]">No conversations found</p>
                     </div>
                   )}
                 </div>
@@ -166,13 +166,13 @@ export default function StudentMessagesPage() {
                       .map((conversation) => (
                         <div
                           key={conversation.id}
-                          className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-muted ${
-                            selectedConversation === conversation.id ? "bg-muted" : ""
+                          className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-[#f4f4f4] ${
+                            selectedConversation === conversation.id ? "bg-[#f4f4f4]" : ""
                           }`}
                           onClick={() => setSelectedConversation(conversation.id)}
                         >
                           <Avatar>
-                            <AvatarImage src={conversation.avatar} alt={conversation.name} />
+                            <AvatarImage src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
                             <AvatarFallback>
                               {conversation.name
                                 .split(" ")
@@ -182,17 +182,17 @@ export default function StudentMessagesPage() {
                           </Avatar>
                           <div className="flex-1 overflow-hidden">
                             <div className="flex items-center justify-between">
-                              <h3 className="font-medium">{conversation.name}</h3>
-                              <span className="text-xs text-muted-foreground">{conversation.timestamp}</span>
+                              <h3 className="text-sm font-medium">{conversation.name}</h3>
+                              <span className="text-xs text-[#858585]">{conversation.timestamp}</span>
                             </div>
-                            <p className="truncate text-sm text-muted-foreground">{conversation.lastMessage}</p>
+                            <p className="truncate text-xs text-[#858585]">{conversation.lastMessage}</p>
                           </div>
-                          <div className="h-2 w-2 rounded-full bg-primary" aria-label="Unread message"></div>
+                          <div className="h-2 w-2 rounded-full bg-[#095d40]" aria-label="Unread message"></div>
                         </div>
                       ))
                   ) : (
                     <div className="flex h-32 items-center justify-center">
-                      <p className="text-muted-foreground">No unread messages</p>
+                      <p className="text-[#858585]">No unread messages</p>
                     </div>
                   )}
                 </div>
@@ -208,7 +208,7 @@ export default function StudentMessagesPage() {
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage
-                      src={conversations.find((c) => c.id === selectedConversation)?.avatar}
+                      src={conversations.find((c) => c.id === selectedConversation)?.avatar || "/placeholder.svg"}
                       alt={conversations.find((c) => c.id === selectedConversation)?.name || ""}
                     />
                     <AvatarFallback>
@@ -219,8 +219,10 @@ export default function StudentMessagesPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle>{conversations.find((c) => c.id === selectedConversation)?.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <CardTitle className="text-sm font-medium">
+                      {conversations.find((c) => c.id === selectedConversation)?.name}
+                    </CardTitle>
+                    <p className="text-xs text-[#858585]">
                       {conversations.find((c) => c.id === selectedConversation)?.role}
                     </p>
                   </div>
@@ -232,15 +234,11 @@ export default function StudentMessagesPage() {
                     <div key={message.id} className={`mb-4 flex ${message.isSelf ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[80%] rounded-lg p-3 ${
-                          message.isSelf
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-secondary-foreground"
+                          message.isSelf ? "bg-[#095d40] text-white" : "bg-[#f4f4f4] text-[#000000]"
                         }`}
                       >
                         <p>{message.content}</p>
-                        <p
-                          className={`mt-1 text-right text-xs ${message.isSelf ? "text-primary-foreground/70" : "text-secondary-foreground/70"}`}
-                        >
+                        <p className={`mt-1 text-right text-xs ${message.isSelf ? "text-white/70" : "text-[#858585]"}`}>
                           {message.timestamp}
                         </p>
                       </div>
@@ -255,7 +253,7 @@ export default function StudentMessagesPage() {
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     />
-                    <Button size="icon" onClick={handleSendMessage}>
+                    <Button size="icon" onClick={handleSendMessage} className="bg-[#095d40] hover:bg-[#02342e]">
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
@@ -265,8 +263,8 @@ export default function StudentMessagesPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h3 className="mb-2 text-lg font-medium">Select a conversation</h3>
-                <p className="text-muted-foreground">Choose a conversation from the list to start messaging</p>
+                <h3 className="mb-2 text-sm font-medium">Select a conversation</h3>
+                <p className="text-[#858585]">Choose a conversation from the list to start messaging</p>
               </div>
             </div>
           )}

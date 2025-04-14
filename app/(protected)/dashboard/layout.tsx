@@ -1,7 +1,7 @@
 import type React from "react"
 import AuthGuard from "@/components/auth-guard"
-import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
+import { Header } from "@/components/header"
 
 export default function DashboardLayout({
   children,
@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }>) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-[#f4f4f4]">
         <Sidebar />
         <div className="flex flex-1 flex-col md:ml-64">
           <Header />

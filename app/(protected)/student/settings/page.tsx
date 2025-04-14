@@ -90,10 +90,10 @@ export default function StudentSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences</p>
+        <p className="text-[#858585]">Manage your account settings and preferences</p>
       </div>
 
       <Tabs defaultValue="password" className="space-y-4">
@@ -106,8 +106,10 @@ export default function StudentSettingsPage() {
         <TabsContent value="password" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Update your password to keep your account secure</CardDescription>
+              <CardTitle className="text-sm font-medium">Change Password</CardTitle>
+              <CardDescription className="text-xs text-[#858585]">
+                Update your password to keep your account secure
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -126,7 +128,7 @@ export default function StudentSettingsPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     >
                       {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -149,7 +151,7 @@ export default function StudentSettingsPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                     >
                       {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -172,7 +174,7 @@ export default function StudentSettingsPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -180,7 +182,7 @@ export default function StudentSettingsPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} className="bg-[#095d40] text-white hover:bg-[#02342e]">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -201,8 +203,8 @@ export default function StudentSettingsPage() {
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Manage how you receive notifications</CardDescription>
+              <CardTitle className="text-sm font-medium">Notification Preferences</CardTitle>
+              <CardDescription className="text-xs text-[#858585]">Manage how you receive notifications</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleNotificationSubmit} className="space-y-4">
@@ -210,7 +212,7 @@ export default function StudentSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="emailNotifications">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive notifications via email</p>
+                      <p className="text-xs text-[#858585]">Receive notifications via email</p>
                     </div>
                     <Switch
                       id="emailNotifications"
@@ -222,7 +224,7 @@ export default function StudentSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="sessionReminders">Session Reminders</Label>
-                      <p className="text-sm text-muted-foreground">Receive reminders before scheduled sessions</p>
+                      <p className="text-xs text-[#858585]">Receive reminders before scheduled sessions</p>
                     </div>
                     <Switch
                       id="sessionReminders"
@@ -234,7 +236,7 @@ export default function StudentSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="newMessages">New Messages</Label>
-                      <p className="text-sm text-muted-foreground">Get notified when you receive new messages</p>
+                      <p className="text-xs text-[#858585]">Get notified when you receive new messages</p>
                     </div>
                     <Switch
                       id="newMessages"
@@ -246,7 +248,7 @@ export default function StudentSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="marketingEmails">Marketing Emails</Label>
-                      <p className="text-sm text-muted-foreground">Receive promotional emails and updates</p>
+                      <p className="text-xs text-[#858585]">Receive promotional emails and updates</p>
                     </div>
                     <Switch
                       id="marketingEmails"
@@ -256,7 +258,7 @@ export default function StudentSettingsPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} className="bg-[#095d40] text-white hover:bg-[#02342e]">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -277,18 +279,18 @@ export default function StudentSettingsPage() {
         <TabsContent value="privacy" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Privacy Settings</CardTitle>
-              <CardDescription>Manage your privacy preferences</CardDescription>
+              <CardTitle className="text-sm font-medium">Privacy Settings</CardTitle>
+              <CardDescription className="text-xs text-[#858585]">Manage your privacy preferences</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Profile Visibility</Label>
-                    <p className="text-sm text-muted-foreground">Control who can see your profile information</p>
+                    <p className="text-xs text-[#858585]">Control who can see your profile information</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
                       Manage
                     </Button>
                   </div>
@@ -297,10 +299,10 @@ export default function StudentSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Data Usage</Label>
-                    <p className="text-sm text-muted-foreground">Manage how your data is used</p>
+                    <p className="text-xs text-[#858585]">Manage how your data is used</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
                       Manage
                     </Button>
                   </div>
@@ -309,10 +311,10 @@ export default function StudentSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Account Data</Label>
-                    <p className="text-sm text-muted-foreground">Download or delete your account data</p>
+                    <p className="text-xs text-[#858585]">Download or delete your account data</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
                       Download
                     </Button>
                   </div>

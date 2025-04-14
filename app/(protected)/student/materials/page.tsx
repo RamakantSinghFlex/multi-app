@@ -49,14 +49,14 @@ export default function StudentMaterialsPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Learning Materials</h1>
-          <p className="text-muted-foreground">Access resources shared by your tutors</p>
+          <p className="text-[#858585]">Access resources shared by your tutors</p>
         </div>
         <div className="relative w-full md:w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#858585]" />
           <Input
             type="search"
             placeholder="Search materials..."
@@ -81,20 +81,21 @@ export default function StudentMaterialsPage() {
                 <Card key={material.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{material.title}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{material.title}</CardTitle>
                       {material.type === "document" ? (
                         <FileText className="h-5 w-5 text-blue-500" />
                       ) : (
                         <Video className="h-5 w-5 text-red-500" />
                       )}
                     </div>
-                    <CardDescription>{material.subject}</CardDescription>
+                    <CardDescription className="text-xs text-[#858585]">{material.subject}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Added on {new Date(material.date).toLocaleDateString()}
-                    </p>
-                    <Button variant="outline" className="mt-4 w-full">
+                    <p className="text-xs text-[#858585]">Added on {new Date(material.date).toLocaleDateString()}</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4 w-full border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]"
+                    >
                       View Material
                     </Button>
                   </CardContent>
@@ -102,8 +103,8 @@ export default function StudentMaterialsPage() {
               ))
             ) : (
               <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-2">
-                <BookOpen className="h-10 w-10 text-muted-foreground" />
-                <p>No materials found matching your search.</p>
+                <BookOpen className="h-10 w-10 text-[#858585]" />
+                <p className="text-[#858585]">No materials found matching your search.</p>
               </div>
             )}
           </div>
@@ -118,16 +119,17 @@ export default function StudentMaterialsPage() {
                   <Card key={material.id} className="overflow-hidden">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{material.title}</CardTitle>
+                        <CardTitle className="text-sm font-medium">{material.title}</CardTitle>
                         <FileText className="h-5 w-5 text-blue-500" />
                       </div>
-                      <CardDescription>{material.subject}</CardDescription>
+                      <CardDescription className="text-xs text-[#858585]">{material.subject}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Added on {new Date(material.date).toLocaleDateString()}
-                      </p>
-                      <Button variant="outline" className="mt-4 w-full">
+                      <p className="text-xs text-[#858585]">Added on {new Date(material.date).toLocaleDateString()}</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]"
+                      >
                         View Document
                       </Button>
                     </CardContent>
@@ -135,8 +137,8 @@ export default function StudentMaterialsPage() {
                 ))
             ) : (
               <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-2">
-                <FileText className="h-10 w-10 text-muted-foreground" />
-                <p>No documents found matching your search.</p>
+                <FileText className="h-10 w-10 text-[#858585]" />
+                <p className="text-[#858585]">No documents found matching your search.</p>
               </div>
             )}
           </div>
@@ -151,16 +153,17 @@ export default function StudentMaterialsPage() {
                   <Card key={material.id} className="overflow-hidden">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{material.title}</CardTitle>
+                        <CardTitle className="text-sm font-medium">{material.title}</CardTitle>
                         <Video className="h-5 w-5 text-red-500" />
                       </div>
-                      <CardDescription>{material.subject}</CardDescription>
+                      <CardDescription className="text-xs text-[#858585]">{material.subject}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Added on {new Date(material.date).toLocaleDateString()}
-                      </p>
-                      <Button variant="outline" className="mt-4 w-full">
+                      <p className="text-xs text-[#858585]">Added on {new Date(material.date).toLocaleDateString()}</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]"
+                      >
                         Watch Video
                       </Button>
                     </CardContent>
@@ -168,8 +171,8 @@ export default function StudentMaterialsPage() {
                 ))
             ) : (
               <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-2">
-                <Video className="h-10 w-10 text-muted-foreground" />
-                <p>No videos found matching your search.</p>
+                <Video className="h-10 w-10 text-[#858585]" />
+                <p className="text-[#858585]">No videos found matching your search.</p>
               </div>
             )}
           </div>

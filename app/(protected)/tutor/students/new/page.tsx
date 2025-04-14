@@ -55,7 +55,7 @@ export default function NewStudentPage() {
     gradeLevel: "",
     school: "",
     notes: "",
-    tenantName: "Tenant 1", // Add default tenant name
+    tenantName: process.env.TENANT_NAME, // Add default tenant name
     roles: ["student"],
   })
 

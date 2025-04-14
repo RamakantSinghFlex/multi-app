@@ -53,32 +53,34 @@ export default function StudentProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">My Profile</h1>
-        <p className="text-muted-foreground">Manage your personal information</p>
+        <p className="text-[#858585]">Manage your personal information</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Profile Picture</CardTitle>
+            <CardTitle className="text-sm font-medium">Profile Picture</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center space-y-4">
-            <Avatar className="h-32 w-32">
+            <Avatar className="h-24 w-24">
               <AvatarImage src="/placeholder.svg?height=128&width=128" alt={user?.firstName || "User"} />
               <AvatarFallback className="text-3xl">
                 {user?.firstName ? user.firstName[0] : user?.email ? user.email[0].toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
-            <Button variant="outline">Change Picture</Button>
+            <Button variant="outline" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
+              Change Picture
+            </Button>
           </CardContent>
         </Card>
 
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Update your personal details</CardDescription>
+            <CardTitle className="text-sm font-medium">Personal Information</CardTitle>
+            <CardDescription className="text-xs text-[#858585]">Update your personal details</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,9 +116,9 @@ export default function StudentProfilePage() {
                   value={formData.email}
                   onChange={handleChange}
                   disabled={true}
-                  className="bg-muted"
+                  className="bg-[#f4f4f4]"
                 />
-                <p className="text-xs text-muted-foreground">Your email cannot be changed</p>
+                <p className="text-xs text-[#858585]">Your email cannot be changed</p>
               </div>
 
               <div className="space-y-2">
@@ -154,7 +156,7 @@ export default function StudentProfilePage() {
                 />
               </div>
 
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="bg-[#095d40] text-white hover:bg-[#02342e]">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

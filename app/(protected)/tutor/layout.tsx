@@ -1,7 +1,7 @@
 import type React from "react"
 import AuthGuard from "@/components/auth-guard"
-import ModernSidebar from "@/components/modern-sidebar"
-import TutorHeader from "@/components/tutor/header"
+import { Sidebar } from "@/components/sidebar"
+import { Header } from "@/components/header"
 
 export default function TutorLayout({
   children,
@@ -10,10 +10,10 @@ export default function TutorLayout({
 }>) {
   return (
     <AuthGuard allowedRoles={["tutor"]}>
-      <div className="flex min-h-screen bg-background">
-        <ModernSidebar role="tutor" />
-        <div className="flex flex-1 flex-col lg:ml-16 xl:ml-64">
-          <TutorHeader />
+      <div className="flex min-h-screen bg-[#f4f4f4]">
+        <Sidebar />
+        <div className="flex flex-1 flex-col md:ml-64">
+          <Header />
           <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
