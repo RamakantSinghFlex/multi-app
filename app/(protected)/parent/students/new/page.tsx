@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, ArrowLeft, Eye, EyeOff, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,10 @@ import { getMe } from "@/lib/api" // Import getMe directly instead of using useA
 import type { User } from "@/lib/types"
 
 // Creation mode types
-type CreationMode = "student" | "student-tutor" | "student-parent-tutor"
+type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
+
+// Define the tab types for better type safety
+type TabType = "student" | "parent" | "tutor"
 
 export default function NewStudentPage() {
   const router = useRouter()
@@ -68,6 +71,7 @@ export default function NewStudentPage() {
     tenantName: "Tenant 1", // Add default tenant name
     roles: ["student"],
   })
+
   // Tutor form state
   const [tutorData, setTutorData] = useState({
     firstName: "",
@@ -98,8 +102,32 @@ export default function NewStudentPage() {
   const [showParentPassword, setShowParentPassword] = useState(false)
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
-  const [activeTab, setActiveTab] = useState("student")
+  const [activeTab, setActiveTab] = useState<TabType>("student")
   const [creationProgress, setCreationProgress] = useState("")
+
+  // Get available tabs based on creation mode
+  const getAvailableTabs = useCallback((): TabType[] => {
+    switch (creationMode) {
+      case "student":
+        return ["student"]
+      case "student-parent":
+        return ["student", "parent"]
+      case "student-tutor":
+        return ["student", "tutor"]
+      case "student-parent-tutor":
+        return ["student", "parent", "tutor"]
+      default:
+        return ["student"]
+    }
+  }, [creationMode])
+
+  // Update active tab when creation mode changes
+  useEffect(() => {
+    const availableTabs = getAvailableTabs()
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0])
+    }
+  }, [creationMode, activeTab, getAvailableTabs])
 
   // Handle student form changes
   const handleStudentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -146,55 +174,72 @@ export default function NewStudentPage() {
   const handleCreationModeChange = (mode: CreationMode) => {
     setCreationMode(mode)
 
-    // If switching to a mode that includes parent or tutor, switch to the appropriate tab
-    if (mode === "student-parent" && activeTab === "student") {
-      setActiveTab("parent")
-    } else if (mode === "student-tutor" && activeTab === "student") {
-      setActiveTab("tutor")
-    } else if (mode === "student-parent-tutor" && activeTab === "student") {
-      setActiveTab("parent")
+    // Reset any errors when changing mode
+    setError(null)
+
+    // Get the available tabs for the new mode
+    const availableTabs = getAvailableTabs()
+
+    // If the current active tab is not available in the new mode, switch to the first available tab
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0])
+    }
+  }
+
+  // Navigate to the next tab
+  const handleNextTab = () => {
+    const availableTabs = getAvailableTabs()
+    const currentIndex = availableTabs.indexOf(activeTab)
+
+    if (currentIndex < availableTabs.length - 1) {
+      setActiveTab(availableTabs[currentIndex + 1])
+    }
+  }
+
+  // Validate the current tab
+  const validateCurrentTab = (): boolean => {
+    if (activeTab === "student") {
+      if (!studentData.firstName || !studentData.lastName || !studentData.email || !studentData.password) {
+        setError("Please fill in all required student fields")
+        return false
+      }
+    } else if (activeTab === "parent") {
+      if (!parentData.firstName || !parentData.lastName || !parentData.email || !parentData.password) {
+        setError("Please fill in all required parent fields")
+        return false
+      }
+    } else if (activeTab === "tutor") {
+      if (!tutorData.firstName || !tutorData.lastName || !tutorData.email || !tutorData.password) {
+        setError("Please fill in all required tutor fields")
+        return false
+      }
+    }
+    return true
+  }
+
+  // Handle next button click
+  const handleNextButtonClick = () => {
+    if (validateCurrentTab()) {
+      setError(null)
+      handleNextTab()
     }
   }
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate the current tab first
+    if (!validateCurrentTab()) {
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setApiErrors(null)
     setCreationProgress("")
 
     try {
-      // Validate required student fields
-      if (!studentData.firstName || !studentData.lastName || !studentData.email || !studentData.password) {
-        setError("Please fill in all required student fields")
-        setActiveTab("student")
-        setIsLoading(false)
-        return
-      }
-
-      // Validate required tutor fields if creating tutor
-      if (
-        creationMode === "student-tutor" &&
-        (!tutorData.firstName || !tutorData.lastName || !tutorData.email || !tutorData.password)
-      ) {
-        setError("Please fill in all required tutor fields")
-        setActiveTab("tutor")
-        setIsLoading(false)
-        return
-      }
-
-      // Validate required parent fields if creating parent
-      if (
-        (creationMode === "student-parent" || creationMode === "student-parent-tutor") &&
-        (!parentData.firstName || !parentData.lastName || !parentData.email || !parentData.password)
-      ) {
-        setError("Please fill in all required parent fields")
-        setActiveTab("parent")
-        setIsLoading(false)
-        return
-      }
-
       // Step 1: Create Student
       setCreationProgress("Creating student...")
       const studentPayload = {
@@ -361,6 +406,9 @@ export default function NewStudentPage() {
     setIsLoading(false)
   }
 
+  // Get the available tabs for the current creation mode
+  const availableTabs = getAvailableTabs()
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center">
@@ -414,14 +462,10 @@ export default function NewStudentPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="student">Student Information</TabsTrigger>
-          {(creationMode === "student-parent" || creationMode === "student-parent-tutor") && (
-            <TabsTrigger value="parent">Parent Information</TabsTrigger>
-          )}
-          {(creationMode === "student-tutor" || creationMode === "student-parent-tutor") && (
-            <TabsTrigger value="tutor">Tutor Information</TabsTrigger>
-          )}
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
+          {availableTabs.includes("student") && <TabsTrigger value="student">Student Information</TabsTrigger>}
+          {availableTabs.includes("parent") && <TabsTrigger value="parent">Parent Information</TabsTrigger>}
+          {availableTabs.includes("tutor") && <TabsTrigger value="tutor">Tutor Information</TabsTrigger>}
         </TabsList>
 
         {/* Student Tab */}
@@ -566,14 +610,10 @@ export default function NewStudentPage() {
               <Button variant="outline" onClick={() => router.back()} disabled={isLoading}>
                 Cancel
               </Button>
-              {creationMode === "student-parent" ||
-              creationMode === "student-tutor" ||
-              creationMode === "student-parent-tutor" ? (
-                <Button
-                  onClick={() => setActiveTab(creationMode === "student-tutor" ? "tutor" : "parent")}
-                  disabled={isLoading}
-                >
-                  Next: {creationMode === "student-tutor" ? "Tutor" : "Parent"} Information
+              {availableTabs.length > 1 && availableTabs.indexOf(activeTab) < availableTabs.length - 1 ? (
+                <Button onClick={handleNextButtonClick} disabled={isLoading}>
+                  Next: {availableTabs[availableTabs.indexOf(activeTab) + 1] === "parent" ? "Parent" : "Tutor"}{" "}
+                  Information
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
@@ -597,54 +637,23 @@ export default function NewStudentPage() {
         </TabsContent>
 
         {/* Parent Tab */}
-        {(creationMode === "student-parent" || creationMode === "student-parent-tutor") && (
-          <TabsContent value="parent">
-            <Card>
-              <CardHeader>
-                <CardTitle>Parent Information</CardTitle>
-                <CardDescription>Enter the details for the student's parent</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="parentFirstName">
-                        First Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="parentFirstName"
-                        name="firstName"
-                        value={parentData.firstName}
-                        onChange={handleParentChange}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="parentLastName">
-                        Last Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="parentLastName"
-                        name="lastName"
-                        value={parentData.lastName}
-                        onChange={handleParentChange}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                  </div>
-
+        <TabsContent value="parent">
+          <Card>
+            <CardHeader>
+              <CardTitle>Parent Information</CardTitle>
+              <CardDescription>Enter the details for the student's parent</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="parentEmail">
-                      Email <span className="text-destructive">*</span>
+                    <Label htmlFor="parentFirstName">
+                      First Name <span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      id="parentEmail"
-                      name="email"
-                      type="email"
-                      value={parentData.email}
+                      id="parentFirstName"
+                      name="firstName"
+                      value={parentData.firstName}
                       onChange={handleParentChange}
                       disabled={isLoading}
                       required
@@ -652,196 +661,95 @@ export default function NewStudentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="parentPassword">
-                      Password <span className="text-destructive">*</span>
+                    <Label htmlFor="parentLastName">
+                      Last Name <span className="text-destructive">*</span>
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="parentPassword"
-                        name="password"
-                        type={showParentPassword ? "text" : "password"}
-                        value={parentData.password}
-                        onChange={handleParentChange}
-                        disabled={isLoading}
-                        required
-                        className="pr-20"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-full px-2 text-xs"
-                          onClick={() => setShowParentPassword(!showParentPassword)}
-                        >
-                          {showParentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-full px-2 text-xs"
-                          onClick={() => handleGeneratePassword("parent")}
-                        >
-                          <RefreshCw className="mr-1 h-3 w-3" />
-                          Generate
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="parentPhone">Phone</Label>
                     <Input
-                      id="parentPhone"
-                      name="phone"
-                      value={parentData.phone}
+                      id="parentLastName"
+                      name="lastName"
+                      value={parentData.lastName}
                       onChange={handleParentChange}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
-                  Back to Student
-                </Button>
-                {creationMode === "student-tutor" || creationMode === "student-parent-tutor" ? (
-                  <Button onClick={() => setActiveTab("tutor")} disabled={isLoading}>
-                    Next: Tutor Information
-                  </Button>
-                ) : (
-                  <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : userLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      "Create Student & Parent"
-                    )}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        )}
-
-        {/* Tutor Tab */}
-        {(creationMode === "student-tutor" || creationMode === "student-parent-tutor") && (
-          <TabsContent value="tutor">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tutor Information</CardTitle>
-                <CardDescription>Enter the details for the tutor</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="tutorFirstName">
-                        First Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="tutorFirstName"
-                        name="firstName"
-                        value={tutorData.firstName}
-                        onChange={handleTutorChange}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="tutorLastName">
-                        Last Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="tutorLastName"
-                        name="lastName"
-                        value={tutorData.lastName}
-                        onChange={handleTutorChange}
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorEmail">
-                      Email <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="tutorEmail"
-                      name="email"
-                      type="email"
-                      value={tutorData.email}
-                      onChange={handleTutorChange}
                       disabled={isLoading}
                       required
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorPassword">
-                      Password <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="tutorPassword"
-                        name="password"
-                        type={showTutorPassword ? "text" : "password"}
-                        value={tutorData.password}
-                        onChange={handleTutorChange}
-                        disabled={isLoading}
-                        required
-                        className="pr-20"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-full px-2 text-xs"
-                          onClick={() => setShowTutorPassword(!showTutorPassword)}
-                        >
-                          {showTutorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-full px-2 text-xs"
-                          onClick={() => handleGeneratePassword("tutor")}
-                        >
-                          <RefreshCw className="mr-1 h-3 w-3" />
-                          Generate
-                        </Button>
-                      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parentEmail">
+                    Email <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="parentEmail"
+                    name="email"
+                    type="email"
+                    value={parentData.email}
+                    onChange={handleParentChange}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="parentPassword">
+                    Password <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="parentPassword"
+                      name="password"
+                      type={showParentPassword ? "text" : "password"}
+                      value={parentData.password}
+                      onChange={handleParentChange}
+                      disabled={isLoading}
+                      required
+                      className="pr-20"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 text-xs"
+                        onClick={() => setShowParentPassword(!showParentPassword)}
+                      >
+                        {showParentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 text-xs"
+                        onClick={() => handleGeneratePassword("parent")}
+                      >
+                        <RefreshCw className="mr-1 h-3 w-3" />
+                        Generate
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorPhone">Phone</Label>
-                    <Input
-                      id="tutorPhone"
-                      name="phone"
-                      value={tutorData.phone}
-                      onChange={handleTutorChange}
-                      disabled={isLoading}
-                    />
-                  </div>
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
-                  Back to Student
+
+                <div className="space-y-2">
+                  <Label htmlFor="parentPhone">Phone</Label>
+                  <Input
+                    id="parentPhone"
+                    name="phone"
+                    value={parentData.phone}
+                    onChange={handleParentChange}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
+                Back to Student
+              </Button>
+              {availableTabs.indexOf(activeTab) < availableTabs.length - 1 ? (
+                <Button onClick={handleNextButtonClick} disabled={isLoading}>
+                  Next: Tutor Information
                 </Button>
+              ) : (
                 <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
                   {isLoading ? (
                     <>
@@ -853,14 +761,146 @@ export default function NewStudentPage() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Loading...
                     </>
+                  ) : creationMode === "student-parent" ? (
+                    "Create Student & Parent"
                   ) : (
                     "Create All"
                   )}
                 </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        )}
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        {/* Tutor Tab */}
+        <TabsContent value="tutor">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tutor Information</CardTitle>
+              <CardDescription>Enter the details for the tutor</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="tutorFirstName">
+                      First Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="tutorFirstName"
+                      name="firstName"
+                      value={tutorData.firstName}
+                      onChange={handleTutorChange}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tutorLastName">
+                      Last Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="tutorLastName"
+                      name="lastName"
+                      value={tutorData.lastName}
+                      onChange={handleTutorChange}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tutorEmail">
+                    Email <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="tutorEmail"
+                    name="email"
+                    type="email"
+                    value={tutorData.email}
+                    onChange={handleTutorChange}
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tutorPassword">
+                    Password <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="tutorPassword"
+                      name="password"
+                      type={showTutorPassword ? "text" : "password"}
+                      value={tutorData.password}
+                      onChange={handleTutorChange}
+                      disabled={isLoading}
+                      required
+                      className="pr-20"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 text-xs"
+                        onClick={() => setShowTutorPassword(!showTutorPassword)}
+                      >
+                        {showTutorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-full px-2 text-xs"
+                        onClick={() => handleGeneratePassword("tutor")}
+                      >
+                        <RefreshCw className="mr-1 h-3 w-3" />
+                        Generate
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tutorPhone">Phone</Label>
+                  <Input
+                    id="tutorPhone"
+                    name="phone"
+                    value={tutorData.phone}
+                    onChange={handleTutorChange}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
+                Back to Student
+              </Button>
+              <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : userLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : creationMode === "student-tutor" ? (
+                  "Create Student & Tutor"
+                ) : (
+                  "Create All"
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <ErrorModal
