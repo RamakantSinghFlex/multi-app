@@ -20,6 +20,24 @@ export async function createUser(userData: Partial<User>): Promise<ApiResponse<U
   }
 }
 
+// Upsert user - new function for upserting users
+export async function upsertUser(userData: Partial<User>): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users/upsert`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(userData),
+      credentials: "include",
+    })
+
+    return await handleResponse<User>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while upserting user",
+    }
+  }
+}
+
 // Update user
 export async function updateUser(id: string, data: Partial<User>): Promise<ApiResponse<User>> {
   try {
