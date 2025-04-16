@@ -295,6 +295,46 @@ export default function NewStudentPage() {
         description: successMessage,
       })
 
+      // Reset all form states
+      setStudentData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        gradeLevel: "",
+        school: "",
+        notes: "",
+        tenantName: "Tenant 1",
+        roles: ["student"],
+      })
+
+      setTutorData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        phone: "",
+        tenantName: "Tenant 1",
+        roles: ["tutor"],
+      })
+
+      setParentData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        phone: "",
+        tenantName: "Tenant 1",
+        roles: ["parent"],
+      })
+
+      // Reset UI states
+      setShowStudentPassword(false)
+      setShowTutorPassword(false)
+      setShowParentPassword(false)
+      setActiveTab("student")
+      setCreationMode("student")
+
       // Refresh the router cache before redirecting
       router.refresh()
 

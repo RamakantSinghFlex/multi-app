@@ -76,7 +76,35 @@ export default function TutorSidebar() {
     <Button
       variant="ghost"
       className="w-full justify-start text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-      onClick={() => logout()}
+      onClick={() => {
+        try {
+          // First clear all local data
+          if (typeof window !== "undefined") {
+            // Clear all known localStorage items
+            localStorage.removeItem("milestone-token")
+            localStorage.removeItem("auth_token")
+            localStorage.removeItem("recentlyCreatedStudents")
+            localStorage.removeItem("user-preferences")
+            localStorage.removeItem("recent-searches")
+            localStorage.removeItem("dashboard-settings")
+
+            // Try to clear everything
+            try {
+              localStorage.clear()
+              sessionStorage.clear()
+            } catch (e) {
+              console.error("Error clearing storage:", e)
+            }
+          }
+
+          // Then call the logout function
+          logout()
+        } catch (error) {
+          console.error("Error during logout:", error)
+          // Force navigation to home page if logout fails
+          window.location.href = "/"
+        }
+      }}
     >
       <LogOut className="mr-2 h-4 w-4" />
       <span>Sign out</span>

@@ -292,43 +292,111 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: "AUTH_START" })
       logger.info("Logging out user")
 
+      // First, clear all user data from browser storage
+      // Do this before API call to ensure data is cleared even if API fails
+      clearAllUserData()
+
+      // Then attempt to notify the server
       const token = localStorage.getItem("milestone-token")
       if (token) {
         logger.info("Attempting to logout with token")
-        const response = await apiLogout()
+        try {
+          const response = await apiLogout()
 
-        // Always clear local storage and update state
-        localStorage.removeItem("milestone-token")
-
-        if (response.data) {
-          dispatch({
-            type: "LOGOUT_SUCCESS",
-            payload: response.data.message || "Logged out successfully.",
-          })
-        } else {
+          if (response.data) {
+            logger.info("Server logout successful:", response.data.message)
+            dispatch({
+              type: "LOGOUT_SUCCESS",
+              payload: response.data.message || "Logged out successfully.",
+            })
+          } else {
+            logger.warn("Server logout returned no data")
+            dispatch({
+              type: "LOGOUT_SUCCESS",
+              payload: "Logged out successfully.",
+            })
+          }
+        } catch (apiError) {
+          // If API call fails, still consider logout successful on client side
+          logger.error("Server logout failed but continuing with client logout:", apiError)
           dispatch({
             type: "LOGOUT_SUCCESS",
             payload: "Logged out successfully.",
           })
         }
       } else {
-        localStorage.removeItem("milestone-token")
+        logger.info("No token found, skipping server logout")
         dispatch({
           type: "LOGOUT_SUCCESS",
           payload: "Logged out successfully.",
         })
       }
 
-      router.push("/")
+      // Use setTimeout to ensure state updates before navigation
+      setTimeout(() => {
+        router.push("/")
+      }, 0)
     } catch (error) {
       logger.error("Logout error:", error)
-      // Even if there's an error, we should still clear the local state
-      localStorage.removeItem("milestone-token")
+      // Even if there's an error, we should still clear all user data
+      clearAllUserData()
       dispatch({
         type: "LOGOUT_SUCCESS",
         payload: "Logged out successfully.",
       })
-      router.push("/")
+
+      // Use setTimeout to ensure state updates before navigation
+      setTimeout(() => {
+        router.push("/")
+      }, 0)
+    }
+  }
+
+  // Add this function to clear all user data
+  const clearAllUserData = () => {
+    logger.info("Clearing all user data from browser storage")
+
+    try {
+      // Clear auth token
+      localStorage.removeItem("milestone-token")
+      localStorage.removeItem("auth_token")
+
+      // Clear recently created students
+      localStorage.removeItem("recentlyCreatedStudents")
+
+      // Clear any other user-specific data
+      localStorage.removeItem("user-preferences")
+      localStorage.removeItem("recent-searches")
+      localStorage.removeItem("dashboard-settings")
+
+      // For extra safety, try to clear everything
+      try {
+        localStorage.clear()
+      } catch (e) {
+        logger.error("Failed to clear all localStorage:", e)
+      }
+
+      // Clear any session storage items as well
+      try {
+        sessionStorage.clear()
+      } catch (e) {
+        logger.error("Failed to clear sessionStorage:", e)
+      }
+
+      // Clear any cookies that might contain user data
+      // Note: This only clears cookies that are accessible via JavaScript
+      try {
+        document.cookie.split(";").forEach((cookie) => {
+          const [name] = cookie.trim().split("=")
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+        })
+      } catch (e) {
+        logger.error("Failed to clear cookies:", e)
+      }
+
+      logger.info("All user data cleared successfully")
+    } catch (clearError) {
+      logger.error("Error during data clearing:", clearError)
     }
   }
 

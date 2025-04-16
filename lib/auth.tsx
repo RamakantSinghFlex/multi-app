@@ -1,80 +1,149 @@
 "use client"
 
-import type React from "react"
-
-import { createContext, useContext, useEffect, useState } from "react"
-import { getMe, type User, login as apiLogin, logout as apiLogout } from "./api"
-import { useRouter } from "next/navigation"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import { login as apiLogin, logout as apiLogout, getMe } from "./api"
+import { clearAllUserData } from "./utils/clear-user-data"
+import type { User } from "./types"
 
 interface AuthContextType {
   user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  isLoading: boolean
+  isAuthenticated: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
-  checkAuth: () => Promise<boolean>
+  refreshUser: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  login: async () => {},
-  logout: async () => {},
-  checkAuth: async () => false,
-})
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
-  const checkAuth = async () => {
+  // Function to fetch the current user
+  const fetchUser = useCallback(async () => {
     try {
-      setLoading(true)
-      const userData = await getMe()
-      setUser(userData)
-      return !!userData
-    } catch (error) {
-      console.error("Auth check error:", error)
-      setUser(null)
-      return false
-    } finally {
-      setLoading(false)
-    }
-  }
+      const { data, error } = await getMe()
 
-  useEffect(() => {
-    checkAuth()
+      if (error || !data) {
+        setUser(null)
+        setIsAuthenticated(false)
+        return null
+      }
+
+      setUser(data)
+      setIsAuthenticated(true)
+      return data
+    } catch (error) {
+      console.error("Error fetching user:", error)
+      setUser(null)
+      setIsAuthenticated(false)
+      return null
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
+  // Check authentication status on mount and when pathname changes
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true)
+      await fetchUser()
+    }
+
+    checkAuth()
+  }, [fetchUser, pathname])
+
+  // Login function
   const login = async (email: string, password: string) => {
+    setIsLoading(true)
+
     try {
-      setLoading(true)
-      const response = await apiLogin(email, password)
-      setUser(response.user)
-      router.push("/dashboard")
+      const { data, error } = await apiLogin({ email, password })
+
+      if (error || !data) {
+        setIsLoading(false)
+        return { success: false, error: error || "Login failed" }
+      }
+
+      // Fetch user data after successful login
+      const userData = await fetchUser()
+
+      if (!userData) {
+        setIsLoading(false)
+        return { success: false, error: "Failed to fetch user data" }
+      }
+
+      setIsLoading(false)
+      return { success: true }
     } catch (error) {
       console.error("Login error:", error)
-      throw error
-    } finally {
-      setLoading(false)
+      setIsLoading(false)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
+      }
     }
   }
 
+  // Logout function - enhanced with comprehensive data clearing
   const logout = async () => {
+    setIsLoading(true)
+
     try {
-      setLoading(true)
+      // First, clear all user data from the browser
+      clearAllUserData()
+
+      // Then attempt to logout via the API
       await apiLogout()
-      setUser(null)
-      router.push("/login")
     } catch (error) {
       console.error("Logout error:", error)
-      throw error
+      // Even if API logout fails, we still want to clear local state
     } finally {
-      setLoading(false)
+      // Reset auth state
+      setUser(null)
+      setIsAuthenticated(false)
+      setIsLoading(false)
+
+      // Navigate to home page
+      router.push("/")
+      router.refresh()
     }
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>{children}</AuthContext.Provider>
+  // Function to refresh user data
+  const refreshUser = async () => {
+    setIsLoading(true)
+    await fetchUser()
+    setIsLoading(false)
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        logout,
+        refreshUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
-export const useAuth = () => useContext(AuthContext)
+export function useAuth() {
+  const context = useContext(AuthContext)
+
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+
+  return context
+}

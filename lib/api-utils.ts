@@ -3,17 +3,90 @@ import type { ApiResponse } from "./types"
 // Token management
 export function getToken(): string | null {
   if (typeof window === "undefined") return null
-  return localStorage.getItem("auth_token")
+  return localStorage.getItem("milestone-token") || localStorage.getItem("auth_token")
 }
 
 export function setToken(token: string): void {
   if (typeof window === "undefined") return
-  localStorage.setItem("auth_token", token)
+  localStorage.setItem("milestone-token", token)
 }
 
+// Add a comprehensive token clearing function
 export function clearToken(): void {
   if (typeof window === "undefined") return
-  localStorage.removeItem("auth_token")
+
+  try {
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("milestone-token")
+    console.log("Auth tokens cleared successfully")
+  } catch (error) {
+    console.error("Error clearing auth tokens:", error)
+  }
+}
+
+// Add a new function to clear all user-related data
+export function clearAllUserData(): void {
+  if (typeof window === "undefined") return
+
+  console.log("Clearing all user data from browser storage")
+
+  try {
+    // Clear all known localStorage keys that might contain user data
+    const userDataKeys = [
+      "auth_token",
+      "milestone-token",
+      "recentlyCreatedStudents",
+      "user-preferences",
+      "recent-searches",
+      "dashboard-settings",
+      "saved-filters",
+      "recent-documents",
+      "message-drafts",
+      "user",
+      "userRole",
+      "userPreferences",
+      "lastLogin",
+      "sessionData",
+      "authState",
+      "rememberMe",
+    ]
+
+    userDataKeys.forEach((key) => {
+      try {
+        localStorage.removeItem(key)
+      } catch (e) {
+        console.error(`Failed to remove ${key} from localStorage:`, e)
+      }
+    })
+
+    // As a fallback, try to clear all localStorage
+    try {
+      localStorage.clear()
+    } catch (e) {
+      console.error("Failed to clear localStorage:", e)
+    }
+
+    // Clear session storage
+    try {
+      sessionStorage.clear()
+    } catch (e) {
+      console.error("Failed to clear sessionStorage:", e)
+    }
+
+    // Clear cookies (those accessible via JavaScript)
+    try {
+      document.cookie.split(";").forEach((cookie) => {
+        const [name] = cookie.trim().split("=")
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+      })
+    } catch (e) {
+      console.error("Failed to clear cookies:", e)
+    }
+
+    console.log("All user data cleared successfully")
+  } catch (error) {
+    console.error("Error clearing user data:", error)
+  }
 }
 
 // Headers creation

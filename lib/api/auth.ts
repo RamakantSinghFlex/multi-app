@@ -193,42 +193,67 @@ export async function resetPassword(token: string, password: string): Promise<Ap
 }
 
 // Logout
-export async function logout(): Promise<ApiResponse<{ success: boolean }>> {
+export async function logout(): Promise<ApiResponse<{ success: boolean; message?: string }>> {
   try {
     const headers = createAuthHeaders()
-
     console.log("Logging out with headers:", headers)
 
-    const response = await fetch(`${API_URL}/users/logout`, {
-      method: "POST",
-      headers,
-      credentials: "include",
-    })
+    // Set a timeout to prevent hanging requests
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-    clearToken()
+    try {
+      const response = await fetch(`${API_URL}/users/logout`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        signal: controller.signal,
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      const errorMessage = extractErrorMessage(errorData)
-      return {
-        error: errorMessage,
-        data: { success: true }, // Consider logout successful even if API call fails
+      clearTimeout(timeoutId)
+
+      // Even if response is not OK, we still want to clear tokens and consider logout successful
+      clearToken()
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = extractErrorMessage(errorData)
+        console.warn("Server logout failed but continuing with client logout:", errorMessage)
+        return {
+          data: {
+            success: true,
+            message: "Logged out successfully.",
+          },
+        }
       }
-    }
 
-    const result = await response.json()
-    return {
-      data: {
-        success: true,
-        ...result,
-      },
+      const result = await response.json()
+      return {
+        data: {
+          success: true,
+          message: result.message || "Logged out successfully.",
+          ...result,
+        },
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      console.warn("Fetch error during logout:", fetchError)
+      clearToken()
+      return {
+        data: {
+          success: true,
+          message: "Logged out successfully.",
+        },
+      }
     }
   } catch (error) {
     console.error("Logout error:", error)
     clearToken()
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred during logout",
-      data: { success: true }, // Consider logout successful even if API call fails
+      data: {
+        success: true,
+        message: "Logged out successfully.",
+      },
     }
   }
 }

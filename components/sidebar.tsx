@@ -23,9 +23,37 @@ export function Sidebar() {
     setIsOpen(false)
   }
 
+  // Update the handleLogout function to be more reliable
   const handleLogout = async () => {
-    await logout()
-    closeSidebar()
+    try {
+      // First clear all local data
+      if (typeof window !== "undefined") {
+        // Clear all known localStorage items
+        localStorage.removeItem("milestone-token")
+        localStorage.removeItem("auth_token")
+        localStorage.removeItem("recentlyCreatedStudents")
+        localStorage.removeItem("user-preferences")
+        localStorage.removeItem("recent-searches")
+        localStorage.removeItem("dashboard-settings")
+
+        // Try to clear everything
+        try {
+          localStorage.clear()
+          sessionStorage.clear()
+        } catch (e) {
+          console.error("Error clearing storage:", e)
+        }
+      }
+
+      // Then call the logout function from auth context
+      await logout()
+    } catch (error) {
+      console.error("Error during logout:", error)
+      // Force navigation to home page if logout fails
+      window.location.href = "/"
+    } finally {
+      closeSidebar()
+    }
   }
 
   // Determine which sidebar items to show based on the path

@@ -187,7 +187,7 @@ export default function NewStudentPage() {
       // Validate required parent fields if creating parent
       if (
         (creationMode === "student-parent" || creationMode === "student-parent-tutor") &&
-          (!parentData.firstName || !parentData.lastName || !parentData.email || !parentData.password)
+        (!parentData.firstName || !parentData.lastName || !parentData.email || !parentData.password)
       ) {
         setError("Please fill in all required parent fields")
         setActiveTab("parent")
@@ -292,6 +292,46 @@ export default function NewStudentPage() {
         title: "Success",
         description: successMessage,
       })
+
+      // Reset all form states
+      setStudentData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        gradeLevel: "",
+        school: "",
+        notes: "",
+        tenantName: "Tenant 1",
+        roles: ["student"],
+      })
+
+      setTutorData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        phone: "",
+        tenantName: "Tenant 1",
+        roles: ["tutor"],
+      })
+
+      setParentData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        phone: "",
+        tenantName: "Tenant 1",
+        roles: ["parent"],
+      })
+
+      // Reset UI states
+      setShowStudentPassword(false)
+      setShowTutorPassword(false)
+      setShowParentPassword(false)
+      setActiveTab("student")
+      setCreationMode("student")
 
       // Refresh the router cache before redirecting
       router.refresh()

@@ -49,11 +49,20 @@ export function useStudentList({ initialStudents = [] }: UseStudentListProps) {
 
   // Function to add a new student to the list
   const addStudent = useCallback((newStudent: Student) => {
+    if (!newStudent || !newStudent.id) {
+      console.error("Attempted to add invalid student:", newStudent)
+      return
+    }
+
     setStudents((prevStudents) => {
       // Check if student already exists in the list
-      const exists = prevStudents.some((student) => student.id === newStudent.id)
-      if (exists) {
-        return prevStudents
+      const existingIndex = prevStudents.findIndex((student) => student.id === newStudent.id)
+
+      if (existingIndex >= 0) {
+        // If student exists, update it with new data
+        const updatedStudents = [...prevStudents]
+        updatedStudents[existingIndex] = { ...updatedStudents[existingIndex], ...newStudent }
+        return updatedStudents
       }
 
       // Add the new student to the beginning of the list
@@ -63,7 +72,17 @@ export function useStudentList({ initialStudents = [] }: UseStudentListProps) {
     // Also store in localStorage for persistence
     try {
       const existingStudentsJson = localStorage.getItem("recentlyCreatedStudents") || "[]"
-      const existingStudents = JSON.parse(existingStudentsJson)
+      let existingStudents = JSON.parse(existingStudentsJson)
+
+      // Ensure existingStudents is an array
+      if (!Array.isArray(existingStudents)) {
+        existingStudents = []
+      }
+
+      // Remove any existing entry with the same ID
+      existingStudents = existingStudents.filter(
+        (student: Student) => student && student.id && student.id !== newStudent.id,
+      )
 
       // Add the new student and keep only the 5 most recent
       existingStudents.unshift(newStudent)

@@ -11,12 +11,9 @@ import { API_URL } from "../config"
 // Create student
 export async function createStudent(data: Partial<Student>): Promise<ApiResponse<Student>> {
   try {
-    // Remove the direct hook call
-    // const { user } = useAuth() <- This was causing the error
-    const headers = {}
+    const headers = createAuthHeaders()
     headers["Content-Type"] = "application/json"
 
-    // Use the data as provided by the component
     const response = await fetch(`${API_URL}/users`, {
       method: "POST",
       headers,

@@ -9,6 +9,7 @@ interface StudentContextType {
   addStudent: (student: Student) => void
   refreshStudents: () => void
   isLoading: boolean
+  clearStudentData: () => void // Add this new method
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined)
@@ -58,13 +59,25 @@ export function StudentProvider({
     }
   }, [initialStudents])
 
+  // Enhance the addStudent function to handle duplicates better
+  // Replace the existing addStudent function with this improved version:
+
   // Function to add a new student to the list
   const addStudent = (newStudent: Student) => {
+    if (!newStudent || !newStudent.id) {
+      console.error("Attempted to add invalid student:", newStudent)
+      return
+    }
+
     setStudents((prevStudents) => {
       // Check if student already exists in the list
-      const exists = prevStudents.some((student) => student.id === newStudent.id)
-      if (exists) {
-        return prevStudents
+      const existingIndex = prevStudents.findIndex((student) => student.id === newStudent.id)
+
+      if (existingIndex >= 0) {
+        // If student exists, update it with new data
+        const updatedStudents = [...prevStudents]
+        updatedStudents[existingIndex] = { ...updatedStudents[existingIndex], ...newStudent }
+        return updatedStudents
       }
 
       // Add the new student to the beginning of the list
@@ -74,7 +87,17 @@ export function StudentProvider({
     // Also store in localStorage for persistence
     try {
       const existingStudentsJson = localStorage.getItem("recentlyCreatedStudents") || "[]"
-      const existingStudents = JSON.parse(existingStudentsJson)
+      let existingStudents = JSON.parse(existingStudentsJson)
+
+      // Ensure existingStudents is an array
+      if (!Array.isArray(existingStudents)) {
+        existingStudents = []
+      }
+
+      // Remove any existing entry with the same ID
+      existingStudents = existingStudents.filter(
+        (student: Student) => student && student.id && student.id !== newStudent.id,
+      )
 
       // Add the new student and keep only the 5 most recent
       existingStudents.unshift(newStudent)
@@ -94,8 +117,15 @@ export function StudentProvider({
     setIsLoading(false)
   }
 
+  // In the StudentProvider component, add the implementation
+  const clearStudentData = () => {
+    setStudents([])
+    localStorage.removeItem("recentlyCreatedStudents")
+  }
+
+  // Update the context provider value to include the new method
   return (
-    <StudentContext.Provider value={{ students, addStudent, refreshStudents, isLoading }}>
+    <StudentContext.Provider value={{ students, addStudent, refreshStudents, isLoading, clearStudentData }}>
       {children}
     </StudentContext.Provider>
   )
