@@ -132,7 +132,7 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
 
   try {
     const data = await response.json()
-    return { data: data.doc }
+    return { data: data.user }
   } catch (error) {
     return { error: "Failed to parse response data" }
   }

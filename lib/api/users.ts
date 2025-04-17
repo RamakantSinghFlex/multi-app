@@ -2,26 +2,8 @@ import { handleResponse, createAuthHeaders } from "../api-utils"
 import type { ApiResponse, User } from "../types"
 import { API_URL } from "../config"
 
-// Create user
-export async function createUser(userData: Partial<User>): Promise<ApiResponse<User>> {
-  try {
-    const response = await fetch(`${API_URL}/users`, {
-      method: "POST",
-      headers: createAuthHeaders(),
-      body: JSON.stringify(userData),
-      credentials: "include",
-    })
-
-    return await handleResponse<User>(response)
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while creating user",
-    }
-  }
-}
-
 // Upsert user - new function for upserting users
-export async function upsertUser(userData: Partial<User>): Promise<ApiResponse<User>> {
+export async function createUser(userData: Partial<User>): Promise<ApiResponse<User>> {
   try {
     const response = await fetch(`${API_URL}/users/upsert`, {
       method: "POST",
@@ -41,10 +23,10 @@ export async function upsertUser(userData: Partial<User>): Promise<ApiResponse<U
 // Update user
 export async function updateUser(id: string, data: Partial<User>): Promise<ApiResponse<User>> {
   try {
-    const response = await fetch(`${API_URL}/users/${id}`, {
-      method: "PATCH",
+    const response = await fetch(`${API_URL}/users/upsert`, {
+      method: "POST",
       headers: createAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, id }), // Include the ID in the payload
       credentials: "include",
     })
 
@@ -69,6 +51,23 @@ export async function deleteUser(id: string): Promise<ApiResponse<{ success: boo
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : `An unknown error occurred while deleting user with ID ${id}`,
+    }
+  }
+}
+
+// Get user by ID
+export async function getUserById(id: string): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users/${id}`, {
+      method: "GET",
+      headers: createAuthHeaders(),
+      credentials: "include",
+    })
+
+    return await handleResponse<User>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while fetching user with ID ${id}`,
     }
   }
 }
