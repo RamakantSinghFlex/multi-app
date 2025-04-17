@@ -3,6 +3,7 @@ export const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "/api"
 
 // App URL
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+export const TENANT_NAME = process.env.TENANT_NAME || "Tenant 1"
 
 // Authentication Configuration
 export const AUTH_TOKEN_KEY = "auth_token"
@@ -30,11 +31,6 @@ export const COOKIE_OPTIONS = {
 export const FEATURES = {
   MOCK_API: process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL,
 }
-
-// Google OAuth
-export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ""
-export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ""
-export const GOOGLE_CALLBACK_URL = `${APP_URL}/api/auth/google/callback`
 
 // Pagination Defaults
 export const PAGINATION = {

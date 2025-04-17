@@ -20,6 +20,7 @@ import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-
 import { generateSecurePassword } from "@/lib/utils/password-generator"
 import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
 import type { User } from "@/lib/types"
+import { TENANT_NAME } from "@/lib/config";
 
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
@@ -68,7 +69,7 @@ export default function NewStudentPage() {
     gradeLevel: "",
     school: "",
     notes: "",
-    tenantName: "Tenant 1", // Add default tenant name
+    tenantName: TENANT_NAME, // Add default tenant name
     roles: ["student"],
   })
 
@@ -79,7 +80,7 @@ export default function NewStudentPage() {
     email: "",
     password: "",
     phone: "",
-    tenantName: "Tenant 1",
+    tenantName: TENANT_NAME,
     roles: ["tutor"],
   })
 
@@ -90,7 +91,7 @@ export default function NewStudentPage() {
     email: "",
     password: "",
     phone: "",
-    tenantName: "Tenant 1",
+    tenantName: TENANT_NAME,
     roles: ["parent"],
   })
 
@@ -347,7 +348,7 @@ export default function NewStudentPage() {
         gradeLevel: "",
         school: "",
         notes: "",
-        tenantName: "Tenant 1",
+        tenantName: TENANT_NAME,
         roles: ["student"],
       })
 
@@ -357,7 +358,7 @@ export default function NewStudentPage() {
         email: "",
         password: "",
         phone: "",
-        tenantName: "Tenant 1",
+        tenantName: TENANT_NAME,
         roles: ["tutor"],
       })
 
@@ -367,7 +368,7 @@ export default function NewStudentPage() {
         email: "",
         password: "",
         phone: "",
-        tenantName: "Tenant 1",
+        tenantName: TENANT_NAME,
         roles: ["parent"],
       })
 
