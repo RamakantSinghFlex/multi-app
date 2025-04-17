@@ -11,11 +11,6 @@ export const AUTH_COOKIE_NAME = "payload-token"
 // Enable logging
 export const ENABLE_LOGGING = process.env.NEXT_PUBLIC_ENABLE_LOGGING === "true"
 
-// Google OAuth
-export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ""
-export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ""
-export const GOOGLE_CALLBACK_URL = `${APP_URL}/api/auth/google/callback`
-
 // JWT Secret
 export const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
@@ -33,9 +28,13 @@ export const COOKIE_OPTIONS = {
 
 // Feature Flags
 export const FEATURES = {
-  GOOGLE_AUTH: process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === "true",
   MOCK_API: process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL,
 }
+
+// Google OAuth
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ""
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ""
+export const GOOGLE_CALLBACK_URL = `${APP_URL}/api/auth/google/callback`
 
 // Pagination Defaults
 export const PAGINATION = {
