@@ -1,52 +1,8 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { logger } from "@/lib/monitoring"
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
-  const { isAuthenticated, isLoading, user } = useAuth()
-  const [error, setError] = useState<string | null>(null)
-  const [pageLoading, setPageLoading] = useState(true)
-  // Set up page loading state
-  useEffect(() => {
-    if (!isLoading) {
-      logger.info("Home page: Auth check complete", { isAuthenticated: isAuthenticated, user: user })
-      setPageLoading(false)
-    }
-  }, [isLoading, isAuthenticated, user])
-
-  // If there's an error during navigation
-  if (error) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 p-4 text-center">
-        <div className="text-destructive">
-          <p className="text-lg font-semibold">Navigation Error</p>
-          <p>{error}</p>
-        </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-        >
-          Refresh Page
-        </button>
-      </div>
-    )
-  }
-
-  // Show a loading state while checking authentication
-  if (pageLoading) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-4 text-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
-      </div>
-    )
-  }
-
-  // Landing page content
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
@@ -61,20 +17,12 @@ export default function Home() {
           />
         </div>
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
-            <Button asChild>
-              <Link href={user.roles[0] + "/dashboard"}>Go to Dashboard</Link>
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/signup">Create Account</Link>
-              </Button>
-            </>
-          )}
+          <Button variant="outline" asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/signup">Create Account</Link>
+          </Button>
         </div>
       </header>
 
@@ -87,20 +35,12 @@ export default function Home() {
           Personalized tutoring services for high-achieving students. Reach your academic goals with our expert tutors.
         </p>
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-          {isAuthenticated ? (
-            <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-              <Link href="/dashboard">Go to Dashboard</Link>
-            </Button>
-          ) : (
-            <>
-              <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-                <Link href="/signup">Get Started</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </>
-          )}
+          <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
+            <Link href="/signup">Get Started</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
         </div>
       </section>
 
@@ -112,7 +52,7 @@ export default function Home() {
           </h2>
           <div className="grid gap-8 md:grid-cols-3">
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-              <div className="mb-4 rounded-full bg-[#eaf4ed] p-3 text-[#095d40] inline-block">
+              <div className="mb-4 inline-block rounded-full bg-[#eaf4ed] p-3 text-[#095d40]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -133,7 +73,7 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-              <div className="mb-4 rounded-full bg-[#eaf4ed] p-3 text-[#095d40] inline-block">
+              <div className="mb-4 inline-block rounded-full bg-[#eaf4ed] p-3 text-[#095d40]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -154,7 +94,7 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-              <div className="mb-4 rounded-full bg-[#eaf4ed] p-3 text-[#095d40] inline-block">
+              <div className="mb-4 inline-block rounded-full bg-[#eaf4ed] p-3 text-[#095d40]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"

@@ -2,179 +2,41 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
-
-import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
-import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function LoginPage() {
-  const {
-    login,
-    isLoading,
-    error,
-    successMessage,
-    resetAuthError,
-    clearSuccessMessage,
-    isAuthenticated,
-    user,
-    setError,
-  } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<{
-    email?: string
-    password?: string
-  }>({})
-  const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
-  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectPath = searchParams.get("redirect")
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log("User already authenticated, redirecting...")
-
-      // Check if there's a redirect path -- //TODO remove false later
-      if (false && redirectPath) {
-        router.push(redirectPath)
-      } else {
-        // Redirect based on user roles
-        if (user.roles && user.roles.length > 0) {
-          const primaryRole = user.roles[0]
-
-          if (primaryRole === "admin") {
-            router.push("/admin/dashboard")
-          } else if (primaryRole === "parent") {
-            router.push("/parent/dashboard")
-          } else if (primaryRole === "tutor") {
-            router.push("/tutor/dashboard")
-          } else if (primaryRole === "student") {
-            router.push("/student/dashboard")
-          }
-        } else {
-          console.error("no role")
-        }
-      }
-    }
-  }, [isAuthenticated, user, router, redirectPath])
-
-  // Clear success message after 5 seconds
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        clearSuccessMessage()
-      }, 5000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [successMessage, clearSuccessMessage])
-
-  // Simple validation function
-  const validateForm = () => {
-    const errors: { email?: string; password?: string } = {}
-
-    if (!email) {
-      errors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = "Please enter a valid email address"
-    }
-
-    if (!password) {
-      errors.password = "Password is required"
-    } else if (password.length < 8) {
-      errors.password = "Password must be at least 8 characters"
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
 
-    if (!validateForm()) {
-      console.log("Form validation failed")
-      return
-    }
-
-    if (error) resetAuthError()
-
-    console.log("Submitting login form with:", { email, password: "***" })
-
-    try {
-      await login({
-        email,
-        password,
-      })
-
-      // The redirection will be handled by the useEffect above
-    } catch (err) {
-      console.error("Unhandled login error:", err)
-
-      // Parse and display API errors in the modal
-      if (err) {
-        try {
-          const parsedErrors = parseApiError(err)
-          setApiErrors(parsedErrors)
-          setShowErrorModal(true)
-        } catch (e) {
-          // The error will be handled by the auth context
-        }
-      }
-    }
+    // Simulate login
+    setTimeout(() => {
+      console.log("Login attempted with:", email)
+      setIsLoading(false)
+      // In a real app, you would redirect after successful login
+    }, 1000)
   }
 
-  // Add this to the useEffect section to handle OAuth errors
-  useEffect(() => {
-    // Check for OAuth error in URL
-    const searchParams = new URLSearchParams(window.location.search)
-    const oauthError = searchParams.get("error")
+  const handleGoogleSignIn = () => {
+    setIsLoading(true)
 
-    if (oauthError) {
-      let errorMessage = "Authentication failed. Please try again."
-
-      switch (oauthError) {
-        case "invalid_state":
-          errorMessage = "Security verification failed. Please try again."
-          break
-        case "no_code":
-          errorMessage = "Authentication was cancelled or failed. Please try again."
-          break
-        case "token_exchange_failed":
-          errorMessage = "Failed to complete authentication. Please try again."
-          break
-        case "userinfo_failed":
-          errorMessage = "Failed to retrieve user information. Please try again."
-          break
-        case "auth_failed":
-          errorMessage = "Failed to authenticate with our system. Please try again or use email login."
-          break
-        case "oauth_init_failed":
-          errorMessage = "Failed to start authentication. Please try again."
-          break
-      }
-
-      setError(errorMessage)
-
-      // Remove the error from the URL to prevent showing it again on refresh
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
-    }
-  }, [setError])
+    // Simulate Google sign-in
+    setTimeout(() => {
+      console.log("Google sign-in attempted")
+      setIsLoading(false)
+      // In a real app, you would redirect after successful login
+    }, 1000)
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -188,27 +50,13 @@ export default function LoginPage() {
         />
       </div>
 
-      <Card className="w-full max-w-md border-0 shadow-md">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
 
         <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -219,11 +67,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="border-input focus:border-primary focus:ring-primary"
               />
-              {validationErrors.email && (
-                <p className="text-sm font-medium text-destructive">{validationErrors.email}</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -233,41 +77,47 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="border-input focus:border-primary focus:ring-primary"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </Button>
-              </div>
-              {validationErrors.password && (
-                <p className="text-sm font-medium text-destructive">{validationErrors.password}</p>
-              )}
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign in"
-              )}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <Button variant="outline" type="button" disabled={isLoading} className="w-full" onClick={handleGoogleSignIn}>
+            <svg
+              className="mr-2 h-4 w-4"
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="fab"
+              data-icon="google"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 488 512"
+            >
+              <path
+                fill="currentColor"
+                d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+              ></path>
+            </svg>
+            {isLoading ? "Connecting..." : "Sign in with Google"}
+          </Button>
         </CardContent>
 
         <CardFooter className="flex justify-center border-t p-6">
@@ -279,14 +129,6 @@ export default function LoginPage() {
           </p>
         </CardFooter>
       </Card>
-
-      <ErrorModal
-        open={showErrorModal}
-        onOpenChange={setShowErrorModal}
-        errors={apiErrors}
-        title="Login Error"
-        description="There was a problem signing you in."
-      />
     </div>
   )
 }

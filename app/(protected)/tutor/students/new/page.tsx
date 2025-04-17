@@ -20,7 +20,7 @@ import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-
 import { generateSecurePassword } from "@/lib/utils/password-generator"
 import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
 import type { User } from "@/lib/types"
-import { TENANT_NAME } from "@/lib/config";
+import { TENANT_NAME } from "@/lib/config"
 
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"

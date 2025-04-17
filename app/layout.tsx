@@ -2,11 +2,11 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/lib/auth-context"
 import ErrorBoundary from "@/components/error-boundary"
 import "./globals.css"
 import "./sidebar-transitions.css"
 import { Analytics } from "@vercel/analytics/react"
+import { Suspense } from "react"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -27,19 +27,13 @@ export default function RootLayout({
         <Analytics />
         <ErrorBoundary>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            <AuthProvider>{children}</AuthProvider>
+            <Suspense>{children}</Suspense>
           </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>
   )
 }
-
-import "./globals.css"
-
-import "./globals.css"
-
-import "./globals.css"
 
 
 import './globals.css'
