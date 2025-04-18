@@ -1,10 +1,8 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,6 +13,8 @@ import { format, addMinutes, isBefore, addDays } from "date-fns"
 import { ChevronLeft, Clock, Video, CalendarIcon, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
+import { createAppointment } from "@/lib/api/appointments"
+import { useEffect, useState } from "react"
 
 interface TimeSlot {
   startTime: Date
@@ -83,47 +83,72 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
 
   // Fetch students, parents, and tutors data
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        // In a real app, you would fetch this data from an API
-        // For now, we'll use mock data
-
-        // Mock students data
-        setStudents([
-          { id: "student1", firstName: "John", lastName: "Doe", email: "john@example.com" },
-          { id: "student2", firstName: "Jane", lastName: "Smith", email: "jane@example.com" },
-        ])
-
-        // Mock parents data
-        setParents([
-          { id: "parent1", firstName: "Robert", lastName: "Doe", email: "robert@example.com" },
-          { id: "parent2", firstName: "Mary", lastName: "Smith", email: "mary@example.com" },
-        ])
-
-        // Mock tutors data
-        setTutors([
-          { id: "tutor1", firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
-          { id: "tutor2", firstName: "Bob", lastName: "Brown", email: "bob@example.com" },
-        ])
-
-        // If current user is a tutor, pre-select them
-        if (user && user.role === "tutor") {
-          setSelectedTutor(user.id)
+    setLoading(true)
+    try {
+      // Use data from the user object instead of making API calls
+      if (user) {
+        // If user has students property, use it
+        if (user.students && Array.isArray(user.students)) {
+          setStudents(user.students)
         }
-      } catch (error) {
-        console.error("Error preparing data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load necessary data. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
 
-    fetchData()
+        // If user has tutors property, use it
+        if (user.tutors && Array.isArray(user.tutors)) {
+          setTutors(user.tutors)
+        }
+
+        // If user has parents property, use it
+        if (user.parents && Array.isArray(user.parents)) {
+          setParents(user.parents)
+        }
+
+        // Pre-select based on user role
+        if (user.role === "tutor") {
+          setSelectedTutor(user.id)
+        } else if (user.role === "student") {
+          setSelectedStudent(user.id)
+        } else if (user.role === "parent") {
+          setSelectedParent(user.id)
+        }
+      }
+
+      // If we don't have the data we need from the user object, use mock data for development
+      if (
+        (!user?.students || !user?.tutors) &&
+        process.env.NODE_ENV === "development" &&
+        !process.env.NEXT_PUBLIC_PAYLOAD_API_URL
+      ) {
+        if (!students.length) {
+          setStudents([
+            { id: "student1", firstName: "John", lastName: "Doe", email: "john@example.com" },
+            { id: "student2", firstName: "Jane", lastName: "Smith", email: "jane@example.com" },
+          ])
+        }
+
+        if (!tutors.length) {
+          setTutors([
+            { id: "tutor1", firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
+            { id: "tutor2", firstName: "Bob", lastName: "Brown", email: "bob@example.com" },
+          ])
+        }
+
+        if (!parents.length) {
+          setParents([
+            { id: "parent1", firstName: "Michael", lastName: "Johnson", email: "michael@example.com" },
+            { id: "parent2", firstName: "Sarah", lastName: "Williams", email: "sarah@example.com" },
+          ])
+        }
+      }
+    } catch (error) {
+      console.error("Error preparing data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load necessary data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }, [user, toast])
 
   const handleSelectDate = (selectedDate: Date | undefined) => {
@@ -155,9 +180,7 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
     try {
       // Format the appointment data
       const appointmentData = {
-        id: `appointment-${Date.now()}`, // Generate a temporary ID
         title: title || `${duration} Minute Appointment`,
-        date: date.toISOString(),
         startTime: selectedTimeSlot.startTime.toISOString(),
         endTime: selectedTimeSlot.endTime.toISOString(),
         tutor: selectedTutor,
@@ -168,17 +191,27 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
       }
 
       // In a real app, you would make an API call to create the appointment
-      // For now, we'll just simulate a successful creation
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await createAppointment(appointmentData)
 
-      toast({
-        title: "Success",
-        description: "Appointment scheduled successfully!",
-      })
+      // Check if the API call was successful
+      if (response.error) {
+        // If the API call failed, show an error message
+        toast({
+          title: "Error",
+          description: "Failed to schedule appointment. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        // If the API call was successful, show a success message
+        toast({
+          title: "Success",
+          description: "Appointment scheduled successfully!",
+        })
 
-      // Call the onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess()
+        // Call the onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess()
+        }
       }
 
       // Reset the form
@@ -281,53 +314,59 @@ export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tutor">Tutor</Label>
-                <Select value={selectedTutor} onValueChange={setSelectedTutor}>
-                  <SelectTrigger id="tutor">
-                    <SelectValue placeholder="Select a tutor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tutors.map((tutor) => (
-                      <SelectItem key={tutor.id} value={tutor.id}>
-                        {tutor.firstName} {tutor.lastName || ""} ({tutor.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {user && user.role !== "student" && (
+                <div className="space-y-2">
+                  <Label htmlFor="tutor">Tutor</Label>
+                  <Select value={selectedTutor} onValueChange={setSelectedTutor}>
+                    <SelectTrigger id="tutor">
+                      <SelectValue placeholder="Select a tutor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tutors.map((tutor) => (
+                        <SelectItem key={tutor.id} value={tutor.id}>
+                          {tutor.firstName} {tutor.lastName || ""} ({tutor.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="student">Student</Label>
-                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                  <SelectTrigger id="student">
-                    <SelectValue placeholder="Select a student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.firstName} {student.lastName || ""} ({student.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {user && user.role !== "tutor" && (
+                <div className="space-y-2">
+                  <Label htmlFor="student">Student</Label>
+                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                    <SelectTrigger id="student">
+                      <SelectValue placeholder="Select a student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.firstName} {student.lastName || ""} ({student.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="parent">Parent</Label>
-                <Select value={selectedParent} onValueChange={setSelectedParent}>
-                  <SelectTrigger id="parent">
-                    <SelectValue placeholder="Select a parent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {parents.map((parent) => (
-                      <SelectItem key={parent.id} value={parent.id}>
-                        {parent.firstName} {parent.lastName || ""} ({parent.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {user && user.role !== "parent" && (
+                <div className="space-y-2">
+                  <Label htmlFor="parent">Parent</Label>
+                  <Select value={selectedParent} onValueChange={setSelectedParent}>
+                    <SelectTrigger id="parent">
+                      <SelectValue placeholder="Select a parent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parents.map((parent) => (
+                        <SelectItem key={parent.id} value={parent.id}>
+                          {parent.firstName} {parent.lastName || ""} ({parent.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -145,7 +145,6 @@ export default function TutorStudentsPage() {
             <div className="flex justify-between items-center mb-2">
               <TabsList>
                 <TabsTrigger value="students">Students</TabsTrigger>
-                <TabsTrigger value="group-tags">Group Tags</TabsTrigger>
               </TabsList>
 
               <div className="flex items-center gap-2">
@@ -172,7 +171,6 @@ export default function TutorStudentsPage() {
                     <DropdownMenuItem>Student Contact</DropdownMenuItem>
                     <DropdownMenuItem>Family</DropdownMenuItem>
                     <DropdownMenuItem>Notes</DropdownMenuItem>
-                    <DropdownMenuItem>Group Tags</DropdownMenuItem>
                     <DropdownMenuItem>Tutors</DropdownMenuItem>
                     <DropdownMenuItem>Next Lesson</DropdownMenuItem>
                     <DropdownMenuItem>Make-Up Credits</DropdownMenuItem>
@@ -272,7 +270,6 @@ export default function TutorStudentsPage() {
                       <TableHead className="h-8 text-xs font-medium">Student Contact</TableHead>
                       <TableHead className="h-8 text-xs font-medium">Family</TableHead>
                       <TableHead className="h-8 text-xs font-medium">Notes</TableHead>
-                      <TableHead className="h-8 text-xs font-medium">Group Tags</TableHead>
                       <TableHead className="h-8 text-xs font-medium">Tutors</TableHead>
                       <TableHead className="h-8 text-xs font-medium">Next Lesson</TableHead>
                       <TableHead className="h-8 text-xs font-medium">Make-Up Credits</TableHead>
@@ -291,7 +288,7 @@ export default function TutorStudentsPage() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center py-4">
+                        <TableCell colSpan={10} className="text-center py-4">
                           <div className="flex justify-center">
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                           </div>
@@ -299,7 +296,7 @@ export default function TutorStudentsPage() {
                       </TableRow>
                     ) : filteredStudents.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center py-4 text-sm">
+                        <TableCell colSpan={10} className="text-center py-4 text-sm">
                           No students found
                         </TableCell>
                       </TableRow>
@@ -329,7 +326,6 @@ export default function TutorStudentsPage() {
                               ?.map((parent) => (typeof parent === "object" ? parent.email : "-"))
                               .join(", ") || "-"}
                           </TableCell>
-                          <TableCell className="py-1 text-xs">-</TableCell>
                           <TableCell className="py-1 text-xs">-</TableCell>
                           <TableCell className="py-1 text-xs">
                             {student.tutors
@@ -378,18 +374,6 @@ export default function TutorStudentsPage() {
                       Next
                     </Button>
                   </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="group-tags">
-              <Card className="border rounded-md">
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-muted-foreground text-sm">No group tags created yet.</p>
-                  <Button size="sm" className="mt-4">
-                    <Plus className="mr-2 h-3.5 w-3.5" />
-                    Create Group Tag
-                  </Button>
                 </div>
               </Card>
             </TabsContent>

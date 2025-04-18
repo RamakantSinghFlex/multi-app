@@ -25,6 +25,8 @@ import { CalendarIcon, ChevronLeft, ChevronRight, Plus, Loader2 } from "lucide-r
 import { useToast } from "@/hooks/use-toast"
 import { sanitizeHtml } from "@/lib/utils"
 import AppointmentCalendar from "@/components/appointment/appointment-calendar"
+import { useAction } from "@/lib/utils"
+import { createAppointment } from "@/lib/api/appointments"
 
 export default function StudentAppointmentsPage() {
   const { user } = useAuth()
@@ -36,20 +38,22 @@ export default function StudentAppointmentsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [view, setView] = useState<"calendar" | "list">("calendar")
+  const [safeCreateAppointment, { state: createAppointmentState, execute: executeCreateAppointment }] =
+    useAction(createAppointment)
 
   const fetchAppointments = async () => {
     if (!user?.id) return
 
     setLoading(true)
     try {
-      const response = await getAppointments(1, 100, { student: user.id })
+      const response = await getAppointments({ student: user.id })
 
       if (response.error) {
         throw new Error(response.error)
       }
 
       if (response.data) {
-        setAppointments(response.data.docs)
+        setAppointments(response.data)
       }
     } catch (error) {
       console.error("Error fetching appointments:", error)
@@ -185,7 +189,7 @@ export default function StudentAppointmentsPage() {
       <div className="flex h-64 w-full flex-col items-center justify-center">
         <CalendarIcon className="h-12 w-12 text-destructive mb-4" />
         <h3 className="text-lg font-medium">Failed to load appointments</h3>
-        <p className="text-[#858585] mb-4">{error}</p>
+        <p className="text-muted-foreground mb-4">{error}</p>
         <Button onClick={fetchAppointments}>Try Again</Button>
       </div>
     )
@@ -196,7 +200,7 @@ export default function StudentAppointmentsPage() {
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Calendar</h1>
-          <p className="text-[#858585]">View and manage your tutoring appointments</p>
+          <p className="text-muted-foreground">View and manage your tutoring appointments</p>
         </div>
         <div className="flex space-x-2">
           <Button
@@ -241,11 +245,11 @@ export default function StudentAppointmentsPage() {
           <CardContent className="p-0">
             <div className="p-4 flex items-center justify-between border-b">
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" onClick={prevMonth} className="text-[#858585]">
+                <Button variant="ghost" size="icon" onClick={prevMonth} className="text-muted-foreground">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <h2 className="text-sm font-medium">{format(currentMonth, "MMMM, yyyy")}</h2>
-                <Button variant="ghost" size="icon" onClick={nextMonth} className="text-[#858585]">
+                <Button variant="ghost" size="icon" onClick={nextMonth} className="text-muted-foreground">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -318,7 +322,7 @@ export default function StudentAppointmentsPage() {
                         </div>
                       ))}
                       {dayAppointments.length > 2 && (
-                        <div className="text-xs text-[#858585]">+{dayAppointments.length - 2} more</div>
+                        <div className="text-xs text-muted-foreground">+{dayAppointments.length - 2} more</div>
                       )}
                     </div>
                   </div>
@@ -344,9 +348,9 @@ export default function StudentAppointmentsPage() {
             {upcomingAppointments.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-10">
-                  <CalendarIcon className="h-12 w-12 text-[#858585] mb-4" />
-                  <h3 className="text-sm font-medium">No upcoming appointments</h3>
-                  <p className="text-[#858585] mb-4">You don't have any upcoming appointments scheduled.</p>
+                  <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No upcoming appointments</h3>
+                  <p className="text-muted-foreground mb-4">You don't have any upcoming appointments scheduled.</p>
                   <Button
                     onClick={() => setCreateDialogOpen(true)}
                     className="bg-[#095d40] text-white hover:bg-[#02342e]"
@@ -360,11 +364,11 @@ export default function StudentAppointmentsPage() {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {upcomingAppointments.map((appointment) => (
                   <Card key={appointment.id} className="overflow-hidden">
-                    <div className="p-4 border-l-4 border-[#095d40]">
+                    <div className="p-4 border-l-4 border-primary">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-sm font-medium">{appointment.title}</h3>
-                          <p className="text-xs text-[#858585]">
+                          <p className="text-xs text-muted-foreground">
                             {format(parseISO(appointment.startTime), "EEEE, MMMM d, yyyy")}
                           </p>
                         </div>
@@ -372,7 +376,7 @@ export default function StudentAppointmentsPage() {
                       </div>
                       <div className="space-y-3 mt-3">
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               {format(parseISO(appointment.startTime), "h:mm a")} -{" "}
@@ -382,19 +386,18 @@ export default function StudentAppointmentsPage() {
                         </div>
 
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               Student: {appointment.student.firstName} {appointment.student.lastName}
                             </p>
                           </div>
                         </div>
-
                         {appointment.notes && (
                           <div className="pt-2 text-sm">
                             <p className="font-medium">Notes:</p>
                             <div
-                              className="text-[#858585]"
+                              className="text-muted-foreground"
                               dangerouslySetInnerHTML={{ __html: sanitizeHtml(appointment.notes) }}
                             />
                           </div>
@@ -403,7 +406,7 @@ export default function StudentAppointmentsPage() {
                       <div className="mt-4">
                         <Button
                           variant="outline"
-                          className="w-full text-destructive hover:bg-destructive/10 border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]"
+                          className="w-full text-destructive hover:bg-destructive/10"
                           onClick={() => handleCancelAppointment(appointment.id)}
                         >
                           Cancel
@@ -420,20 +423,20 @@ export default function StudentAppointmentsPage() {
             {pastAppointments.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-10">
-                  <CalendarIcon className="h-12 w-12 text-[#858585] mb-4" />
+                  <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-sm font-medium">No past appointments</h3>
-                  <p className="text-[#858585]">You don't have any past appointments.</p>
+                  <p className="text-muted-foreground">You don't have any past appointments.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {pastAppointments.map((appointment) => (
                   <Card key={appointment.id} className="overflow-hidden">
-                    <div className="p-4 border-l-4 border-[#d3d3d3]">
+                    <div className="p-4 border-l-4 border-gray-300">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-sm font-medium">{appointment.title}</h3>
-                          <p className="text-xs text-[#858585]">
+                          <p className="text-xs text-muted-foreground">
                             {format(parseISO(appointment.startTime), "EEEE, MMMM d, yyyy")}
                           </p>
                         </div>
@@ -441,7 +444,7 @@ export default function StudentAppointmentsPage() {
                       </div>
                       <div className="space-y-3 mt-3">
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               {format(parseISO(appointment.startTime), "h:mm a")} -{" "}
@@ -451,7 +454,7 @@ export default function StudentAppointmentsPage() {
                         </div>
 
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               Student: {appointment.student.firstName} {appointment.student.lastName}
@@ -470,20 +473,20 @@ export default function StudentAppointmentsPage() {
             {cancelledAppointments.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-10">
-                  <CalendarIcon className="h-12 w-12 text-[#858585] mb-4" />
+                  <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-sm font-medium">No cancelled appointments</h3>
-                  <p className="text-[#858585]">You don't have any cancelled appointments.</p>
+                  <p className="text-muted-foreground">You don't have any cancelled appointments.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {cancelledAppointments.map((appointment) => (
                   <Card key={appointment.id} className="overflow-hidden">
-                    <div className="p-4 border-l-4 border-[#ff0000]">
+                    <div className="p-4 border-l-4 border-red-300">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-sm font-medium">{appointment.title}</h3>
-                          <p className="text-xs text-[#858585]">
+                          <p className="text-xs text-muted-foreground">
                             {format(parseISO(appointment.startTime), "EEEE, MMMM d, yyyy")}
                           </p>
                         </div>
@@ -491,7 +494,7 @@ export default function StudentAppointmentsPage() {
                       </div>
                       <div className="space-y-3 mt-3">
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               {format(parseISO(appointment.startTime), "h:mm a")} -{" "}
@@ -501,7 +504,7 @@ export default function StudentAppointmentsPage() {
                         </div>
 
                         <div className="flex items-start space-x-2">
-                          <CalendarIcon className="h-4 w-4 mt-0.5 text-[#858585]" />
+                          <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                           <div>
                             <p className="text-sm">
                               Student: {appointment.student.firstName} {appointment.student.lastName}
