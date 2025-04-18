@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
+import { handleLogout } from "@/lib/utils/auth-utils"
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -33,38 +34,6 @@ export default function AdminSidebar() {
 
   const closeSidebar = () => {
     setIsOpen(false)
-  }
-
-  const handleLogout = async () => {
-    try {
-      // First clear all local data
-      if (typeof window !== "undefined") {
-        // Clear all known localStorage items
-        localStorage.removeItem("milestone-token")
-        localStorage.removeItem("auth_token")
-        localStorage.removeItem("recentlyCreatedStudents")
-        localStorage.removeItem("user-preferences")
-        localStorage.removeItem("recent-searches")
-        localStorage.removeItem("dashboard-settings")
-
-        // Try to clear everything
-        try {
-          localStorage.clear()
-          sessionStorage.clear()
-        } catch (e) {
-          console.error("Error clearing storage:", e)
-        }
-      }
-
-      // Then call the logout function from auth context
-      await logout()
-    } catch (error) {
-      console.error("Error during logout:", error)
-      // Force navigation to home page if logout fails
-      window.location.href = "/"
-    } finally {
-      closeSidebar()
-    }
   }
 
   const mainNavItems = [
@@ -196,7 +165,7 @@ export default function AdminSidebar() {
             <Button
               variant="ghost"
               className="w-full justify-start rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted hover:text-primary"
-              onClick={handleLogout}
+              onClick={() => handleLogout(logout)}
             >
               <LogOut className="mr-2 h-5 w-5" />
               Sign out
