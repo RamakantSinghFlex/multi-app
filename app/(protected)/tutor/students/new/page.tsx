@@ -289,6 +289,7 @@ export default function NewStudentPage() {
         const parentPayload = {
           ...parentData,
           students: [createdStudent.id], // Link to the created student
+          tutors: [userId],
         }
 
         const parentResponse = await createUser(parentPayload)
@@ -309,6 +310,8 @@ export default function NewStudentPage() {
         const tutorPayload = {
           ...tutorData,
           students: [createdStudent.id], // Link to the created student
+          parents: [createdParent?.id], // Link to the created student
+          tutors: [userId], // Link to the created student
         }
 
         const tutorResponse = await createUser(tutorPayload)
