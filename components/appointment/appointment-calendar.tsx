@@ -14,9 +14,8 @@ import { format, setHours, setMinutes, isPast, isToday } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { createAppointment } from "@/lib/api/appointments"
 import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { AlertCircle, X } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "@/components/ui/alert"
 import { useAuth } from "@/lib/auth-context"
 import type { Student, Tutor, Parent } from "@/lib/types"
 
@@ -251,89 +250,95 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="tutors">Tutors</Label>
-              <Select onValueChange={handleAddTutor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tutors" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tutors.map((tutor) => (
-                    <SelectItem key={tutor.id} value={tutor.id}>
-                      {tutor.firstName} {tutor.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedTutors.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedTutors.map((tutorId) => (
-                    <Badge key={tutorId} variant="secondary" className="flex items-center gap-1">
-                      {getTutorName(tutorId)}
-                      <button type="button" onClick={() => handleRemoveTutor(tutorId)}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            {tutors.length > 0 && (
+              <div>
+                <Label htmlFor="tutors">Tutors</Label>
+                <Select onValueChange={handleAddTutor}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select tutors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tutors.map((tutor) => (
+                      <SelectItem key={tutor.id} value={tutor.id}>
+                        {tutor.firstName} {tutor.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTutors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedTutors.map((tutorId) => (
+                      <Badge key={tutorId} variant="secondary" className="flex items-center gap-1">
+                        {getTutorName(tutorId)}
+                        <button type="button" onClick={() => handleRemoveTutor(tutorId)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div>
-              <Label htmlFor="students">Students</Label>
-              <Select onValueChange={handleAddStudent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select students" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((student) => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.firstName} {student.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedStudents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedStudents.map((studentId) => (
-                    <Badge key={studentId} variant="secondary" className="flex items-center gap-1">
-                      {getStudentName(studentId)}
-                      <button type="button" onClick={() => handleRemoveStudent(studentId)}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            {students.length > 0 && (
+              <div>
+                <Label htmlFor="students">Students</Label>
+                <Select onValueChange={handleAddStudent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select students" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.firstName} {student.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedStudents.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedStudents.map((studentId) => (
+                      <Badge key={studentId} variant="secondary" className="flex items-center gap-1">
+                        {getStudentName(studentId)}
+                        <button type="button" onClick={() => handleRemoveStudent(studentId)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div>
-              <Label htmlFor="parents">Parents</Label>
-              <Select onValueChange={handleAddParent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select parents" />
-                </SelectTrigger>
-                <SelectContent>
-                  {parents.map((parent) => (
-                    <SelectItem key={parent.id} value={parent.id}>
-                      {parent.firstName} {parent.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedParents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedParents.map((parentId) => (
-                    <Badge key={parentId} variant="secondary" className="flex items-center gap-1">
-                      {getParentName(parentId)}
-                      <button type="button" onClick={() => handleRemoveParent(parentId)}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            {parents.length > 0 && (
+              <div>
+                <Label htmlFor="parents">Parents</Label>
+                <Select onValueChange={handleAddParent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select parents" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {parents.map((parent) => (
+                      <SelectItem key={parent.id} value={parent.id}>
+                        {parent.firstName} {parent.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedParents.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedParents.map((parentId) => (
+                      <Badge key={parentId} variant="secondary" className="flex items-center gap-1">
+                        {getParentName(parentId)}
+                        <button type="button" onClick={() => handleRemoveParent(parentId)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <Label htmlFor="status">Appointment Status</Label>
