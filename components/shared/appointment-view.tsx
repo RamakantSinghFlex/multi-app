@@ -7,23 +7,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import {
-  format,
-  parseISO,
-  isAfter,
-  isBefore,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameDay,
-  getDay,
-} from "date-fns"
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, Loader2, Users } from "lucide-react"
+// Update the import section to include the necessary date-fns functions
+import { format, parseISO, isAfter, isBefore, addMonths, subMonths, isSameDay } from "date-fns"
+import { CalendarIcon, Plus, Loader2, Users, DollarSign } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import AppointmentCalendar from "@/components/appointment/appointment-calendar"
 import { cancelAppointment, getAppointments } from "@/lib/api/appointments"
+import { CalendarView } from "@/components/ui/calendar-view"
 
 // Fallback sanitize function in case the import fails
 const simpleSanitize = (html: string) => {
@@ -41,6 +31,27 @@ export interface AppointmentViewProps {
   className?: string
 }
 
+// Add this helper function to better display multiple participants
+
+// Add this function to format participant names
+const formatParticipantNames = (participants: any[]) => {
+  if (!participants || !Array.isArray(participants) || participants.length === 0) return "None"
+
+  if (participants.length === 1) {
+    const participant = participants[0]
+    if (typeof participant === "string") return participant
+    return `${participant.firstName || ""} ${participant.lastName || ""}`.trim()
+  }
+
+  const firstParticipant = participants[0]
+  const firstName =
+    typeof firstParticipant === "string"
+      ? firstParticipant
+      : `${firstParticipant.firstName || ""} ${firstParticipant.lastName || ""}`.trim()
+
+  return `${firstName} +${participants.length - 1} more`
+}
+
 export default function AppointmentView({ userRole, fetchFromApi = true, className = "" }: AppointmentViewProps) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -51,6 +62,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [view, setView] = useState<"calendar" | "list">("calendar")
+  const [highlightedDates, setHighlightedDates] = useState<Date[]>([])
 
   const fetchAppointments = async () => {
     if (!user?.id) return
@@ -60,7 +72,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
       if (fetchFromApi) {
         // Fetch from API
         const response = await getAppointments({
-          [userRole]: user.id,
+          [userRole + "s"]: user.id, // Note the plural form to match the API schema
         })
 
         if (response.error) {
@@ -69,11 +81,19 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
 
         if (response.data) {
           setAppointments(response.data)
+
+          // Extract dates for highlighting in the calendar
+          const dates = response.data.map((appointment: any) => new Date(appointment.startTime))
+          setHighlightedDates(dates)
         }
       } else {
         // Get appointments directly from the user object
         const userAppointments = user.appointments || []
         setAppointments(userAppointments)
+
+        // Extract dates for highlighting in the calendar
+        const dates = userAppointments.map((appointment: any) => new Date(appointment.startTime))
+        setHighlightedDates(dates)
       }
     } catch (error) {
       console.error("Error fetching appointments:", error)
@@ -185,24 +205,27 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
     setSelectedDate(new Date())
   }
 
-  // Calendar days generation
-  const monthStart = startOfMonth(currentMonth)
-  const monthEnd = endOfMonth(currentMonth)
-  const startDate = monthStart
-  const endDate = monthEnd
-
-  const dateRange = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  })
-
   // Get appointments for a specific day
   const getAppointmentsForDay = (day: Date) => {
-    return appointments.filter((appointment) => isSameDay(parseISO(appointment.startTime), day))
+    return appointments.filter((appointment) => {
+      const appointmentDate = parseISO(appointment.startTime)
+      return isSameDay(appointmentDate, day)
+    })
   }
 
   // Get appointments for selected date
   const selectedDateAppointments = getAppointmentsForDay(selectedDate)
+
+  // Helper function to get the first item from an array or return null
+  const getFirstItem = (array: any[] | undefined) => {
+    if (!array || !Array.isArray(array) || array.length === 0) return null
+    return array[0]
+  }
+
+  // Handle date selection from the calendar
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+  }
 
   if (loading) {
     return (
@@ -278,101 +301,138 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
       </div>
 
       {view === "calendar" ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="p-4 flex items-center justify-between border-b">
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" onClick={prevMonth} className="text-muted-foreground">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="text-sm font-medium">{format(currentMonth, "MMMM, yyyy")}</h2>
-                <Button variant="ghost" size="icon" onClick={nextMonth} className="text-muted-foreground">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToToday}
-                  className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]"
-                >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left sidebar with mini calendar */}
+          <Card className="md:col-span-1">
+            <CardContent className="p-4">
+              <h3 className="text-lg font-medium mb-4">Select Date</h3>
+              <CalendarView
+                initialMonth={currentMonth}
+                onDateSelect={handleDateSelect}
+                highlightedDates={highlightedDates}
+                disablePastDates={false} // Allow selecting any date including today and past dates
+              />
+
+              <div className="mt-4">
+                <Button variant="outline" className="w-full" onClick={goToToday}>
                   Today
                 </Button>
-                <Button variant="outline" size="sm" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
-                  Month
-                </Button>
-                <Button variant="outline" size="sm" className="border-[#d9d9d9] text-[#000000] hover:bg-[#f4f4f4]">
-                  Search
-                </Button>
               </div>
-            </div>
 
-            <div className="grid grid-cols-7 border-b">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                <div key={day} className="py-2 text-center text-xs font-medium">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7">
-              {/* Fill in empty cells for days of the week before the first of the month */}
-              {Array.from({ length: getDay(monthStart) === 0 ? 6 : getDay(monthStart) - 1 }).map((_, index) => (
-                <div key={`empty-start-${index}`} className="min-h-[100px] p-2 border-r border-b bg-[#f4f4f4]"></div>
-              ))}
-
-              {/* Calendar days */}
-              {dateRange.map((day, dayIdx) => {
-                const dayAppointments = getAppointmentsForDay(day)
-                const isSelected = isSameDay(day, selectedDate)
-                const isToday = isSameDay(day, new Date())
-
-                return (
-                  <div
-                    key={day.toString()}
-                    className={`min-h-[100px] p-2 border-r border-b relative ${
-                      isSelected ? "bg-primary/5" : ""
-                    } ${isToday ? "bg-blue-50" : ""}`}
-                    onClick={() => setSelectedDate(day)}
-                  >
-                    <div
-                      className={`text-sm font-medium ${isToday ? "text-primary rounded-full w-6 h-6 flex items-center justify-center bg-primary text-white" : ""}`}
-                    >
-                      {format(day, "d")}
-                    </div>
-                    <div className="mt-1 space-y-1 max-h-[80px] overflow-hidden">
-                      {dayAppointments.slice(0, 2).map((appointment) => (
-                        <div
-                          key={appointment.id}
-                          className={`text-xs p-1 rounded truncate ${
-                            appointment.status === "confirmed"
-                              ? "bg-green-100 text-green-800"
-                              : appointment.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : appointment.status === "cancelled"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {format(parseISO(appointment.startTime), "h:mm a")} - {appointment.title}
-                        </div>
-                      ))}
-                      {dayAppointments.length > 2 && (
-                        <div className="text-xs text-muted-foreground">+{dayAppointments.length - 2} more</div>
-                      )}
-                    </div>
+              <div className="mt-6">
+                <h4 className="text-sm font-medium mb-2">Legend</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-[#095d40] mr-2"></div>
+                    <span className="text-sm">Appointment</span>
                   </div>
-                )
-              })}
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full border border-[#095d40] mr-2"></div>
+                    <span className="text-sm">Today</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Fill in empty cells for days of the week after the end of the month */}
-              {Array.from({ length: getDay(monthEnd) === 0 ? 0 : 7 - getDay(monthEnd) }).map((_, index) => (
-                <div key={`empty-end-${index}`} className="min-h-[100px] p-2 border-r border-b bg-[#f4f4f4]"></div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Main content area */}
+          <Card className="md:col-span-2">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">{format(selectedDate, "EEEE, MMMM d, yyyy")}</h3>
+              </div>
+
+              {selectedDateAppointments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No appointments</h3>
+                  <p className="text-muted-foreground mb-4">You don't have any appointments scheduled for this day.</p>
+                  <Button
+                    onClick={() => setCreateDialogOpen(true)}
+                    className="bg-[#095d40] text-white hover:bg-[#02342e]"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Schedule Appointment
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {selectedDateAppointments.map((appointment) => (
+                    <Card key={`selected-${appointment.id}`} className="overflow-hidden">
+                      <div className="p-4 border-l-4 border-primary">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="text-sm font-medium">{appointment.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {format(parseISO(appointment.startTime), "h:mm a")} -{" "}
+                              {format(parseISO(appointment.endTime), "h:mm a")}
+                            </p>
+                          </div>
+                          {getStatusBadge(appointment.status)}
+                        </div>
+                        <div className="space-y-3 mt-3">
+                          {appointment.students && appointment.students.length > 0 && (
+                            <div className="flex items-start space-x-2">
+                              <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm">
+                                  Student{appointment.students.length > 1 ? "s" : ""}:{" "}
+                                  {formatParticipantNames(appointment.students)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {appointment.tutors && appointment.tutors.length > 0 && (
+                            <div className="flex items-start space-x-2">
+                              <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm">
+                                  Tutor{appointment.tutors.length > 1 ? "s" : ""}:{" "}
+                                  {formatParticipantNames(appointment.tutors)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {appointment.payment && (
+                            <div className="flex items-start space-x-2">
+                              <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm">
+                                  Payment: ${appointment.payment.amount} ({appointment.payment.status})
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {appointment.notes && (
+                            <div className="pt-2 text-sm">
+                              <p className="font-medium">Notes:</p>
+                              <div
+                                className="text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: simpleSanitize(appointment.notes) }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4">
+                          <Button
+                            variant="outline"
+                            className="w-full text-destructive hover:bg-destructive/10"
+                            onClick={() => handleCancelAppointment(appointment.id)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <Tabs defaultValue="upcoming" className="space-y-4">
           <TabsList>
@@ -400,7 +460,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {upcomingAppointments.map((appointment) => (
-                  <Card key={appointment.id} className="overflow-hidden">
+                  <Card key={`upcoming-${appointment.id}`} className="overflow-hidden">
                     <div className="p-4 border-l-4 border-primary">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -422,60 +482,38 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
                           </div>
                         </div>
 
-                        {userRole === "student" && appointment.student && (
+                        {appointment.students && appointment.students.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Student{appointment.students.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.students)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "tutor" && appointment.student && (
+                        {appointment.tutors && appointment.tutors.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Tutor{appointment.tutors.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.tutors)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "parent" && (
-                          <>
-                            {appointment.tutor && (
-                              <div className="flex items-start space-x-2">
-                                <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Tutor: {appointment.tutor.firstName} {appointment.tutor.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {appointment.student && (
-                              <div className="flex items-start space-x-2">
-                                <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Student: {appointment.student.firstName} {appointment.student.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-
-                        {appointment.notes && (
-                          <div className="pt-2 text-sm">
-                            <p className="font-medium">Notes:</p>
-                            <div
-                              className="text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: simpleSanitize(appointment.notes) }}
-                            />
+                        {appointment.payment && (
+                          <div className="flex items-start space-x-2">
+                            <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm">
+                                Payment: ${appointment.payment.amount} ({appointment.payment.status})
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -500,14 +538,14 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-10">
                   <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-sm font-medium">No past appointments</h3>
+                  <h3 className="text-lg font-medium">No past appointments</h3>
                   <p className="text-muted-foreground">You don't have any past appointments.</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {pastAppointments.map((appointment) => (
-                  <Card key={appointment.id} className="overflow-hidden">
+                  <Card key={`past-${appointment.id}`} className="overflow-hidden">
                     <div className="p-4 border-l-4 border-gray-300">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -529,51 +567,39 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
                           </div>
                         </div>
 
-                        {userRole === "student" && appointment.student && (
+                        {appointment.students && appointment.students.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Student{appointment.students.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.students)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "tutor" && appointment.student && (
+                        {appointment.tutors && appointment.tutors.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Tutor{appointment.tutors.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.tutors)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "parent" && (
-                          <>
-                            {appointment.tutor && (
-                              <div className="flex items-start space-x-2">
-                                <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Tutor: {appointment.tutor.firstName} {appointment.tutor.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {appointment.student && (
-                              <div className="flex items-start space-x-2">
-                                <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Student: {appointment.student.firstName} {appointment.student.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </>
+                        {appointment.payment && (
+                          <div className="flex items-start space-x-2">
+                            <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm">
+                                Payment: ${appointment.payment.amount} ({appointment.payment.status})
+                              </p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -595,7 +621,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {cancelledAppointments.map((appointment) => (
-                  <Card key={appointment.id} className="overflow-hidden">
+                  <Card key={`cancelled-${appointment.id}`} className="overflow-hidden">
                     <div className="p-4 border-l-4 border-red-300">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -617,51 +643,39 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
                           </div>
                         </div>
 
-                        {userRole === "student" && appointment.student && (
+                        {appointment.students && appointment.students.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Student{appointment.students.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.students)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "tutor" && appointment.student && (
+                        {appointment.tutors && appointment.tutors.length > 0 && (
                           <div className="flex items-start space-x-2">
-                            <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm">
-                                Student: {appointment.student.firstName} {appointment.student.lastName}
+                                Tutor{appointment.tutors.length > 1 ? "s" : ""}:{" "}
+                                {formatParticipantNames(appointment.tutors)}
                               </p>
                             </div>
                           </div>
                         )}
 
-                        {userRole === "parent" && (
-                          <>
-                            {appointment.tutor && (
-                              <div className="flex items-start space-x-2">
-                                <CalendarIcon className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Tutor: {appointment.tutor.firstName} {appointment.tutor.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {appointment.student && (
-                              <div className="flex items-start space-x-2">
-                                <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm">
-                                    Student: {appointment.student.firstName} {appointment.student.lastName}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </>
+                        {appointment.payment && (
+                          <div className="flex items-start space-x-2">
+                            <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                            <div>
+                              <p className="text-sm">
+                                Payment: ${appointment.payment.amount} ({appointment.payment.status})
+                              </p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>

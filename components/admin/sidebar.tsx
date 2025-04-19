@@ -48,8 +48,8 @@ export default function AdminSidebar() {
       icon: Users,
     },
     {
-      title: "Sessions",
-      href: "/admin/sessions",
+      title: "Appointments",
+      href: "/admin/appointments",
       icon: Calendar,
     },
     {
@@ -104,7 +104,7 @@ export default function AdminSidebar() {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <Link href="/admin/dashboard" onClick={closeSidebar}>
+          <Link href="/admin/students" onClick={closeSidebar}>
             <Image
               src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
               alt="Milestone Learning Logo"

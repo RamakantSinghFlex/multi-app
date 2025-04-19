@@ -50,7 +50,7 @@ export default function ParentDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Session Taken</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Appointments</p>
                 <h3 className="text-2xl font-bold">07</h3>
               </div>
               <div className="rounded-full bg-[#e3fae3] p-3 text-[#095d40]">

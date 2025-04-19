@@ -37,16 +37,12 @@ export default function StudentSidebar() {
     setIsOpen(false)
   }
 
+  // Fix: Ensure Students tab is always visible and Sessions is completely removed
   const mainNavItems = [
     {
       title: "Dashboard",
       href: "/student/dashboard",
       icon: Home,
-    },
-    {
-      title: "Sessions",
-      href: "/student/sessions",
-      icon: Calendar,
     },
     {
       title: "Appointments",
@@ -115,7 +111,7 @@ export default function StudentSidebar() {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <Link href="/student/dashboard" onClick={closeSidebar}>
+          <Link href="/student/students" onClick={closeSidebar}>
             <Image
               src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
               alt="Milestone Learning Logo"

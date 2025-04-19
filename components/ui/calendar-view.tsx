@@ -4,12 +4,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { isBefore, isSameDay, isPast } from "date-fns"
 
 interface CalendarViewProps {
   initialMonth?: Date
   onDateSelect?: (date: Date) => void
   highlightedDates?: Date[]
   className?: string
+  disablePastDates?: boolean
 }
 
 export function CalendarView({
@@ -17,6 +19,7 @@ export function CalendarView({
   onDateSelect,
   highlightedDates = [],
   className,
+  disablePastDates = false,
 }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(initialMonth)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -47,6 +50,13 @@ export function CalendarView({
   }
 
   const handleDateClick = (date: Date) => {
+    // Check if the date and time are in the past and if past dates should be disabled
+    if (disablePastDates) {
+      if (isPast(date)) {
+        return // Don't allow selection of past dates and times
+      }
+    }
+
     setSelectedDate(date)
     if (onDateSelect) {
       onDateSelect(date)
@@ -79,6 +89,12 @@ export function CalendarView({
     )
   }
 
+  const isPastDate = (date: Date) => {
+    if (!disablePastDates) return false
+
+    return isBefore(date, new Date())
+  }
+
   const renderCalendarDays = () => {
     const year = currentMonth.getFullYear()
     const month = currentMonth.getMonth()
@@ -89,25 +105,28 @@ export function CalendarView({
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-8 w-8"></div>)
+      days.push(<div key={`empty-${month}-${i}`} className="h-8 w-8"></div>)
     }
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day)
-      const isActive = isHighlighted(date)
+      const isActive = isHighlighted(date) || (selectedDate && isSameDay(date, selectedDate))
       const isTodayDate = isToday(date)
+      const isPast = isPastDate(date)
 
       days.push(
         <button
-          key={`day-${day}`}
+          key={`day-${month}-${day}`}
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-full text-sm",
             isActive && "bg-[#095d40] text-white",
             isTodayDate && !isActive && "border border-[#095d40]",
-            !isActive && !isTodayDate && "hover:bg-[#f4f4f4]",
+            isPast && "text-gray-400 cursor-not-allowed",
+            !isActive && !isTodayDate && !isPast && "hover:bg-[#f4f4f4]",
           )}
           onClick={() => handleDateClick(date)}
+          disabled={isPast}
         >
           {day}
         </button>,
@@ -134,8 +153,8 @@ export function CalendarView({
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center">
-        {dayNames.map((day) => (
-          <div key={day} className="text-xs font-medium text-[#858585]">
+        {dayNames.map((day, index) => (
+          <div key={`dayname-${index}`} className="text-xs font-medium text-[#858585]">
             {day}
           </div>
         ))}

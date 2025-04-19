@@ -1,7 +1,7 @@
 "use client"
 
-import AppointmentView from "@/components/shared/appointment-view"
+import { GoogleCalendarView } from "@/components/calendar/google-calendar-view"
 
 export default function StudentAppointmentsPage() {
-  return <AppointmentView userRole="student" fetchFromApi={true} className="p-6" />
+  return <GoogleCalendarView userRole="student" className="p-6" />
 }

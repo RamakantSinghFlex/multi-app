@@ -12,7 +12,6 @@ export default function AdminDashboardPage() {
 
   // Get stats directly from the user object
   const stats = {
-    totalSessions: user?.sessions?.length || 0,
     totalTutors: user?.tutors?.length || 0,
     totalParents: user?.parents?.length || 0,
     totalStudents: user?.students?.length || 0,
@@ -33,8 +32,8 @@ export default function AdminDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                <h3 className="text-2xl font-bold">{stats.totalSessions}</h3>
+                <p className="text-sm font-medium text-muted-foreground">Total Appointments</p>
+                <h3 className="text-2xl font-bold">{user?.appointments?.length || 0}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Calendar className="h-5 w-5" />
@@ -88,16 +87,16 @@ export default function AdminDashboardPage() {
 
       <Tabs defaultValue="recent" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="recent">Recent Sessions</TabsTrigger>
-          <TabsTrigger value="upcoming">Upcoming Sessions</TabsTrigger>
+          <TabsTrigger value="recent">Recent Appointments</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
           <TabsTrigger value="tutors">Active Tutors</TabsTrigger>
         </TabsList>
 
         <TabsContent value="recent" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Sessions</CardTitle>
-              <CardDescription>Overview of recently completed tutoring sessions</CardDescription>
+              <CardTitle>Recent Appointments</CardTitle>
+              <CardDescription>Overview of recently completed tutoring appointments</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -128,7 +127,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-end">
                   <Button variant="outline" asChild>
-                    <Link href="/admin/sessions">View All Sessions</Link>
+                    <Link href="/admin/appointments">View All Appointments</Link>
                   </Button>
                 </div>
               </div>
@@ -139,8 +138,8 @@ export default function AdminDashboardPage() {
         <TabsContent value="upcoming" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Sessions</CardTitle>
-              <CardDescription>Overview of scheduled tutoring sessions</CardDescription>
+              <CardTitle>Upcoming Appointments</CardTitle>
+              <CardDescription>Overview of scheduled tutoring appointments</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -171,7 +170,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-end">
                   <Button variant="outline" asChild>
-                    <Link href="/admin/sessions">View All Sessions</Link>
+                    <Link href="/admin/appointments">View All Appointments</Link>
                   </Button>
                 </div>
               </div>
@@ -192,7 +191,7 @@ export default function AdminDashboardPage() {
                     <div>Name</div>
                     <div>Subjects</div>
                     <div>Rating</div>
-                    <div>Sessions</div>
+                    <div>Appointments</div>
                   </div>
                   <div className="divide-y">
                     {/* Mock data for demonstration */}

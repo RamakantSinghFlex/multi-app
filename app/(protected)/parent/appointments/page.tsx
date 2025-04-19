@@ -1,7 +1,7 @@
 "use client"
 
-import AppointmentView from "@/components/shared/appointment-view"
+import { GoogleCalendarView } from "@/components/calendar/google-calendar-view"
 
 export default function ParentAppointmentsPage() {
-  return <AppointmentView userRole="parent" fetchFromApi={false} />
+  return <GoogleCalendarView userRole="parent" className="p-6" />
 }

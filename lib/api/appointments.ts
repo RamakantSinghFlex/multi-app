@@ -59,12 +59,31 @@ export async function cancelAppointment(id: string): Promise<ApiResponse<any>> {
 }
 
 // Get appointments
-export async function getAppointments(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
+export async function getAppointments(params: {
+  student?: string
+  tutor?: string
+  parent?: string
+}): Promise<ApiResponse<any[]>> {
   try {
     const headers = createAuthHeaders()
 
-    // Build query string from params
-    const queryString = params ? "?" + new URLSearchParams(params).toString() : ""
+    let queryString = ""
+    if (params) {
+      const whereClauses: string[] = []
+      if (params.student) {
+        whereClauses.push(`students.in:${params.student}`)
+      }
+      if (params.tutor) {
+        whereClauses.push(`tutors.in:${params.tutor}`)
+      }
+      if (params.parent) {
+        whereClauses.push(`parents.in:${params.parent}`)
+      }
+
+      if (whereClauses.length > 0) {
+        queryString = `?where=${encodeURIComponent(whereClauses.join(" AND "))}`
+      }
+    }
 
     // For development/testing without an API
     if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_PAYLOAD_API_URL) {
@@ -85,29 +104,35 @@ export async function getAppointments(params?: Record<string, string>): Promise<
           {
             id: "1",
             title: "Math Tutoring",
-            startDate: today.toISOString(),
-            endDate: new Date(today.getTime() + 60 * 60 * 1000).toISOString(), // 1 hour later
+            startTime: today.toISOString(),
+            endTime: new Date(today.getTime() + 60 * 60 * 1000).toISOString(), // 1 hour later
             status: "confirmed",
-            student: { id: "s1", firstName: "John", lastName: "Doe" },
-            tutor: { id: "t1", firstName: "Jane", lastName: "Smith" },
+            students: [{ id: "s1", firstName: "John", lastName: "Doe" }],
+            tutors: [{ id: "t1", firstName: "Jane", lastName: "Smith" }],
+            parents: [{ id: "p1", firstName: "Robert", lastName: "Doe" }],
+            payment: { id: "pay1", transactionId: "tx1", amount: 50, status: "completed" },
           },
           {
             id: "2",
             title: "Science Review",
-            startDate: tomorrow.toISOString(),
-            endDate: new Date(tomorrow.getTime() + 45 * 60 * 1000).toISOString(), // 45 minutes later
+            startTime: tomorrow.toISOString(),
+            endTime: new Date(tomorrow.getTime() + 45 * 60 * 1000).toISOString(), // 45 minutes later
             status: "pending",
-            student: { id: "s1", firstName: "John", lastName: "Doe" },
-            tutor: { id: "t2", firstName: "Robert", lastName: "Johnson" },
+            students: [{ id: "s1", firstName: "John", lastName: "Doe" }],
+            tutors: [{ id: "t2", firstName: "Robert", lastName: "Johnson" }],
+            parents: [{ id: "p1", firstName: "Robert", lastName: "Doe" }],
+            payment: { id: "pay2", transactionId: "tx2", amount: 40, status: "pending" },
           },
           {
             id: "3",
             title: "English Literature",
-            startDate: nextWeek.toISOString(),
-            endDate: new Date(nextWeek.getTime() + 90 * 60 * 1000).toISOString(), // 90 minutes later
+            startTime: nextWeek.toISOString(),
+            endTime: new Date(nextWeek.getTime() + 90 * 60 * 1000).toISOString(), // 90 minutes later
             status: "confirmed",
-            student: { id: "s2", firstName: "Sarah", lastName: "Williams" },
-            tutor: { id: "t1", firstName: "Jane", lastName: "Smith" },
+            students: [{ id: "s2", firstName: "Sarah", lastName: "Williams" }],
+            tutors: [{ id: "t1", firstName: "Jane", lastName: "Smith" }],
+            parents: [{ id: "p2", firstName: "Michael", lastName: "Williams" }],
+            payment: { id: "pay3", transactionId: "tx3", amount: 75, status: "completed" },
           },
         ],
       }

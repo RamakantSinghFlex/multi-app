@@ -1,421 +1,377 @@
 "use client"
 
 import type React from "react"
-import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format, addMinutes, isBefore, addDays } from "date-fns"
-import { ChevronLeft, Clock, Video, CalendarIcon, Loader2 } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
+import { CalendarView } from "@/components/ui/calendar-view"
+import { format, setHours, setMinutes, isPast, isToday } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { createAppointment } from "@/lib/api/appointments"
-import { useEffect, useState } from "react"
-
-interface TimeSlot {
-  startTime: Date
-  endTime: Date
-  formatted: string
-}
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "@/components/ui/alert"
+import { useAuth } from "@/lib/auth-context"
+import type { Student, Tutor, Parent } from "@/lib/types"
 
 interface AppointmentCalendarProps {
-  duration?: number // in minutes
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export default function AppointmentCalendar({ duration = 30, onSuccess, onCancel }: AppointmentCalendarProps) {
+export default function AppointmentCalendar({ onSuccess, onCancel }: AppointmentCalendarProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [title, setTitle] = useState("")
+  const [startTime, setStartTime] = useState("09:00")
+  const [endTime, setEndTime] = useState("10:00")
+  const [notes, setNotes] = useState("")
+  const [status, setStatus] = useState("pending")
+  const [selectedTutors, setSelectedTutors] = useState<string[]>([])
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+  const [selectedParents, setSelectedParents] = useState<string[]>([])
+  const [validationError, setValidationError] = useState<string | null>(null)
 
-  // States for the appointment booking flow
-  const [step, setStep] = useState<"date" | "time" | "details">("date")
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null)
-  const [title, setTitle] = useState<string>("")
-  const [notes, setNotes] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(false)
-  const [submitting, setSubmitting] = useState<boolean>(false)
+  // Use user data from auth context
+  const tutors = (user?.tutors || []) as Tutor[]
+  const students = (user?.students || []) as Student[]
+  const parents = (user?.parents || []) as Parent[]
 
-  // States for API data
-  const [students, setStudents] = useState<any[]>([])
-  const [parents, setParents] = useState<any[]>([])
-  const [tutors, setTutors] = useState<any[]>([])
-  const [selectedStudent, setSelectedStudent] = useState<string>("")
-  const [selectedParent, setSelectedParent] = useState<string>("")
-  const [selectedTutor, setSelectedTutor] = useState<string>("")
-
-  // Generate time slots for the selected date
-  const generateTimeSlots = (selectedDate: Date): TimeSlot[] => {
-    const slots: TimeSlot[] = []
-
-    // Start at 7:00 AM
-    const startTime = new Date(selectedDate)
-    startTime.setHours(7, 0, 0, 0)
-
-    // End at 7:00 PM
-    const endTime = new Date(selectedDate)
-    endTime.setHours(19, 0, 0, 0)
-
-    let currentTime = new Date(startTime)
-
-    while (isBefore(currentTime, endTime)) {
-      const slotEndTime = addMinutes(currentTime, duration)
-
-      slots.push({
-        startTime: new Date(currentTime),
-        endTime: slotEndTime,
-        formatted: format(currentTime, "h:mma"),
-      })
-
-      // Add slots every 30 minutes
-      currentTime = addMinutes(currentTime, 30)
-    }
-
-    return slots
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
   }
 
-  const timeSlots = date ? generateTimeSlots(date) : []
-
-  // Fetch students, parents, and tutors data
-  useEffect(() => {
-    setLoading(true)
-    try {
-      // Use data from the user object instead of making API calls
-      if (user) {
-        // If user has students property, use it
-        if (user.students && Array.isArray(user.students)) {
-          setStudents(user.students)
-        }
-
-        // If user has tutors property, use it
-        if (user.tutors && Array.isArray(user.tutors)) {
-          setTutors(user.tutors)
-        }
-
-        // If user has parents property, use it
-        if (user.parents && Array.isArray(user.parents)) {
-          setParents(user.parents)
-        }
-
-        // Pre-select based on user role
-        if (user.role === "tutor") {
-          setSelectedTutor(user.id)
-        } else if (user.role === "student") {
-          setSelectedStudent(user.id)
-        } else if (user.role === "parent") {
-          setSelectedParent(user.id)
-        }
-      }
-
-      // If we don't have the data we need from the user object, use mock data for development
-      if (
-        (!user?.students || !user?.tutors) &&
-        process.env.NODE_ENV === "development" &&
-        !process.env.NEXT_PUBLIC_PAYLOAD_API_URL
-      ) {
-        if (!students.length) {
-          setStudents([
-            { id: "student1", firstName: "John", lastName: "Doe", email: "john@example.com" },
-            { id: "student2", firstName: "Jane", lastName: "Smith", email: "jane@example.com" },
-          ])
-        }
-
-        if (!tutors.length) {
-          setTutors([
-            { id: "tutor1", firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
-            { id: "tutor2", firstName: "Bob", lastName: "Brown", email: "bob@example.com" },
-          ])
-        }
-
-        if (!parents.length) {
-          setParents([
-            { id: "parent1", firstName: "Michael", lastName: "Johnson", email: "michael@example.com" },
-            { id: "parent2", firstName: "Sarah", lastName: "Williams", email: "sarah@example.com" },
-          ])
-        }
-      }
-    } catch (error) {
-      console.error("Error preparing data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load necessary data. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [user, toast])
-
-  const handleSelectDate = (selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setDate(selectedDate)
-      setStep("time")
+  const handleAddTutor = (tutorId: string) => {
+    if (!selectedTutors.includes(tutorId)) {
+      setSelectedTutors([...selectedTutors, tutorId])
     }
   }
 
-  const handleSelectTime = (timeSlot: TimeSlot) => {
-    setSelectedTimeSlot(timeSlot)
-    setStep("details")
+  const handleRemoveTutor = (tutorId: string) => {
+    setSelectedTutors(selectedTutors.filter((id) => id !== tutorId))
+  }
+
+  const handleAddStudent = (studentId: string) => {
+    if (!selectedStudents.includes(studentId)) {
+      setSelectedStudents([...selectedStudents, studentId])
+    }
+  }
+
+  const handleRemoveStudent = (studentId: string) => {
+    setSelectedStudents(selectedStudents.filter((id) => id !== studentId))
+  }
+
+  const handleAddParent = (parentId: string) => {
+    if (!selectedParents.includes(parentId)) {
+      setSelectedParents([...selectedParents, parentId])
+    }
+  }
+
+  const handleRemoveParent = (parentId: string) => {
+    setSelectedParents(selectedParents.filter((id) => id !== parentId))
+  }
+
+  const getTutorName = (id: string) => {
+    const tutor = tutors.find((t) => t.id === id)
+    return tutor ? `${tutor.firstName} ${tutor.lastName}` : id
+  }
+
+  const getStudentName = (id: string) => {
+    const student = students.find((studentItem) => studentItem.id === id)
+    return student ? `${student.firstName} ${student.lastName}` : id
+  }
+
+  const getParentName = (id: string) => {
+    const parent = parents.find((p) => p.id === id)
+    return parent ? `${parent.firstName} ${parent.lastName}` : id
+  }
+
+  const validateAppointment = () => {
+    // Clear previous validation errors
+    setValidationError(null)
+
+    if (!title) {
+      setValidationError("Please enter a title for the appointment")
+      return false
+    }
+
+    if (selectedTutors.length === 0) {
+      setValidationError("Please select at least one tutor")
+      return false
+    }
+
+    if (selectedStudents.length === 0) {
+      setValidationError("Please select at least one student")
+      return false
+    }
+
+    // Create start and end time Date objects
+    const [startHour, startMinute] = startTime.split(":").map(Number)
+    const [endHour, endMinute] = endTime.split(":").map(Number)
+
+    const startDateTime = new Date(selectedDate)
+    startDateTime.setHours(startHour, startMinute, 0, 0)
+
+    const endDateTime = new Date(selectedDate)
+    endDateTime.setHours(endHour, endMinute, 0, 0)
+
+    // Check if the appointment is in the past
+    const now = new Date()
+    if (isPast(startDateTime)) {
+      setValidationError("Appointment cannot be scheduled in the past")
+      return false
+    }
+
+    // Check if the appointment is today and the time is in the past
+    if (isToday(startDateTime) && startDateTime < now) {
+      setValidationError("Appointment cannot be scheduled for a time in the past")
+      return false
+    }
+
+    // Check if end time is after start time
+    if (endDateTime <= startDateTime) {
+      setValidationError("End time must be after start time")
+      return false
+    }
+
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!date || !selectedTimeSlot || !selectedStudent || !selectedTutor) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
+    if (!validateAppointment()) {
       return
     }
 
-    setSubmitting(true)
+    // Create start and end time Date objects
+    const [startHour, startMinute] = startTime.split(":").map(Number)
+    const [endHour, endMinute] = endTime.split(":").map(Number)
+
+    const startDateTime = setHours(setMinutes(selectedDate, startMinute), startHour)
+    const endDateTime = setHours(setMinutes(selectedDate, endMinute), endHour)
+
+    setLoading(true)
 
     try {
-      // Format the appointment data
-      const appointmentData = {
-        title: title || `${duration} Minute Appointment`,
-        startTime: selectedTimeSlot.startTime.toISOString(),
-        endTime: selectedTimeSlot.endTime.toISOString(),
-        tutor: selectedTutor,
-        student: selectedStudent,
-        parent: selectedParent,
-        status: "pending",
-        notes: notes,
-      }
+      const response = await createAppointment({
+        title,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        tutors: selectedTutors,
+        students: selectedStudents,
+        parents: selectedParents,
+        status,
+        notes,
+      })
 
-      // In a real app, you would make an API call to create the appointment
-      const response = await createAppointment(appointmentData)
-
-      // Check if the API call was successful
       if (response.error) {
-        // If the API call failed, show an error message
-        toast({
-          title: "Error",
-          description: "Failed to schedule appointment. Please try again.",
-          variant: "destructive",
-        })
-      } else {
-        // If the API call was successful, show a success message
-        toast({
-          title: "Success",
-          description: "Appointment scheduled successfully!",
-        })
-
-        // Call the onSuccess callback if provided
-        if (onSuccess) {
-          onSuccess()
-        }
+        throw new Error(response.error)
       }
 
-      // Reset the form
-      setDate(new Date())
-      setSelectedTimeSlot(null)
-      setTitle("")
-      setNotes("")
-      setStep("date")
+      toast({
+        title: "Success",
+        description: "Appointment created successfully",
+      })
+
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (error) {
       console.error("Error creating appointment:", error)
       toast({
         title: "Error",
-        description: "Failed to schedule appointment. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create appointment",
         variant: "destructive",
       })
     } finally {
-      setSubmitting(false)
+      setLoading(false)
     }
-  }
-
-  const handleBack = () => {
-    if (step === "time") {
-      setStep("date")
-    } else if (step === "details") {
-      setStep("time")
-    }
-  }
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel()
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading...</span>
-      </div>
-    )
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center">
-          {step !== "date" && (
-            <Button variant="ghost" size="sm" onClick={handleBack} className="mr-2">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <Card className="md:col-span-1">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-medium mb-4">Select Date</h3>
+          <CalendarView
+            initialMonth={selectedDate}
+            onDateSelect={handleDateSelect}
+            disablePastDates={true} // Disable past dates
+          />
+          <div className="mt-4 text-center">
+            <p className="text-sm font-medium">Selected: {format(selectedDate, "EEEE, MMMM d, yyyy")}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardContent className="p-6">
+          {validationError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{validationError}</AlertDescription>
+            </Alert>
           )}
-          <div>
-            <CardTitle>
-              {step === "date" && "Select a Date"}
-              {step === "time" && "Select a Time"}
-              {step === "details" && "Enter Appointment Details"}
-            </CardTitle>
-            <CardDescription>
-              {step === "date" && "Choose a date for your appointment"}
-              {step === "time" && format(date!, "EEEE, MMMM d, yyyy")}
-              {step === "details" && `${format(date!, "EEEE, MMMM d, yyyy")} at ${selectedTimeSlot?.formatted}`}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {step === "date" && (
-          <div className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleSelectDate}
-              disabled={(date) => date < new Date() || date > addDays(new Date(), 60)}
-              className="rounded-md border"
-            />
-          </div>
-        )}
 
-        {step === "time" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {timeSlots.map((slot, index) => (
-              <Button key={index} variant="outline" className="h-12" onClick={() => handleSelectTime(slot)}>
-                {slot.formatted}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        {step === "details" && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Appointment Title</Label>
+            <div>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={`${duration} Minute Appointment`}
+                placeholder="e.g. Math Tutoring Session"
+                required
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {user && user.role !== "student" && (
-                <div className="space-y-2">
-                  <Label htmlFor="tutor">Tutor</Label>
-                  <Select value={selectedTutor} onValueChange={setSelectedTutor}>
-                    <SelectTrigger id="tutor">
-                      <SelectValue placeholder="Select a tutor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tutors.map((tutor) => (
-                        <SelectItem key={tutor.id} value={tutor.id}>
-                          {tutor.firstName} {tutor.lastName || ""} ({tutor.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+              </div>
+            </div>
 
-              {user && user.role !== "tutor" && (
-                <div className="space-y-2">
-                  <Label htmlFor="student">Student</Label>
-                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                    <SelectTrigger id="student">
-                      <SelectValue placeholder="Select a student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id}>
-                          {student.firstName} {student.lastName || ""} ({student.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {user && user.role !== "parent" && (
-                <div className="space-y-2">
-                  <Label htmlFor="parent">Parent</Label>
-                  <Select value={selectedParent} onValueChange={setSelectedParent}>
-                    <SelectTrigger id="parent">
-                      <SelectValue placeholder="Select a parent" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {parents.map((parent) => (
-                        <SelectItem key={parent.id} value={parent.id}>
-                          {parent.firstName} {parent.lastName || ""} ({parent.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <div>
+              <Label htmlFor="tutors">Tutors</Label>
+              <Select onValueChange={handleAddTutor}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tutors" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tutors.map((tutor) => (
+                    <SelectItem key={tutor.id} value={tutor.id}>
+                      {tutor.firstName} {tutor.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTutors.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedTutors.map((tutorId) => (
+                    <Badge key={tutorId} variant="secondary" className="flex items-center gap-1">
+                      {getTutorName(tutorId)}
+                      <button type="button" onClick={() => handleRemoveTutor(tutorId)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
+            <div>
+              <Label htmlFor="students">Students</Label>
+              <Select onValueChange={handleAddStudent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select students" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {student.firstName} {student.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedStudents.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedStudents.map((studentId) => (
+                    <Badge key={studentId} variant="secondary" className="flex items-center gap-1">
+                      {getStudentName(studentId)}
+                      <button type="button" onClick={() => handleRemoveStudent(studentId)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="parents">Parents</Label>
+              <Select onValueChange={handleAddParent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parents" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parents.map((parent) => (
+                    <SelectItem key={parent.id} value={parent.id}>
+                      {parent.firstName} {parent.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedParents.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedParents.map((parentId) => (
+                    <Badge key={parentId} variant="secondary" className="flex items-center gap-1">
+                      {getParentName(parentId)}
+                      <button type="button" onClick={() => handleRemoveParent(parentId)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="status">Appointment Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any additional information about this appointment"
-                rows={4}
+                placeholder="Add any additional notes here..."
+                rows={3}
               />
             </div>
 
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{duration} minutes</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Video className="h-4 w-4" />
-                <span>Web conferencing details provided upon confirmation</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <CalendarIcon className="h-4 w-4" />
-                <span>
-                  {format(date!, "EEEE, MMMM d, yyyy")} at {selectedTimeSlot?.formatted}
-                </span>
-              </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creating..." : "Create Appointment"}
+              </Button>
             </div>
           </form>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={handleCancel}>
-          Cancel
-        </Button>
-
-        {step === "details" && (
-          <Button type="submit" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Scheduling...
-              </>
-            ) : (
-              "Schedule Appointment"
-            )}
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

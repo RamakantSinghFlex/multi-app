@@ -10,6 +10,7 @@ import { handleLogout } from "@/lib/utils/auth-utils"
 export default function TutorSidebar() {
   const { logout } = useAuth()
 
+  // Remove the Sessions menu item from the sections array
   const sections = [
     {
       title: "Main",

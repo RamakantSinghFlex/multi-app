@@ -53,7 +53,6 @@ export interface User {
   tutors?: Tutor[]
   parents?: Parent[]
   appointments?: Appointment[]
-  sessions?: Session[]
 }
 
 // Domain Types
@@ -92,6 +91,7 @@ export interface Subject {
   description?: string
 }
 
+// Update the Appointment interface to match the new schema
 export interface Appointment {
   id: string
   title: string
@@ -99,9 +99,20 @@ export interface Appointment {
   endTime: string
   status: "pending" | "confirmed" | "cancelled" | "completed"
   notes?: string
-  student: Student | string
-  tutor: Tutor | string
-  subject: Subject | string
+  tutors: Array<Tutor | string>
+  students: Array<Student | string>
+  parents?: Array<Parent | string>
+  payment?: Payment | string
+}
+
+// Add Payment interface
+export interface Payment {
+  id: string
+  transactionId: string
+  amount: number
+  status: "pending" | "completed" | "failed" | "refunded"
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Session {

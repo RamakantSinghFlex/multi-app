@@ -12,17 +12,19 @@ export default function StudentDashboardPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("upcoming")
 
-  // Get sessions directly from the user object
-  const sessions = user?.sessions || []
+  // Get appointments directly from the user object instead of sessions
+  const appointments = user?.appointments || []
 
-  // Filter sessions by status
-  const upcomingSessions = sessions.filter(
-    (session) =>
-      session.status !== "cancelled" && session.status !== "completed" && new Date(session.startTime) > new Date(),
+  // Filter appointments by status
+  const upcomingAppointments = appointments.filter(
+    (appointment) =>
+      appointment.status !== "cancelled" &&
+      appointment.status !== "completed" &&
+      new Date(appointment.startTime) > new Date(),
   )
 
-  const pastSessions = sessions.filter(
-    (session) => session.status === "completed" || new Date(session.startTime) <= new Date(),
+  const pastAppointments = appointments.filter(
+    (appointment) => appointment.status === "completed" || new Date(appointment.startTime) <= new Date(),
   )
 
   return (
@@ -44,8 +46,8 @@ export default function StudentDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                <h3 className="text-2xl font-bold">{sessions.length}</h3>
+                <p className="text-sm font-medium text-muted-foreground">Total Appointments</p>
+                <h3 className="text-2xl font-bold">{appointments.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Calendar className="h-5 w-5" />
@@ -58,8 +60,8 @@ export default function StudentDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Upcoming Sessions</p>
-                <h3 className="text-2xl font-bold">{upcomingSessions.length}</h3>
+                <p className="text-sm font-medium text-muted-foreground">Upcoming Appointments</p>
+                <h3 className="text-2xl font-bold">{upcomingAppointments.length}</h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <Clock className="h-5 w-5" />
@@ -73,7 +75,9 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Subjects</p>
-                <h3 className="text-2xl font-bold">{new Set(sessions.map((session) => session.subject?.name)).size}</h3>
+                <h3 className="text-2xl font-bold">
+                  {new Set(appointments.map((appointment) => appointment.subject?.name)).size}
+                </h3>
               </div>
               <div className="rounded-full bg-primary/10 p-3 text-primary">
                 <BookOpen className="h-5 w-5" />
@@ -89,7 +93,8 @@ export default function StudentDashboardPage() {
                 <p className="text-sm font-medium text-muted-foreground">Progress</p>
                 <h3 className="text-2xl font-bold">
                   {Math.round(
-                    (sessions.filter((s) => s.status === "completed").length / Math.max(sessions.length, 1)) * 100,
+                    (appointments.filter((a) => a.status === "completed").length / Math.max(appointments.length, 1)) *
+                      100,
                   )}
                   %
                 </h3>
@@ -104,19 +109,19 @@ export default function StudentDashboardPage() {
 
       <Tabs defaultValue="upcoming" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="upcoming">Upcoming Sessions</TabsTrigger>
-          <TabsTrigger value="past">Past Sessions</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
+          <TabsTrigger value="past">Past Appointments</TabsTrigger>
           <TabsTrigger value="materials">Learning Materials</TabsTrigger>
         </TabsList>
 
         <TabsContent value="upcoming" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Sessions</CardTitle>
-              <CardDescription>Your scheduled tutoring sessions</CardDescription>
+              <CardTitle>Upcoming Appointments</CardTitle>
+              <CardDescription>Your scheduled tutoring appointments</CardDescription>
             </CardHeader>
             <CardContent>
-              {upcomingSessions.length > 0 ? (
+              {upcomingAppointments.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-4 gap-4 p-4 font-medium">
@@ -126,24 +131,26 @@ export default function StudentDashboardPage() {
                       <div>Actions</div>
                     </div>
                     <div className="divide-y">
-                      {upcomingSessions.map((session) => (
-                        <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
+                      {upcomingAppointments.map((appointment) => (
+                        <div key={appointment.id} className="grid grid-cols-4 gap-4 p-4">
                           <div>
-                            {typeof session.tutor === "object"
-                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
-                              : session.tutor}
+                            {typeof appointment.tutor === "object"
+                              ? `${appointment.tutor.firstName} ${appointment.tutor.lastName}`
+                              : appointment.tutor}
                           </div>
-                          <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
                           <div>
-                            {new Date(session.startTime).toLocaleDateString()}{" "}
-                            {new Date(session.startTime).toLocaleTimeString([], {
+                            {typeof appointment.subject === "object" ? appointment.subject.name : appointment.subject}
+                          </div>
+                          <div>
+                            {new Date(appointment.startTime).toLocaleDateString()}{" "}
+                            {new Date(appointment.startTime).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
                           </div>
                           <div>
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/student/sessions/${session.id}`}>View</Link>
+                              <Link href={`/student/appointments/${appointment.id}`}>View</Link>
                             </Button>
                           </div>
                         </div>
@@ -152,13 +159,13 @@ export default function StudentDashboardPage() {
                   </div>
                   <div className="flex justify-end">
                     <Button variant="outline" asChild>
-                      <Link href="/student/sessions">View All Sessions</Link>
+                      <Link href="/student/appointments">View All Appointments</Link>
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center space-y-4">
-                  <p>No upcoming sessions scheduled</p>
+                  <p>No upcoming appointments scheduled</p>
                 </div>
               )}
             </CardContent>
@@ -168,11 +175,11 @@ export default function StudentDashboardPage() {
         <TabsContent value="past" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Past Sessions</CardTitle>
-              <CardDescription>Your completed tutoring sessions</CardDescription>
+              <CardTitle>Past Appointments</CardTitle>
+              <CardDescription>Your completed tutoring appointments</CardDescription>
             </CardHeader>
             <CardContent>
-              {pastSessions.length > 0 ? (
+              {pastAppointments.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-md border">
                     <div className="grid grid-cols-4 gap-4 p-4 font-medium">
@@ -182,24 +189,26 @@ export default function StudentDashboardPage() {
                       <div>Actions</div>
                     </div>
                     <div className="divide-y">
-                      {pastSessions.map((session) => (
-                        <div key={session.id} className="grid grid-cols-4 gap-4 p-4">
+                      {pastAppointments.map((appointment) => (
+                        <div key={appointment.id} className="grid grid-cols-4 gap-4 p-4">
                           <div>
-                            {typeof session.tutor === "object"
-                              ? `${session.tutor.firstName} ${session.tutor.lastName}`
-                              : session.tutor}
+                            {typeof appointment.tutor === "object"
+                              ? `${appointment.tutor.firstName} ${appointment.tutor.lastName}`
+                              : appointment.tutor}
                           </div>
-                          <div>{typeof session.subject === "object" ? session.subject.name : session.subject}</div>
                           <div>
-                            {new Date(session.startTime).toLocaleDateString()}{" "}
-                            {new Date(session.startTime).toLocaleTimeString([], {
+                            {typeof appointment.subject === "object" ? appointment.subject.name : appointment.subject}
+                          </div>
+                          <div>
+                            {new Date(appointment.startTime).toLocaleDateString()}{" "}
+                            {new Date(appointment.startTime).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
                           </div>
                           <div>
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/student/sessions/${session.id}`}>View</Link>
+                              <Link href={`/student/appointments/${appointment.id}`}>View</Link>
                             </Button>
                           </div>
                         </div>
@@ -208,13 +217,13 @@ export default function StudentDashboardPage() {
                   </div>
                   <div className="flex justify-end">
                     <Button variant="outline" asChild>
-                      <Link href="/student/sessions">View All Sessions</Link>
+                      <Link href="/student/appointments">View All Appointments</Link>
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex h-40 items-center justify-center">
-                  <p>No past sessions found</p>
+                  <p>No past appointments found</p>
                 </div>
               )}
             </CardContent>
