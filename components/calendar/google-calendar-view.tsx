@@ -144,14 +144,14 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
       const end = endOfWeek(selectedDate, { weekStartsOn: 0 })
       return appointments.filter((appointment) => {
         const appointmentDate = parseISO(appointment.startTime)
-        return isAfter(appointmentDate, start) && isBefore(appointmentDate, end)
+        return !isBefore(appointmentDate, start) && !isAfter(appointmentDate, end)
       })
     } else {
       const start = startOfMonth(selectedDate)
       const end = endOfMonth(selectedDate)
       return appointments.filter((appointment) => {
         const appointmentDate = parseISO(appointment.startTime)
-        return isAfter(appointmentDate, start) && isBefore(appointmentDate, end)
+        return !isBefore(appointmentDate, start) && !isAfter(appointmentDate, end)
       })
     }
   }, [appointments, selectedDate, viewType])

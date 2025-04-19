@@ -1,15 +1,6 @@
 "use client"
 
-import {
-  format,
-  addHours,
-  parseISO,
-  differenceInMinutes,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameDay,
-} from "date-fns"
+import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -58,7 +49,7 @@ export function WeekView({
 
   return (
     <div className="relative min-h-[600px] overflow-y-auto">
-      <div className="sticky top-0 z-10 grid grid-cols-[60px_repeat(7,1fr)] bg-background">
+      <div className="sticky top-0 z-20 grid grid-cols-[60px_repeat(7,1fr)] bg-background">
         <div className="border-b border-r p-2"></div>
         {days.map((day) => (
           <div
@@ -74,13 +65,19 @@ export function WeekView({
       <div className="grid grid-cols-[60px_repeat(7,1fr)]">
         {/* Time labels */}
         <div className="border-r">
-          {hours.map((hour) => (
-            <div key={hour} className="relative h-16 border-b">
-              <span className="absolute -top-2.5 right-2 text-xs text-muted-foreground">
-                {format(addHours(new Date().setHours(hour, 0, 0, 0), 0), "h a")}
-              </span>
-            </div>
-          ))}
+          {hours.map((hour) => {
+            // Create a date object for this hour
+            const timeDate = new Date()
+            timeDate.setHours(hour, 0, 0, 0)
+
+            return (
+              <div key={hour} className="relative h-16 border-b">
+                <span className="absolute -top-3 right-2 text-xs text-muted-foreground">
+                  {format(timeDate, "h:mm a")}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
         {/* Day columns */}
@@ -90,6 +87,18 @@ export function WeekView({
             {hours.map((hour) => (
               <div key={hour} className="h-16 border-b"></div>
             ))}
+
+            {/* Current time indicator */}
+            {isSameDay(day, new Date()) && (
+              <div
+                className="absolute left-0 right-0 border-t border-red-500 z-10"
+                style={{
+                  top: `${((new Date().getHours() * 60 + new Date().getMinutes()) / 60) * 64}px`,
+                }}
+              >
+                <div className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div>
+              </div>
+            )}
 
             {/* Appointments for this day */}
             {appointments
@@ -112,12 +121,12 @@ export function WeekView({
                   <div
                     key={appointment.id}
                     className={cn(
-                      "absolute left-0.5 right-0.5 rounded-md border p-1 shadow-sm cursor-pointer transition-opacity hover:opacity-90",
+                      "absolute left-0.5 right-0.5 rounded-md border p-1 shadow-sm cursor-pointer transition-opacity hover:opacity-90 z-10",
                       getAppointmentColor(appointment.status),
                     )}
                     style={{
                       top: `${topPosition}px`,
-                      height: `${height}px`,
+                      height: `${Math.max(height, 20)}px`, // Ensure minimum height for very short appointments
                     }}
                     onClick={() => onAppointmentClick(appointment)}
                   >

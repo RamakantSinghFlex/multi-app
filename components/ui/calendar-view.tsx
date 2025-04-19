@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isBefore, isSameDay, isPast } from "date-fns"
+import { isBefore, isSameDay, isPast, isToday } from "date-fns"
 
 interface CalendarViewProps {
   initialMonth?: Date
@@ -71,22 +71,8 @@ export function CalendarView({
     return new Date(year, month, 1).getDay()
   }
 
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
-  }
-
   const isHighlighted = (date: Date) => {
-    return highlightedDates.some(
-      (highlightedDate) =>
-        date.getDate() === highlightedDate.getDate() &&
-        date.getMonth() === highlightedDate.getMonth() &&
-        date.getFullYear() === highlightedDate.getFullYear(),
-    )
+    return highlightedDates.some((highlightedDate) => isSameDay(date, highlightedDate))
   }
 
   const isPastDate = (date: Date) => {
