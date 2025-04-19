@@ -304,15 +304,7 @@ export async function getMe(): Promise<ApiResponse<User>> {
 // Create user (signup)
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   try {
-    // Add tenants if not already provided
-    if (!credentials.tenants || credentials.tenants.length === 0) {
-      credentials.tenants = [
-        {
-          id: new ObjectId(),
-          tenant: "67e96de1c71e8d565d305a82",
-        },
-      ]
-    }
+    credentials.tenantName = 'Tenant 1';
 
     // Ensure roles is an array
     if (credentials.role && !credentials.roles) {
