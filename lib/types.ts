@@ -168,3 +168,12 @@ export interface Content {
   updatedAt: string
   createdAt: string
 }
+// Authentication State
+export interface AuthState {
+  user: User | null
+  token: string | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  error: string | null
+  successMessage: string | null
+}
