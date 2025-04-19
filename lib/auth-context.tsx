@@ -283,8 +283,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ensure roles is an array
       if (!credentials.roles && credentials.role) {
         credentials.roles = [credentials.role]
-      } else if (!credentials.roles) {
-        credentials.roles = ["user"]
       }
 
       const response = await apiSignup(credentials)
