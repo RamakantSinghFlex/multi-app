@@ -68,6 +68,7 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
       }
 
       if (response.data) {
+        // The data is now directly available as an array
         setAppointments(response.data)
       }
     } catch (error) {

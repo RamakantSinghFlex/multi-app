@@ -43,7 +43,7 @@ export function WeekView({
     return participants
       .map((p) => {
         if (typeof p === "string") return p
-        return `${p.firstName || ""} ${p.lastName || ""}`.trim()
+        return `${p.firstName || ""} ${p.lastName || ""}`.trim() || p.id || "Unknown"
       })
       .join(", ")
   }

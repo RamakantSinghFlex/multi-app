@@ -1,5 +1,5 @@
 import { handleResponse, createAuthHeaders } from "../api-utils"
-import type { ApiResponse } from "../types"
+import type { ApiResponse, PaginatedResponse, Appointment } from "../types"
 import { API_URL } from "../config"
 
 // Create appointment
@@ -63,7 +63,7 @@ export async function getAppointments(params: {
   student?: string
   tutor?: string
   parent?: string
-}): Promise<ApiResponse<any[]>> {
+}): Promise<ApiResponse<Appointment[]>> {
   try {
     const headers = createAuthHeaders()
 
@@ -143,7 +143,24 @@ export async function getAppointments(params: {
       credentials: "include",
     })
 
-    return await handleResponse<any[]>(response)
+    const result = await handleResponse<PaginatedResponse<Appointment>>(response)
+
+    // Transform the paginated response to match our expected format
+    if (result.data) {
+      return {
+        data: result.data.docs,
+        pagination: {
+          total: result.data.totalDocs,
+          limit: result.data.limit,
+          page: result.data.page,
+          totalPages: result.data.totalPages,
+          hasNextPage: result.data.hasNextPage,
+          hasPrevPage: result.data.hasPrevPage,
+        },
+      }
+    }
+
+    return result as ApiResponse<Appointment[]>
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "An unknown error occurred while fetching appointments",

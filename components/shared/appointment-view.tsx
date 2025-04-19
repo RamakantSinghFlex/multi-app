@@ -40,14 +40,22 @@ const formatParticipantNames = (participants: any[]) => {
   if (participants.length === 1) {
     const participant = participants[0]
     if (typeof participant === "string") return participant
-    return `${participant.firstName || ""} ${participant.lastName || ""}`.trim()
+    if (participant.firstName || participant.lastName) {
+      return `${participant.firstName || ""} ${participant.lastName || ""}`.trim()
+    }
+    return participant.id || "Unknown"
   }
 
   const firstParticipant = participants[0]
-  const firstName =
-    typeof firstParticipant === "string"
-      ? firstParticipant
-      : `${firstParticipant.firstName || ""} ${firstParticipant.lastName || ""}`.trim()
+  let firstName = ""
+
+  if (typeof firstParticipant === "string") {
+    firstName = firstParticipant
+  } else if (firstParticipant.firstName || firstParticipant.lastName) {
+    firstName = `${firstParticipant.firstName || ""} ${firstParticipant.lastName || ""}`.trim()
+  } else {
+    firstName = firstParticipant.id || "Unknown"
+  }
 
   return `${firstName} +${participants.length - 1} more`
 }
@@ -64,6 +72,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
   const [view, setView] = useState<"calendar" | "list">("calendar")
   const [highlightedDates, setHighlightedDates] = useState<Date[]>([])
 
+  // Update the fetchAppointments function to handle the new response format
   const fetchAppointments = async () => {
     if (!user?.id) return
 
@@ -80,6 +89,7 @@ export default function AppointmentView({ userRole, fetchFromApi = true, classNa
         }
 
         if (response.data) {
+          // The data is now directly available as an array
           setAppointments(response.data)
 
           // Extract dates for highlighting in the calendar
