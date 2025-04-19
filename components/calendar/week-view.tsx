@@ -71,10 +71,9 @@ export function WeekView({
             timeDate.setHours(hour, 0, 0, 0)
 
             return (
-              <div key={hour} className="relative h-16 border-b">
-                <span className="absolute -top-3 right-2 text-xs text-muted-foreground">
-                  {format(timeDate, "h:mm a")}
-                </span>
+              <div key={hour} className="relative h-16">
+                <div className="absolute top-0 right-2 text-xs text-muted-foreground">{format(timeDate, "h:mm a")}</div>
+                <div className="h-full border-b"></div>
               </div>
             )
           })}

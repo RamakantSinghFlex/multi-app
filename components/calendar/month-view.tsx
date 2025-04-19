@@ -1,6 +1,6 @@
 "use client"
 
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, getDay } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO } from "date-fns"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -19,20 +19,17 @@ export function MonthView({
   getAppointmentColor,
   loading,
 }: MonthViewProps) {
-  // Generate days for the month view
+  // Get days in month
   const monthStart = startOfMonth(selectedDate)
   const monthEnd = endOfMonth(selectedDate)
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-  // Calculate the starting day offset (0 = Sunday, 1 = Monday, etc.)
-  const startingDayOffset = getDay(monthStart)
+  // Get day names
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-  // Get appointments for a specific day
-  const getAppointmentsForDay = (day: Date) => {
-    return appointments.filter((appointment) => {
-      const appointmentDate = parseISO(appointment.startTime)
-      return isSameDay(appointmentDate, day)
-    })
+  // Format appointment title to fit in calendar cell
+  const formatTitle = (title: string) => {
+    return title.length > 18 ? title.substring(0, 15) + "..." : title
   }
 
   if (loading) {
@@ -43,60 +40,49 @@ export function MonthView({
     )
   }
 
-  // Get day names for header
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
   return (
-    <div className="min-h-[600px]">
-      <div className="grid grid-cols-7 gap-1 text-center mb-2">
-        {dayNames.map((day, i) => (
-          <div key={i} className="py-2 font-medium">
+    <div className="border rounded-md overflow-hidden">
+      {/* Day headers */}
+      <div className="grid grid-cols-7 bg-muted">
+        {dayNames.map((day) => (
+          <div key={day} className="p-2 text-center font-medium text-sm">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 auto-rows-fr">
-        {/* Empty cells for days before the start of the month */}
-        {Array.from({ length: startingDayOffset }).map((_, i) => (
-          <div key={`empty-start-${i}`} className="border rounded-md bg-muted/20"></div>
-        ))}
-
-        {/* Days of the month */}
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 auto-rows-fr">
         {days.map((day) => {
-          const dayAppointments = getAppointmentsForDay(day)
-          const isToday = isSameDay(day, new Date())
-          const isCurrentMonth = isSameMonth(day, selectedDate)
+          // Get appointments for this day
+          const dayAppointments = appointments.filter((appointment) => {
+            const appointmentDate = parseISO(appointment.startTime)
+            return isSameDay(appointmentDate, day)
+          })
 
           return (
             <div
               key={day.toString()}
               className={cn(
-                "border rounded-md p-1 min-h-[100px]",
-                isToday && "bg-primary/10 border-primary/50",
-                !isCurrentMonth && "bg-muted/20 text-muted-foreground",
+                "min-h-[100px] p-1 border relative",
+                !isSameMonth(day, selectedDate) && "bg-muted/50 text-muted-foreground",
+                isSameDay(day, new Date()) && "bg-primary/10",
               )}
             >
-              <div className="text-right text-sm font-medium p-1">{format(day, "d")}</div>
-
-              <div className="space-y-1 mt-1">
-                {dayAppointments.slice(0, 3).map((appointment) => {
-                  const startTime = parseISO(appointment.startTime)
-
-                  return (
-                    <div
-                      key={appointment.id}
-                      className={cn(
-                        "rounded px-1 py-0.5 text-xs truncate cursor-pointer",
-                        getAppointmentColor(appointment.status),
-                      )}
-                      onClick={() => onAppointmentClick(appointment)}
-                    >
-                      {format(startTime, "h:mm a")} - {appointment.title}
-                    </div>
-                  )
-                })}
-
+              <div className="text-right p-1 text-sm">{format(day, "d")}</div>
+              <div className="space-y-1">
+                {dayAppointments.slice(0, 3).map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className={cn(
+                      "text-xs p-1 rounded cursor-pointer truncate",
+                      getAppointmentColor(appointment.status),
+                    )}
+                    onClick={() => onAppointmentClick(appointment)}
+                  >
+                    {formatTitle(appointment.title)}
+                  </div>
+                ))}
                 {dayAppointments.length > 3 && (
                   <div className="text-xs text-center text-muted-foreground">+{dayAppointments.length - 3} more</div>
                 )}

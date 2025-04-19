@@ -1,7 +1,11 @@
 "use client"
 
-import { GoogleCalendarView } from "@/components/calendar/google-calendar-view"
+import { AppointmentView } from "@/components/shared/appointment-view"
 
 export default function ParentAppointmentsPage() {
-  return <GoogleCalendarView userRole="parent" className="p-6" />
+  return (
+    <div className="container py-6">
+      <AppointmentView userRole="parent" />
+    </div>
+  )
 }
