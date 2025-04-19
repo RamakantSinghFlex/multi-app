@@ -16,7 +16,6 @@ import {
 import type { AuthResponse, LoginCredentials, User, SignupCredentials } from "./types"
 import { API_URL, FEATURES, DEV_CONFIG } from "./config"
 import { logger, trackAsyncPerformance } from "./monitoring"
-import { ObjectId } from "bson"
 
 // Development mocks
 import { getMockResponse } from "./api/mock-api"
@@ -338,7 +337,7 @@ export async function getMe(): Promise<ApiResponse<User>> {
 export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
   return trackAsyncPerformance("signup", async () => {
     try {
-      credentials.tenantName = 'Tenant 1'
+      credentials.tenantName = "Tenant 1"
 
       // Ensure roles is an array
       if (credentials.role && !credentials.roles) {

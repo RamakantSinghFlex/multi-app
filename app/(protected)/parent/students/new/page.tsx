@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ArrowLeft, Eye, EyeOff, RefreshCw } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,10 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createUser } from "@/lib/api/users"
 import { useToast } from "@/hooks/use-toast"
 import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
-import { generateSecurePassword } from "@/lib/utils/password-generator"
 import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
 import type { User } from "@/lib/types"
 import { TENANT_NAME } from "@/lib/config"
+// Import the shared PasswordInput component
+import { PasswordInput } from "@/components/ui/password-input"
 
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
@@ -98,9 +99,7 @@ export default function NewStudentPage() {
   // UI state
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showStudentPassword, setShowStudentPassword] = useState(false)
-  const [showTutorPassword, setShowTutorPassword] = useState(false)
-  const [showParentPassword, setShowParentPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>("student")
@@ -159,15 +158,14 @@ export default function NewStudentPage() {
     }
   }
 
-  // Generate passwords
-  const handleGeneratePassword = (formType: "student" | "tutor" | "parent") => {
-    const password = generateSecurePassword(12)
+  // Handle password changes
+  const handlePasswordChange = (formType: "student" | "tutor" | "parent", value: string) => {
     if (formType === "student") {
-      setStudentData((prev) => ({ ...prev, password }))
+      setStudentData((prev) => ({ ...prev, password: value }))
     } else if (formType === "tutor") {
-      setTutorData((prev) => ({ ...prev, password }))
+      setTutorData((prev) => ({ ...prev, password: value }))
     } else if (formType === "parent") {
-      setParentData((prev) => ({ ...prev, password }))
+      setParentData((prev) => ({ ...prev, password: value }))
     }
   }
 
@@ -375,9 +373,7 @@ export default function NewStudentPage() {
       })
 
       // Reset UI states
-      setShowStudentPassword(false)
-      setShowTutorPassword(false)
-      setShowParentPassword(false)
+      setShowConfirmPassword(false)
       setActiveTab("student")
       setCreationMode("student")
 
@@ -525,44 +521,15 @@ export default function NewStudentPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="studentPassword">
-                    Password <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="studentPassword"
-                      name="password"
-                      type={showStudentPassword ? "text" : "password"}
-                      value={studentData.password}
-                      onChange={handleStudentChange}
-                      disabled={isLoading}
-                      required
-                      className="pr-20"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => setShowStudentPassword(!showStudentPassword)}
-                      >
-                        {showStudentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => handleGeneratePassword("student")}
-                      >
-                        <RefreshCw className="mr-1 h-3 w-3" />
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                {/* Use the shared PasswordInput component */}
+                <PasswordInput
+                  id="studentPassword"
+                  value={studentData.password}
+                  onChange={(value) => handlePasswordChange("student", value)}
+                  disabled={isLoading}
+                  label="Password"
+                  required={true}
+                />
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
@@ -693,44 +660,15 @@ export default function NewStudentPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="parentPassword">
-                    Password <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="parentPassword"
-                      name="password"
-                      type={showParentPassword ? "text" : "password"}
-                      value={parentData.password}
-                      onChange={handleParentChange}
-                      disabled={isLoading}
-                      required
-                      className="pr-20"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => setShowParentPassword(!showParentPassword)}
-                      >
-                        {showParentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => handleGeneratePassword("parent")}
-                      >
-                        <RefreshCw className="mr-1 h-3 w-3" />
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                {/* Use the shared PasswordInput component */}
+                <PasswordInput
+                  id="parentPassword"
+                  value={parentData.password}
+                  onChange={(value) => handlePasswordChange("parent", value)}
+                  disabled={isLoading}
+                  label="Password"
+                  required={true}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="parentPhone">Phone</Label>
@@ -829,44 +767,15 @@ export default function NewStudentPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tutorPassword">
-                    Password <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="tutorPassword"
-                      name="password"
-                      type={showTutorPassword ? "text" : "password"}
-                      value={tutorData.password}
-                      onChange={handleTutorChange}
-                      disabled={isLoading}
-                      required
-                      className="pr-20"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => setShowTutorPassword(!showTutorPassword)}
-                      >
-                        {showTutorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-full px-2 text-xs"
-                        onClick={() => handleGeneratePassword("tutor")}
-                      >
-                        <RefreshCw className="mr-1 h-3 w-3" />
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                {/* Use the shared PasswordInput component */}
+                <PasswordInput
+                  id="tutorPassword"
+                  value={tutorData.password}
+                  onChange={(value) => handlePasswordChange("tutor", value)}
+                  disabled={isLoading}
+                  label="Password"
+                  required={true}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="tutorPhone">Phone</Label>

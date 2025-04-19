@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { useAuth } from "@/lib/auth-context"
@@ -18,13 +18,8 @@ import { Label } from "@/components/ui/label"
 import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
 import { logger } from "@/lib/monitoring"
 import { FEATURES } from "@/lib/config"
-
-// Password strength requirements
-const PASSWORD_MIN_LENGTH = 8
-const PASSWORD_REQUIRES_UPPERCASE = true
-const PASSWORD_REQUIRES_LOWERCASE = true
-const PASSWORD_REQUIRES_NUMBER = true
-const PASSWORD_REQUIRES_SPECIAL = false
+// Import the shared PasswordInput component
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function SignupPage() {
   const {
@@ -49,11 +44,9 @@ export default function SignupPage() {
   const [terms, setTerms] = useState(false)
 
   // UI state
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [passwordStrength, setPasswordStrength] = useState(0)
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Validation state
   const [validationErrors, setValidationErrors] = useState<{
@@ -112,33 +105,6 @@ export default function SignupPage() {
     }
   }, [successMessage, clearSuccessMessage])
 
-  // Calculate password strength when password changes
-  useEffect(() => {
-    if (!password) {
-      setPasswordStrength(0)
-      return
-    }
-
-    let strength = 0
-
-    // Length check
-    if (password.length >= PASSWORD_MIN_LENGTH) strength += 1
-
-    // Uppercase check
-    if (PASSWORD_REQUIRES_UPPERCASE && /[A-Z]/.test(password)) strength += 1
-
-    // Lowercase check
-    if (PASSWORD_REQUIRES_LOWERCASE && /[a-z]/.test(password)) strength += 1
-
-    // Number check
-    if (PASSWORD_REQUIRES_NUMBER && /[0-9]/.test(password)) strength += 1
-
-    // Special character check
-    if (PASSWORD_REQUIRES_SPECIAL && /[^A-Za-z0-9]/.test(password)) strength += 1
-
-    setPasswordStrength(strength)
-  }, [password])
-
   // Form validation
   const validateForm = () => {
     const errors: {
@@ -167,6 +133,12 @@ export default function SignupPage() {
     if (!password) {
       errors.password = "Password is required"
     } else {
+      const PASSWORD_MIN_LENGTH = 8
+      const PASSWORD_REQUIRES_UPPERCASE = true
+      const PASSWORD_REQUIRES_LOWERCASE = true
+      const PASSWORD_REQUIRES_NUMBER = true
+      const PASSWORD_REQUIRES_SPECIAL = false
+
       if (password.length < PASSWORD_MIN_LENGTH) {
         errors.password = `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
       } else if (PASSWORD_REQUIRES_UPPERCASE && !/[A-Z]/.test(password)) {
@@ -228,6 +200,11 @@ export default function SignupPage() {
         }
       }
     }
+  }
+
+  // Handle password generation
+  const handlePasswordGeneration = (newPassword: string) => {
+    setConfirmPassword(newPassword)
   }
 
   return (
@@ -314,75 +291,30 @@ export default function SignupPage() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="border-input focus:border-primary focus:ring-primary"
-                  autoComplete="new-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </Button>
-              </div>
-              {validationErrors.password && (
-                <p className="text-sm font-medium text-destructive">{validationErrors.password}</p>
-              )}
-
-              {/* Password strength indicator */}
-              {password && (
-                <div className="mt-2">
-                  <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className={`h-full ${
-                        passwordStrength === 0
-                          ? "w-0"
-                          : passwordStrength === 1
-                            ? "w-1/4 bg-red-500"
-                            : passwordStrength === 2
-                              ? "w-2/4 bg-orange-500"
-                              : passwordStrength === 3
-                                ? "w-3/4 bg-yellow-500"
-                                : "w-full bg-green-500"
-                      }`}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {passwordStrength === 0
-                      ? "Very weak"
-                      : passwordStrength === 1
-                        ? "Weak"
-                        : passwordStrength === 2
-                          ? "Fair"
-                          : passwordStrength === 3
-                            ? "Good"
-                            : "Strong"}
-                  </p>
-                </div>
-              )}
-            </div>
+            {/* Use the shared PasswordInput component */}
+            <PasswordInput
+              id="password"
+              value={password}
+              onChange={setPassword}
+              onGeneratePassword={handlePasswordGeneration}
+              disabled={isLoading}
+              label="Password"
+              showStrengthIndicator={true}
+              autoComplete="new-password"
+              required={true}
+              error={validationErrors.password}
+            />
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Label htmlFor="confirm-password">Confirm password</Label>
               <div className="relative">
                 <Input
-                  id="confirmPassword"
+                  id="confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
-                  className="border-input focus:border-primary focus:ring-primary"
+                  className="border-input focus:border-primary focus:ring-primary pr-10"
                   autoComplete="new-password"
                 />
                 <Button
@@ -392,7 +324,7 @@ export default function SignupPage() {
                   className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? "Hide" : "Show"}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               {validationErrors.confirmPassword && (
