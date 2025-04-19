@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * @deprecated This authentication provider is being phased out.
+ * Please use the AuthProvider from lib/auth-context.tsx instead.
+ * This file will be removed in a future release.
+ */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { login as apiLogin, logout as apiLogout, getMe } from "./api"

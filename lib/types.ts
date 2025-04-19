@@ -23,20 +23,21 @@ export interface LoginCredentials {
   password: string
 }
 
-export interface AuthResponse {
-  user: User
-  token: string
-  message?: string
-}
-
 export interface SignupCredentials {
   email: string
   password: string
   firstName?: string
   lastName?: string
-  role?: string
-  roles?: string[]
+  role?: string // For backward compatibility
+  roles?: string[] // Preferred way to specify roles
   tenantName?: string
+  [key: string]: any // Allow for additional properties
+}
+
+export interface AuthResponse {
+  user: User
+  token: string
+  message?: string
 }
 
 // User Types
@@ -45,14 +46,11 @@ export interface User {
   email: string
   firstName?: string
   lastName?: string
-  role?: string
-  roles?: string[]
+  role?: string // For backward compatibility
+  roles: string[] // Always use this for role-based logic
   createdAt: string
   updatedAt: string
-  students?: Student[]
-  tutors?: Tutor[]
-  parents?: Parent[]
-  appointments?: Appointment[]
+  [key: string]: any // Allow for additional properties
 }
 
 // Domain Types

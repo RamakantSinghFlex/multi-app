@@ -1,40 +1,79 @@
-import type { ApiResponse } from "./types"
+/**
+ * API Utilities
+ *
+ * This module provides utilities for API interactions, including:
+ * - Token management
+ * - Headers creation
+ * - Error handling
+ * - Response processing
+ */
 
-// Token management
+import type { ApiResponse } from "./types"
+import { logger } from "./monitoring"
+
+// Constants
+const TOKEN_KEY = "milestone-token"
+const LEGACY_TOKEN_KEY = "auth_token"
+
+/**
+ * Get the authentication token from storage
+ * @returns The token or null if not found
+ */
 export function getToken(): string | null {
   if (typeof window === "undefined") return null
-  return localStorage.getItem("milestone-token") || localStorage.getItem("auth_token")
+
+  try {
+    return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY)
+  } catch (error) {
+    logger.error("Error retrieving token:", error)
+    return null
+  }
 }
 
+/**
+ * Set the authentication token in storage
+ * @param token The token to store
+ */
 export function setToken(token: string): void {
   if (typeof window === "undefined") return
-  localStorage.setItem("milestone-token", token)
+
+  try {
+    localStorage.setItem(TOKEN_KEY, token)
+    logger.info("Token stored successfully")
+  } catch (error) {
+    logger.error("Error storing token:", error)
+  }
 }
 
-// Add a comprehensive token clearing function
+/**
+ * Clear the authentication token from storage
+ */
 export function clearToken(): void {
   if (typeof window === "undefined") return
 
   try {
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("milestone-token")
-    console.log("Auth tokens cleared successfully")
+    localStorage.removeItem(LEGACY_TOKEN_KEY)
+    localStorage.removeItem(TOKEN_KEY)
+    logger.info("Auth tokens cleared successfully")
   } catch (error) {
-    console.error("Error clearing auth tokens:", error)
+    logger.error("Error clearing auth tokens:", error)
   }
 }
 
-// Add a new function to clear all user-related data
+/**
+ * Clear all user-related data from browser storage
+ * This is a comprehensive cleanup function for logout
+ */
 export function clearAllUserData(): void {
   if (typeof window === "undefined") return
 
-  console.log("Clearing all user data from browser storage")
+  logger.info("Clearing all user data from browser storage")
 
   try {
     // Clear all known localStorage keys that might contain user data
     const userDataKeys = [
-      "auth_token",
-      "milestone-token",
+      LEGACY_TOKEN_KEY,
+      TOKEN_KEY,
       "recentlyCreatedStudents",
       "user-preferences",
       "recent-searches",
@@ -49,13 +88,15 @@ export function clearAllUserData(): void {
       "sessionData",
       "authState",
       "rememberMe",
+      "google_oauth_state",
+      "google_user_info",
     ]
 
     userDataKeys.forEach((key) => {
       try {
         localStorage.removeItem(key)
       } catch (e) {
-        console.error(`Failed to remove ${key} from localStorage:`, e)
+        logger.error(`Failed to remove ${key} from localStorage:`, e)
       }
     })
 
@@ -63,14 +104,14 @@ export function clearAllUserData(): void {
     try {
       localStorage.clear()
     } catch (e) {
-      console.error("Failed to clear localStorage:", e)
+      logger.error("Failed to clear localStorage:", e)
     }
 
     // Clear session storage
     try {
       sessionStorage.clear()
     } catch (e) {
-      console.error("Failed to clear sessionStorage:", e)
+      logger.error("Failed to clear sessionStorage:", e)
     }
 
     // Clear cookies (those accessible via JavaScript)
@@ -80,16 +121,20 @@ export function clearAllUserData(): void {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
       })
     } catch (e) {
-      console.error("Failed to clear cookies:", e)
+      logger.error("Failed to clear cookies:", e)
     }
 
-    console.log("All user data cleared successfully")
+    logger.info("All user data cleared successfully")
   } catch (error) {
-    console.error("Error clearing user data:", error)
+    logger.error("Error during data clearing:", error)
   }
 }
 
-// Headers creation
+/**
+ * Create headers for API requests, including authentication if available
+ * @param includeContentType Whether to include Content-Type header
+ * @returns Headers object for fetch requests
+ */
 export function createAuthHeaders(includeContentType = true): Record<string, string> {
   const headers: Record<string, string> = {}
   const token = getToken()
@@ -105,7 +150,11 @@ export function createAuthHeaders(includeContentType = true): Record<string, str
   return headers
 }
 
-// Error handling
+/**
+ * Extract a human-readable error message from various error formats
+ * @param errorData Error data from API response
+ * @returns Formatted error message
+ */
 export function extractErrorMessage(errorData: any): string {
   if (typeof errorData === "string") return errorData
 
@@ -118,15 +167,22 @@ export function extractErrorMessage(errorData: any): string {
   return "An unknown error occurred"
 }
 
-// Response handling
+/**
+ * Process API responses and standardize the format
+ * @param response Fetch Response object
+ * @returns Standardized ApiResponse object
+ */
 export async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   if (!response.ok) {
     try {
       const errorData = await response.json()
       const errorMessage = extractErrorMessage(errorData)
+      logger.error(`API error (${response.status}):`, errorMessage)
       return { error: errorMessage }
     } catch (error) {
-      return { error: `Error: ${response.status} ${response.statusText}` }
+      const errorMessage = `Error: ${response.status} ${response.statusText}`
+      logger.error(errorMessage)
+      return { error: errorMessage }
     }
   }
 
@@ -134,17 +190,40 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
     const data = await response.json()
     return { data: data.user ? data.user : data }
   } catch (error) {
+    logger.error("Failed to parse response data:", error)
     return { error: "Failed to parse response data" }
   }
 }
 
-// API response helper
+/**
+ * Helper function to standardize API response handling
+ * @param param0 Object containing data or error
+ * @returns Standardized ApiResponse object
+ */
 export function handleApiResponse<T>({ data, error }: { data?: T; error?: string }): ApiResponse<T> {
   if (error) {
+    logger.error("API error:", error)
     return { error }
   }
   if (data) {
     return { data }
   }
-  return { error: "No data or error provided" }
+  const errorMessage = "No data or error provided"
+  logger.error(errorMessage)
+  return { error: errorMessage }
+}
+
+/**
+ * Safely parse JSON with error handling
+ * @param jsonString JSON string to parse
+ * @param fallback Fallback value if parsing fails
+ * @returns Parsed object or fallback
+ */
+export function safeJsonParse<T>(jsonString: string, fallback: T): T {
+  try {
+    return JSON.parse(jsonString) as T
+  } catch (error) {
+    logger.error("JSON parse error:", error)
+    return fallback
+  }
 }

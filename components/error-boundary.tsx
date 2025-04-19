@@ -1,9 +1,20 @@
+/**
+ * Error Boundary Component
+ *
+ * This component catches JavaScript errors anywhere in the child component tree,
+ * logs those errors, and displays a fallback UI instead of crashing the whole app.
+ */
+
 "use client"
+
+import type React from "react"
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
 import { AlertCircle, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { logger, reportError } from "@/lib/monitoring"
 
 interface Props {
   children: ReactNode
@@ -16,6 +27,9 @@ interface State {
   errorInfo: ErrorInfo | null
 }
 
+/**
+ * Error Boundary Component
+ */
 class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
@@ -23,51 +37,73 @@ class ErrorBoundary extends Component<Props, State> {
     errorInfo: null,
   }
 
+  /**
+   * Update state when an error occurs
+   */
   public static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI
     return { hasError: true, error, errorInfo: null }
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log the error to an error reporting service
-    console.error("Uncaught error:", error, errorInfo)
-    this.setState({ errorInfo })
+  /**
+   * Log error information
+   */
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    logger.error("Error caught by ErrorBoundary:", { error, errorInfo })
+    reportError(error, { componentStack: errorInfo.componentStack })
   }
 
-  private handleReload = (): void => {
-    window.location.reload()
+  /**
+   * Reset error state and retry
+   */
+  private handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    })
   }
 
-  public render(): ReactNode {
+  /**
+   * Render error UI or children
+   */
+  public render() {
     if (this.state.hasError) {
       // Custom fallback UI
+      if (this.props.fallback) {
+        return this.props.fallback
+      }
+
+      // Default fallback UI
       return (
-        this.props.fallback || (
-          <div className="flex min-h-screen flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md space-y-4">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Something went wrong</AlertTitle>
-                <AlertDescription>{this.state.error?.message || "An unexpected error occurred"}</AlertDescription>
+        <div className="flex min-h-[400px] w-full items-center justify-center p-4">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center text-destructive">
+                <AlertCircle className="mr-2 h-5 w-5" />
+                Something went wrong
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Error details</AlertTitle>
+                <AlertDescription className="mt-2">
+                  <div className="max-h-[200px] overflow-auto rounded bg-destructive/10 p-2 text-sm">
+                    {this.state.error?.toString() || "Unknown error"}
+                  </div>
+                </AlertDescription>
               </Alert>
-
-              <div className="text-sm text-muted-foreground">
-                <p>Try the following:</p>
-                <ul className="list-disc pl-5 pt-2">
-                  <li>Refresh the page</li>
-                  <li>Check your internet connection</li>
-                  <li>Clear your browser cache</li>
-                  <li>Try again later</li>
-                </ul>
-              </div>
-
-              <Button onClick={this.handleReload} className="w-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Reload Page
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Reload page
               </Button>
-            </div>
-          </div>
-        )
+              <Button onClick={this.handleReset} className="flex items-center">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try again
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       )
     }
 
@@ -75,4 +111,22 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
+/**
+ * Wrap a component with an error boundary
+ * @param Component Component to wrap
+ * @param fallback Optional fallback UI
+ * @returns Wrapped component
+ */
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  fallback?: ReactNode,
+): React.FC<P> {
+  return (props: P) => (
+    <ErrorBoundary fallback={fallback}>
+      <Component {...props} />
+    </ErrorBoundary>
+  )
+}
+
+// Export the ErrorBoundary as the default export
 export default ErrorBoundary

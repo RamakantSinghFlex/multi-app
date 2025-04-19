@@ -1,12 +1,35 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useCallback, useContext, useEffect, useReducer, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { AuthState as AuthStateType, LoginCredentials, SignupCredentials, User } from "./types"
 import { getMe, login as apiLogin, logout as apiLogout, signup as apiSignup } from "./api"
 import { logger } from "./monitoring"
+import { clearAllUserData } from "./utils/clear-user-data"
+
+// Standardize the User type to always use roles as an array
+// Update the AuthState interface to ensure roles is an array
+export interface AuthState extends AuthStateType {
+  user: User | null
+  token: string | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  error: string | null
+  successMessage: string | null
+}
+
+// Update the AuthContextType interface to include all necessary methods
+interface AuthContextType extends AuthState {
+  login: (credentials: LoginCredentials) => Promise<void>
+  signup: (credentials: SignupCredentials) => Promise<void>
+  logout: () => Promise<void>
+  resetAuthError: () => void
+  clearSuccessMessage: () => void
+  checkAuth: () => Promise<boolean>
+  setError: (error: string) => void
+  refreshUser: () => Promise<void>
+}
 
 // Initial auth state
 const initialState: AuthStateType = {
@@ -18,17 +41,18 @@ const initialState: AuthStateType = {
   successMessage: null,
 }
 
-// Auth action types
+// Auth action types - add more specific typing
 type AuthAction =
   | { type: "AUTH_START" }
   | { type: "AUTH_SUCCESS"; payload: { user: User; token?: string; message?: string } }
   | { type: "AUTH_FAILURE"; payload: string }
   | { type: "AUTH_RESET" }
-  | { type: "AUTH_COMPLETE" } // New action to mark auth check as complete even if not authenticated
+  | { type: "AUTH_COMPLETE" }
   | { type: "LOGOUT_SUCCESS"; payload: string }
   | { type: "CLEAR_SUCCESS_MESSAGE" }
+  | { type: "REFRESH_USER_SUCCESS"; payload: { user: User } }
 
-// Auth reducer
+// Auth reducer with improved error handling
 function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
   switch (action.type) {
     case "AUTH_START":
@@ -78,30 +102,15 @@ function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
         ...state,
         successMessage: null,
       }
+    case "REFRESH_USER_SUCCESS":
+      return {
+        ...state,
+        user: action.payload.user,
+        isAuthenticated: true,
+      }
     default:
       return state
   }
-}
-
-// Update the AuthState interface to ensure roles is an array
-export interface AuthState extends AuthStateType {
-  user: User | null
-  token: string | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  error: string | null
-  successMessage: string | null
-}
-
-// Update the AuthContextType interface to include setError
-interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<void>
-  signup: (credentials: SignupCredentials) => Promise<void>
-  logout: () => Promise<void>
-  resetAuthError: () => void
-  clearSuccessMessage: () => void
-  checkAuth: () => Promise<boolean>
-  setError: (error: string) => void
 }
 
 // Create auth context with the updated interface
@@ -114,9 +123,10 @@ const AuthContext = createContext<AuthContextType>({
   clearSuccessMessage: () => {},
   checkAuth: async () => false,
   setError: () => {},
+  refreshUser: async () => {},
 })
 
-// Auth provider component
+// Auth provider component with improved error handling and security
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
   const [authCheckComplete, setAuthCheckComplete] = useState(false)
@@ -129,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "AUTH_START" })
         logger.info("Starting auth check...")
 
-        const token = localStorage.getItem("milestone-token")
+        const token = typeof window !== "undefined" ? localStorage.getItem("milestone-token") : null
 
         if (!token) {
           logger.info("No token found, user is not authenticated")
@@ -143,21 +153,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (authResponse.error || !authResponse.data) {
           logger.warn("Session validation failed:", authResponse.error)
-          localStorage.removeItem("milestone-token")
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("milestone-token")
+          }
           dispatch({ type: "AUTH_COMPLETE" })
           setAuthCheckComplete(true)
           return
         }
 
-        logger.info("Session validation successful, user authenticated:", authResponse.data.email)
+        // Ensure user data has roles as an array
+        const userData = normalizeUserData(authResponse.data)
+
+        logger.info("Session validation successful, user authenticated:", userData.email)
         dispatch({
           type: "AUTH_SUCCESS",
-          payload: { user: authResponse.data, token },
+          payload: { user: userData, token },
         })
         setAuthCheckComplete(true)
       } catch (error) {
         logger.error("Auth check error:", error)
-        localStorage.removeItem("milestone-token")
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("milestone-token")
+        }
         dispatch({
           type: "AUTH_FAILURE",
           payload: error instanceof Error ? error.message : "Authentication check failed",
@@ -169,7 +186,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  // In the login function, update the redirection logic
+  // Helper function to normalize user data (ensure roles is always an array)
+  const normalizeUserData = (user: User): User => {
+    if (!user) return user
+
+    // If user has role but not roles, convert to roles array
+    if (user.role && (!user.roles || !Array.isArray(user.roles))) {
+      return {
+        ...user,
+        roles: [user.role],
+      }
+    }
+
+    // If user has neither, set a default role
+    if (!user.role && (!user.roles || !Array.isArray(user.roles) || user.roles.length === 0)) {
+      return {
+        ...user,
+        roles: ["user"],
+      }
+    }
+
+    return user
+  }
+
+  // Login function with improved security and error handling
   const login = async (credentials: LoginCredentials) => {
     dispatch({ type: "AUTH_START" })
 
@@ -189,22 +229,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.info("Login successful:", { email: response.data.user.email })
 
       // Ensure token is stored in localStorage
-      if (response.data.token) {
+      if (response.data.token && typeof window !== "undefined") {
         localStorage.setItem("milestone-token", response.data.token)
       }
+
+      // Normalize user data to ensure roles is an array
+      const userData = normalizeUserData(response.data.user)
 
       dispatch({
         type: "AUTH_SUCCESS",
         payload: {
-          user: response.data.user,
+          user: userData,
           token: response.data.token,
           message: response.data.message || "Login successful!",
         },
       })
 
       // Redirect based on user roles
-      if (response.data.user.roles && response.data.user.roles.length > 0) {
-        const userRole = response.data.user.roles[0] // Use the first role for redirection
+      if (userData.roles && userData.roles.length > 0) {
+        const userRole = userData.roles[0] // Use the first role for redirection
 
         if (userRole === "admin") {
           router.push("/admin/dashboard")
@@ -230,12 +273,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Update the signup function with the same redirection logic
+  // Signup function with improved security and error handling
   const signup = async (credentials: SignupCredentials) => {
     dispatch({ type: "AUTH_START" })
 
     try {
       logger.info("Attempting signup with:", { email: credentials.email })
+
+      // Ensure roles is an array
+      if (!credentials.roles && credentials.role) {
+        credentials.roles = [credentials.role]
+      } else if (!credentials.roles) {
+        credentials.roles = ["user"]
+      }
+
       const response = await apiSignup(credentials)
 
       if (response.error || !response.data) {
@@ -249,18 +300,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       logger.info("Signup successful:", { email: response.data.user.email })
 
+      // Normalize user data
+      const userData = normalizeUserData(response.data.user)
+
       dispatch({
         type: "AUTH_SUCCESS",
         payload: {
-          user: response.data.user,
+          user: userData,
           token: response.data.token,
           message: response.data.message || "Account created successfully!",
         },
       })
 
       // Redirect based on user roles
-      if (response.data.user.roles && response.data.user.roles.length > 0) {
-        const userRole = response.data.user.roles[0] // Use the first role for redirection
+      if (userData.roles && userData.roles.length > 0) {
+        const userRole = userData.roles[0] // Use the first role for redirection
 
         if (userRole === "admin") {
           router.push("/admin/dashboard")
@@ -286,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Logout function
+  // Logout function with improved security
   const logout = async () => {
     try {
       dispatch({ type: "AUTH_START" })
@@ -297,7 +351,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAllUserData()
 
       // Then attempt to notify the server
-      const token = localStorage.getItem("milestone-token")
+      const token = typeof window !== "undefined" ? localStorage.getItem("milestone-token") : null
+
       if (token) {
         logger.info("Attempting to logout with token")
         try {
@@ -352,54 +407,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Add this function to clear all user data
-  const clearAllUserData = () => {
-    logger.info("Clearing all user data from browser storage")
-
-    try {
-      // Clear auth token
-      localStorage.removeItem("milestone-token")
-      localStorage.removeItem("auth_token")
-
-      // Clear recently created students
-      localStorage.removeItem("recentlyCreatedStudents")
-
-      // Clear any other user-specific data
-      localStorage.removeItem("user-preferences")
-      localStorage.removeItem("recent-searches")
-      localStorage.removeItem("dashboard-settings")
-
-      // For extra safety, try to clear everything
-      try {
-        localStorage.clear()
-      } catch (e) {
-        logger.error("Failed to clear all localStorage:", e)
-      }
-
-      // Clear any session storage items as well
-      try {
-        sessionStorage.clear()
-      } catch (e) {
-        logger.error("Failed to clear sessionStorage:", e)
-      }
-
-      // Clear any cookies that might contain user data
-      // Note: This only clears cookies that are accessible via JavaScript
-      try {
-        document.cookie.split(";").forEach((cookie) => {
-          const [name] = cookie.trim().split("=")
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-        })
-      } catch (e) {
-        logger.error("Failed to clear cookies:", e)
-      }
-
-      logger.info("All user data cleared successfully")
-    } catch (clearError) {
-      logger.error("Error during data clearing:", clearError)
-    }
-  }
-
   // Reset auth error - using useCallback to prevent recreation on each render
   const resetAuthError = useCallback(() => {
     if (state.error) {
@@ -414,12 +421,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.successMessage])
 
+  // Check authentication status
   const checkAuth = useCallback(async () => {
     try {
       dispatch({ type: "AUTH_START" })
       logger.info("Starting auth check...")
 
-      const token = localStorage.getItem("milestone-token")
+      const token = typeof window !== "undefined" ? localStorage.getItem("milestone-token") : null
 
       if (!token) {
         logger.info("No token found, user is not authenticated")
@@ -433,22 +441,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (authResponse.error || !authResponse.data) {
         logger.warn("Session validation failed:", authResponse.error)
-        localStorage.removeItem("milestone-token")
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("milestone-token")
+        }
         dispatch({ type: "AUTH_COMPLETE" })
         setAuthCheckComplete(true)
         return false
       }
 
-      logger.info("Session validation successful, user authenticated:", authResponse.data.email)
+      // Normalize user data
+      const userData = normalizeUserData(authResponse.data)
+
+      logger.info("Session validation successful, user authenticated:", userData.email)
       dispatch({
         type: "AUTH_SUCCESS",
-        payload: { user: authResponse.data, token },
+        payload: { user: userData, token },
       })
       setAuthCheckComplete(true)
       return true
     } catch (error) {
       logger.error("Auth check error:", error)
-      localStorage.removeItem("milestone-token")
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("milestone-token")
+      }
       dispatch({
         type: "AUTH_FAILURE",
         payload: error instanceof Error ? error.message : "Authentication check failed",
@@ -458,8 +473,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Function to refresh user data
+  const refreshUser = async () => {
+    try {
+      logger.info("Refreshing user data")
+      const authResponse = await getMe()
+
+      if (authResponse.error || !authResponse.data) {
+        logger.warn("User refresh failed:", authResponse.error)
+        return
+      }
+
+      // Normalize user data
+      const userData = normalizeUserData(authResponse.data)
+
+      logger.info("User refresh successful:", userData.email)
+      dispatch({
+        type: "REFRESH_USER_SUCCESS",
+        payload: { user: userData },
+      })
+    } catch (error) {
+      logger.error("User refresh error:", error)
+    }
+  }
+
   // Add setError to the contextValue in the AuthProvider component
-  // Find the contextValue object in the AuthProvider component and update it to:
   const contextValue = {
     ...state,
     login,
@@ -468,6 +506,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetAuthError,
     clearSuccessMessage,
     checkAuth,
+    refreshUser,
     setError: (error: string) => dispatch({ type: "AUTH_FAILURE", payload: error }),
   }
 
@@ -486,4 +525,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Auth hook
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+
+  return context
+}

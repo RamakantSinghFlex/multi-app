@@ -1,3 +1,10 @@
+/**
+ * Error Modal Component
+ *
+ * This component displays errors in a modal dialog.
+ * It supports displaying multiple validation errors and provides a consistent UI for error handling.
+ */
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -12,43 +19,65 @@ import {
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { logger } from "@/lib/monitoring"
 
+/**
+ * Validation error structure
+ */
 export interface ValidationError {
   message: string
   path?: string
 }
 
+/**
+ * Error data structure
+ */
 export interface ErrorData {
   collection?: string
   errors?: ValidationError[]
 }
 
+/**
+ * API error structure
+ */
 export interface ApiError {
   name?: string
   message: string
   data?: ErrorData
+  status?: number
+  code?: string
 }
 
+/**
+ * Error modal props
+ */
 interface ErrorModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   errors?: ApiError[] | null
   title?: string
   description?: string
+  onRetry?: () => void
+  showRetry?: boolean
 }
 
+/**
+ * Error Modal Component
+ */
 export function ErrorModal({
   open,
   onOpenChange,
   errors,
   title = "Error",
   description = "There was an error processing your request.",
+  onRetry,
+  showRetry = false,
 }: ErrorModalProps) {
   const [allValidationErrors, setAllValidationErrors] = useState<ValidationError[]>([])
 
+  // Extract validation errors from the error structure
   useEffect(() => {
     if (errors && errors.length > 0) {
-      // Extract all validation errors from the error structure
       const validationErrors: ValidationError[] = []
 
       errors.forEach((error) => {
@@ -60,6 +89,9 @@ export function ErrorModal({
       })
 
       setAllValidationErrors(validationErrors)
+
+      // Log errors for debugging
+      logger.error("API errors:", { errors })
     } else {
       setAllValidationErrors([])
     }
@@ -104,8 +136,17 @@ export function ErrorModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex gap-2">
+          {showRetry && onRetry && (
+            <Button variant="outline" onClick={onRetry}>
+              Retry
+            </Button>
+          )}
+          <Button
+            variant={showRetry && onRetry ? "default" : "outline"}
+            onClick={() => onOpenChange(false)}
+            className={showRetry && onRetry ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+          >
             Close
           </Button>
         </DialogFooter>
@@ -114,6 +155,11 @@ export function ErrorModal({
   )
 }
 
+/**
+ * Parse API error into a standardized format
+ * @param error Error object or string
+ * @returns Array of standardized API errors
+ */
 export function parseApiError(error: any): ApiError[] {
   try {
     // If it's already in the expected format
@@ -128,17 +174,51 @@ export function parseApiError(error: any): ApiError[] {
 
     // If it's an Error object
     if (error instanceof Error) {
-      return [{ message: error.message }]
+      return [{ message: error.message, name: error.name }]
     }
 
     // If it's a response with a message
     if (error.message) {
-      return [{ message: error.message }]
+      return [
+        {
+          message: error.message,
+          name: error.name,
+          status: error.status,
+          code: error.code,
+        },
+      ]
+    }
+
+    // If it's a response with data.errors
+    if (error.data && error.data.errors) {
+      return [
+        {
+          message: "Validation errors occurred",
+          data: error.data,
+        },
+      ]
     }
 
     // Default fallback
     return [{ message: "An unexpected error occurred" }]
   } catch (e) {
+    logger.error("Error parsing API error:", e)
     return [{ message: "An unexpected error occurred" }]
+  }
+}
+
+/**
+ * Format error message for display
+ * @param error Error object or string
+ * @returns Formatted error message
+ */
+export function formatErrorMessage(error: any): string {
+  try {
+    if (typeof error === "string") return error
+    if (error.message) return error.message
+    if (error.error) return typeof error.error === "string" ? error.error : JSON.stringify(error.error)
+    return "An unexpected error occurred"
+  } catch (e) {
+    return "An unexpected error occurred"
   }
 }

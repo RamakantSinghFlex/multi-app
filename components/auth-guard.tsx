@@ -1,3 +1,11 @@
+/**
+ * Authentication Guard Component
+ *
+ * This component protects routes by checking authentication status and user roles.
+ * It redirects unauthenticated users to the login page and users without proper roles
+ * to their appropriate dashboard.
+ */
+
 "use client"
 
 import type React from "react"
@@ -8,6 +16,19 @@ import { useAuth } from "@/lib/auth-context"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { logger } from "@/lib/monitoring"
+import { Button } from "@/components/ui/button"
+
+// Define public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/role-selection",
+  "/terms",
+  "/privacy",
+]
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -15,7 +36,7 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProps) {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, user, checkAuth } = useAuth()
   const [isChecking, setIsChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -23,17 +44,20 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
 
   useEffect(() => {
     // Skip auth check for public routes
-    const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password"]
-    const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/public")
+    const isPublicRoute =
+      PUBLIC_ROUTES.includes(pathname) ||
+      pathname.startsWith("/public") ||
+      pathname.startsWith("/api/") ||
+      pathname.includes("/content/")
 
-    const checkAuth = async () => {
+    const checkAuthStatus = async () => {
       try {
         if (!isLoading) {
           logger.info("AuthGuard checking access", {
             pathname,
             isAuthenticated,
             isPublicRoute,
-            userRoles: user?.roles || (user?.role ? [user.role] : []),
+            userRoles: user?.roles || [],
             allowedRoles,
           })
 
@@ -46,8 +70,8 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
 
           // Only redirect if user doesn't have the required role for a specific protected route
           if (isAuthenticated && allowedRoles.length > 0 && user) {
-            // Get user roles from either roles array or single role property
-            const userRoles = user.roles || (user.role ? [user.role] : [])
+            // Get user roles from roles array
+            const userRoles = user.roles || []
 
             // Check if any of the user's roles match the allowed roles
             const hasAllowedRole = userRoles.some((role) => allowedRoles.includes(role))
@@ -55,7 +79,6 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
             if (!hasAllowedRole) {
               logger.info("User doesn't have required role, redirecting to appropriate dashboard", {
                 userRoles,
-                user,
                 allowedRoles,
               })
 
@@ -86,8 +109,22 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
       }
     }
 
-    checkAuth()
+    checkAuthStatus()
   }, [isAuthenticated, isLoading, pathname, router, user, allowedRoles])
+
+  // Function to retry authentication
+  const handleRetry = async () => {
+    setError(null)
+    setIsChecking(true)
+    try {
+      await checkAuth()
+      setIsChecking(false)
+    } catch (err) {
+      logger.error("Retry auth check error:", err)
+      setError("Authentication check failed again. Please try refreshing the page.")
+      setIsChecking(false)
+    }
+  }
 
   // If there's an error during auth check
   if (error) {
@@ -97,12 +134,17 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <button
-          onClick={() => window.location.reload()}
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-        >
-          Refresh Page
-        </button>
+        <div className="flex gap-4">
+          <Button onClick={handleRetry} variant="outline">
+            Retry
+          </Button>
+          <Button
+            onClick={() => window.location.reload()}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Refresh Page
+          </Button>
+        </div>
       </div>
     )
   }
@@ -112,6 +154,7 @@ export default function AuthGuard({ children, allowedRoles = [] }: AuthGuardProp
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">Verifying authentication...</p>
         </div>
       </div>
     )

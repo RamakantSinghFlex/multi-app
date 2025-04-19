@@ -1,17 +1,45 @@
+/**
+ * Google OAuth Callback Handler
+ *
+ * This route handles the callback from Google OAuth authentication.
+ * It verifies the state token, exchanges the authorization code for tokens,
+ * fetches user information, and either logs the user in or redirects to role selection.
+ */
+
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { logger } from "@/lib/monitoring"
-import { API_URL } from "@/lib/config"
+import { API_URL, APP_URL } from "@/lib/config"
+import { createHash, randomBytes } from "crypto"
 
-// Google OAuth configuration - using consistent environment variable names
+// Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/google/callback`
+const REDIRECT_URI = `${APP_URL}/api/auth/google/callback`
 
 // Google OAuth endpoints
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
+// Cookie configuration
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 10, // 10 minutes
+}
+
+/**
+ * Generate a CSRF token for OAuth state verification
+ */
+function generateStateToken(): string {
+  return createHash("sha256").update(randomBytes(32)).digest("hex")
+}
+
+/**
+ * Handle Google OAuth callback
+ */
 export async function GET(request: NextRequest) {
   try {
     logger.info("Handling Google OAuth callback")
@@ -20,25 +48,23 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get("code")
     const incomingState = searchParams.get("state")
-    const cookieAwaited = await cookies()
+    const cookieStore = cookies()
 
     // Get the state from the cookie for verification
-    const storedState = cookieAwaited.get("google_oauth_state")?.value
+    const storedState = cookieStore.get("google_oauth_state")?.value
 
     // Clear the state cookie
-    cookieAwaited.delete("google_oauth_state")
+    cookieStore.delete("google_oauth_state")
 
     // Verify the state to prevent CSRF attacks
     if (!incomingState || !storedState || incomingState !== storedState) {
       logger.error("State mismatch in Google OAuth callback", { incomingState, storedState })
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=invalid_state`,
-      )
+      return NextResponse.redirect(`${APP_URL}/login?error=invalid_state`)
     }
 
     if (!code) {
       logger.error("No authorization code in Google OAuth callback")
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=no_code`)
+      return NextResponse.redirect(`${APP_URL}/login?error=no_code`)
     }
 
     // Exchange the authorization code for tokens
@@ -56,14 +82,13 @@ export async function GET(request: NextRequest) {
       }),
     })
 
-    const tokenData = await tokenResponse.json()
-
     if (!tokenResponse.ok) {
-      logger.error("Error exchanging code for tokens", { error: tokenData })
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=token_exchange_failed`,
-      )
+      const tokenError = await tokenResponse.text()
+      logger.error("Error exchanging code for tokens", { error: tokenError, status: tokenResponse.status })
+      return NextResponse.redirect(`${APP_URL}/login?error=token_exchange_failed`)
     }
+
+    const tokenData = await tokenResponse.json()
 
     // Get the user's profile information
     const userInfoResponse = await fetch(GOOGLE_USERINFO_URL, {
@@ -72,15 +97,13 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const userInfo = await userInfoResponse.json()
-
     if (!userInfoResponse.ok) {
-      logger.error("Error fetching user info from Google", { error: userInfo })
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=userinfo_failed`,
-      )
+      const userInfoError = await userInfoResponse.text()
+      logger.error("Error fetching user info from Google", { error: userInfoError, status: userInfoResponse.status })
+      return NextResponse.redirect(`${APP_URL}/login?error=userinfo_failed`)
     }
 
+    const userInfo = await userInfoResponse.json()
     logger.info("Successfully retrieved Google user info", { email: userInfo.email })
 
     // Use mock implementation for development
@@ -89,7 +112,7 @@ export async function GET(request: NextRequest) {
       logger.info("DEV MODE: Redirecting to role selection page")
 
       // Store Google user info in a temporary cookie for the role selection page
-      cookieAwaited.set(
+      cookieStore.set(
         "google_user_info",
         JSON.stringify({
           googleId: userInfo.sub,
@@ -98,15 +121,10 @@ export async function GET(request: NextRequest) {
           lastName: userInfo.family_name || "",
           picture: userInfo.picture || "",
         }),
-        {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 60 * 10, // 10 minutes
-          path: "/",
-        },
+        COOKIE_OPTIONS,
       )
 
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/role-selection`)
+      return NextResponse.redirect(`${APP_URL}/auth/role-selection`)
     }
 
     // Check if user exists by email
@@ -119,26 +137,31 @@ export async function GET(request: NextRequest) {
           headers: {
             "Content-Type": "application/json",
           },
+          cache: "no-store",
         },
       )
+
+      if (!checkUserResponse.ok) {
+        const checkUserError = await checkUserResponse.text()
+        logger.error("Error checking if user exists", { error: checkUserError, status: checkUserResponse.status })
+        return NextResponse.redirect(`${APP_URL}/login?error=auth_failed`)
+      }
 
       const checkUserData = await checkUserResponse.json()
 
       // If user exists, log them in
-      if (checkUserResponse.ok && checkUserData.docs && checkUserData.docs.length > 0) {
+      if (checkUserData.docs && checkUserData.docs.length > 0) {
         logger.info("User found, attempting to log in", { email: userInfo.email })
 
         // Try to login with the email
-        const loginResponse = await fetch(`${API_URL}/users/login`, {
+        const loginResponse = await fetch(`${API_URL}/users/login-with-google`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: userInfo.email,
-            // Use a special password format for Google OAuth users
-            // This won't actually work for login, but we'll handle the error
-            password: `google-oauth-${userInfo.sub}`,
+            googleId: userInfo.sub,
           }),
           credentials: "include",
         })
@@ -149,16 +172,15 @@ export async function GET(request: NextRequest) {
 
           // Set the JWT token in a cookie
           if (loginData.token) {
-            cookieAwaited.set("milestone-token", loginData.token, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
+            cookieStore.set("milestone-token", loginData.token, {
+              ...COOKIE_OPTIONS,
               maxAge: 60 * 60 * 24 * 7, // 1 week
-              path: "/",
             })
           }
 
           // Redirect to the appropriate dashboard based on user role
-          const role = loginData.user?.role || "user"
+          const roles = loginData.user?.roles || []
+          const role = roles.length > 0 ? roles[0] : "user"
           let redirectUrl = "/dashboard"
 
           if (role === "admin") {
@@ -172,9 +194,11 @@ export async function GET(request: NextRequest) {
           }
 
           logger.info("Google authentication successful, redirecting to dashboard", { role, redirectUrl })
-          return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${redirectUrl}?welcome=returning`,
-          )
+          return NextResponse.redirect(`${APP_URL}${redirectUrl}?welcome=returning`)
+        } else {
+          const loginError = await loginResponse.text()
+          logger.error("Error logging in with Google", { error: loginError, status: loginResponse.status })
+          return NextResponse.redirect(`${APP_URL}/login?error=auth_failed`)
         }
       }
 
@@ -182,7 +206,7 @@ export async function GET(request: NextRequest) {
       logger.info("User not found, redirecting to role selection", { email: userInfo.email })
 
       // Store Google user info in a temporary cookie for the role selection page
-      cookieAwaited.set(
+      cookieStore.set(
         "google_user_info",
         JSON.stringify({
           googleId: userInfo.sub,
@@ -191,23 +215,16 @@ export async function GET(request: NextRequest) {
           lastName: userInfo.family_name || "",
           picture: userInfo.picture || "",
         }),
-        {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 60 * 10, // 10 minutes
-          path: "/",
-        },
+        COOKIE_OPTIONS,
       )
 
-      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/role-selection`)
+      return NextResponse.redirect(`${APP_URL}/auth/role-selection`)
     } catch (error) {
       logger.error("Error checking if user exists", { error })
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=auth_failed`,
-      )
+      return NextResponse.redirect(`${APP_URL}/login?error=auth_failed`)
     }
   } catch (error) {
     logger.error("Unexpected error in Google OAuth callback", { error })
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login?error=unexpected`)
+    return NextResponse.redirect(`${APP_URL}/login?error=unexpected`)
   }
 }
