@@ -17,9 +17,6 @@ import type { AuthResponse, LoginCredentials, User, SignupCredentials } from "./
 import { API_URL, FEATURES, DEV_CONFIG } from "./config"
 import { logger, trackAsyncPerformance } from "./monitoring"
 
-// Development mocks
-import { getMockResponse } from "./api/mock-api"
-
 /**
  * Add artificial delay for development testing
  */
@@ -44,12 +41,22 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
         logger.info("DEV MODE: Simulating successful login")
         await addDevDelay()
 
-        const mockResponse = getMockResponse<AuthResponse>("login", { email: credentials.email })
+        // Create a mock response
+        const mockResponse: AuthResponse = {
+          user: {
+            id: "123",
+            email: credentials.email,
+            firstName: "Test",
+            lastName: "User",
+            roles: ["parent"],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          token: "mock-jwt-token",
+        }
 
         // Store the token
-        if (mockResponse.token) {
-          setToken(mockResponse.token)
-        }
+        setToken(mockResponse.token)
 
         logger.info("DEV MODE: Returning mock response")
         return { data: mockResponse }
@@ -296,7 +303,17 @@ export async function getMe(): Promise<ApiResponse<User>> {
         logger.info("DEV MODE: Simulating successful session validation")
         await addDevDelay()
 
-        const mockUser = getMockResponse<User>("currentUser")
+        // Create a mock user
+        const mockUser: User = {
+          id: "123",
+          email: "test@example.com",
+          firstName: "Test",
+          lastName: "User",
+          roles: ["parent"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+
         return { data: mockUser }
       }
 
@@ -351,7 +368,20 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
         logger.info("DEV MODE: Simulating successful signup")
         await addDevDelay()
 
-        const mockResponse = getMockResponse<AuthResponse>("signup", credentials)
+        // Create a mock response
+        const mockResponse: AuthResponse = {
+          user: {
+            id: String(Date.now()),
+            email: credentials.email,
+            firstName: credentials.firstName || "",
+            lastName: credentials.lastName || "",
+            roles: credentials.roles,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          token: "mock-jwt-token-signup",
+          message: "Account created successfully!",
+        }
 
         // Store the token
         if (mockResponse.token) {

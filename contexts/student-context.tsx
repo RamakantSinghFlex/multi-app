@@ -3,13 +3,14 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Student } from "@/lib/types"
 import { useRouter } from "next/navigation"
+import { logger } from "@/lib/monitoring"
 
 interface StudentContextType {
   students: Student[]
   addStudent: (student: Student) => void
   refreshStudents: () => void
   isLoading: boolean
-  clearStudentData: () => void // Add this new method
+  clearStudentData: () => void
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined)
@@ -54,18 +55,15 @@ export function StudentProvider({
         setStudents(initialStudents)
       }
     } catch (err) {
-      console.error("Error retrieving recently created students:", err)
+      logger.error("Error retrieving recently created students:", err)
       setStudents(initialStudents)
     }
   }, [initialStudents])
 
-  // Enhance the addStudent function to handle duplicates better
-  // Replace the existing addStudent function with this improved version:
-
   // Function to add a new student to the list
   const addStudent = (newStudent: Student) => {
     if (!newStudent || !newStudent.id) {
-      console.error("Attempted to add invalid student:", newStudent)
+      logger.error("Attempted to add invalid student:", newStudent)
       return
     }
 
@@ -105,7 +103,7 @@ export function StudentProvider({
 
       localStorage.setItem("recentlyCreatedStudents", JSON.stringify(recentStudents))
     } catch (err) {
-      console.error("Error storing student in localStorage:", err)
+      logger.error("Error storing student in localStorage:", err)
     }
   }
 
@@ -117,13 +115,13 @@ export function StudentProvider({
     setIsLoading(false)
   }
 
-  // In the StudentProvider component, add the implementation
+  // Function to clear student data
   const clearStudentData = () => {
     setStudents([])
     localStorage.removeItem("recentlyCreatedStudents")
+    logger.info("Student data cleared")
   }
 
-  // Update the context provider value to include the new method
   return (
     <StudentContext.Provider value={{ students, addStudent, refreshStudents, isLoading, clearStudentData }}>
       {children}
