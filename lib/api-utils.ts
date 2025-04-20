@@ -61,76 +61,6 @@ export function clearToken(): void {
 }
 
 /**
- * Clear all user-related data from browser storage
- * This is a comprehensive cleanup function for logout
- */
-export function clearAllUserData(): void {
-  if (typeof window === "undefined") return
-
-  logger.info("Clearing all user data from browser storage")
-
-  try {
-    // Clear all known localStorage keys that might contain user data
-    const userDataKeys = [
-      LEGACY_TOKEN_KEY,
-      TOKEN_KEY,
-      "recentlyCreatedStudents",
-      "user-preferences",
-      "recent-searches",
-      "dashboard-settings",
-      "saved-filters",
-      "recent-documents",
-      "message-drafts",
-      "user",
-      "userRole",
-      "userPreferences",
-      "lastLogin",
-      "sessionData",
-      "authState",
-      "rememberMe",
-      "google_oauth_state",
-      "google_user_info",
-    ]
-
-    userDataKeys.forEach((key) => {
-      try {
-        localStorage.removeItem(key)
-      } catch (e) {
-        logger.error(`Failed to remove ${key} from localStorage:`, e)
-      }
-    })
-
-    // As a fallback, try to clear all localStorage
-    try {
-      localStorage.clear()
-    } catch (e) {
-      logger.error("Failed to clear localStorage:", e)
-    }
-
-    // Clear session storage
-    try {
-      sessionStorage.clear()
-    } catch (e) {
-      logger.error("Failed to clear sessionStorage:", e)
-    }
-
-    // Clear cookies (those accessible via JavaScript)
-    try {
-      document.cookie.split(";").forEach((cookie) => {
-        const [name] = cookie.trim().split("=")
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-      })
-    } catch (e) {
-      logger.error("Failed to clear cookies:", e)
-    }
-
-    logger.info("All user data cleared successfully")
-  } catch (error) {
-    logger.error("Error during data clearing:", error)
-  }
-}
-
-/**
  * Create headers for API requests, including authentication if available
  * @param includeContentType Whether to include Content-Type header
  * @returns Headers object for fetch requests
@@ -192,38 +122,5 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
   } catch (error) {
     logger.error("Failed to parse response data:", error)
     return { error: "Failed to parse response data" }
-  }
-}
-
-/**
- * Helper function to standardize API response handling
- * @param param0 Object containing data or error
- * @returns Standardized ApiResponse object
- */
-export function handleApiResponse<T>({ data, error }: { data?: T; error?: string }): ApiResponse<T> {
-  if (error) {
-    logger.error("API error:", error)
-    return { error }
-  }
-  if (data) {
-    return { data }
-  }
-  const errorMessage = "No data or error provided"
-  logger.error(errorMessage)
-  return { error: errorMessage }
-}
-
-/**
- * Safely parse JSON with error handling
- * @param jsonString JSON string to parse
- * @param fallback Fallback value if parsing fails
- * @returns Parsed object or fallback
- */
-export function safeJsonParse<T>(jsonString: string, fallback: T): T {
-  try {
-    return JSON.parse(jsonString) as T
-  } catch (error) {
-    logger.error("JSON parse error:", error)
-    return fallback
   }
 }
