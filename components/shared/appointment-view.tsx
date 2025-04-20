@@ -30,6 +30,7 @@ const mockAppointments = [
     description: "Weekly math tutoring session focusing on algebra.",
     students: [{ firstName: "Alex", lastName: "Johnson" }],
     tutors: [{ firstName: "Michael", lastName: "Smith" }],
+    parents: [{ firstName: "Jane", lastName: "Doe" }],
   },
   {
     id: "2",
@@ -44,6 +45,7 @@ const mockAppointments = [
       { firstName: "Noah", lastName: "Wilson" },
     ],
     tutors: [{ firstName: "Sophia", lastName: "Brown" }],
+    parents: [{ firstName: "Robert", lastName: "Davis" }],
   },
   {
     id: "3",
@@ -65,6 +67,7 @@ const mockAppointments = [
     description: "Review of Shakespeare's Macbeth for upcoming essay.",
     students: [{ firstName: "Olivia", lastName: "Martinez" }],
     tutors: [{ firstName: "William", lastName: "Taylor" }],
+    parents: [{ firstName: "Linda", lastName: "Martinez" }],
   },
   {
     id: "4",
@@ -86,6 +89,7 @@ const mockAppointments = [
     description: "Preparation for the upcoming history midterm exam.",
     students: [{ firstName: "James", lastName: "Anderson" }],
     tutors: [{ firstName: "Charlotte", lastName: "Thomas" }],
+    parents: [{ firstName: "David", lastName: "Anderson" }],
   },
 ]
 
@@ -198,6 +202,12 @@ export function AppointmentView({ userRole }: AppointmentViewProps) {
                           <span>Tutors: {formatParticipants(appointment.tutors)}</span>
                         </div>
                       )}
+                      {appointment.parents && (
+                        <div className="flex items-center">
+                          <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span>Parents: {formatParticipants(appointment.parents)}</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                   <CardFooter className="pt-2">
@@ -263,6 +273,12 @@ export function AppointmentView({ userRole }: AppointmentViewProps) {
                         <div className="flex items-center">
                           <User className="mr-2 h-4 w-4 text-muted-foreground" />
                           <span>Tutors: {formatParticipants(appointment.tutors)}</span>
+                        </div>
+                      )}
+                      {appointment.parents && (
+                        <div className="flex items-center">
+                          <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span>Parents: {formatParticipants(appointment.parents)}</span>
                         </div>
                       )}
                     </div>

@@ -139,6 +139,9 @@ export function WeekView({
                     {appointment.tutors && appointment.tutors.length > 0 && (
                       <div className="text-xs truncate">Tutors: {formatParticipants(appointment.tutors)}</div>
                     )}
+                    {appointment.parents && appointment.parents.length > 0 && (
+                      <div className="text-xs truncate">Parents: {formatParticipants(appointment.parents)}</div>
+                    )}
                   </div>
                 )
               })}

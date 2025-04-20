@@ -1,7 +1,7 @@
 import { handleResponse, createAuthHeaders } from "../api-utils"
 import type { ApiResponse, PaginatedResponse, Appointment } from "../types"
 import { API_URL } from "../config"
-import { getMe } from "@/lib/api";
+import { getMe } from "@/lib/api"
 
 // Create appointment
 export async function createAppointment(data: any): Promise<ApiResponse<any>> {

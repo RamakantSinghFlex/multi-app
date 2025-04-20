@@ -139,6 +139,16 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
           </div>
         )}
 
+        {appointment.parents && appointment.parents.length > 0 && (
+          <div className="flex items-start gap-2">
+            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Parents</p>
+              <p className="text-sm">{formatParticipants(appointment.parents)}</p>
+            </div>
+          </div>
+        )}
+
         {appointment.payment && (
           <div className="flex items-start gap-2">
             <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
