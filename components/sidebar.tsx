@@ -11,9 +11,19 @@ import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
 
 export function Sidebar() {
+  // Update the path detection logic to be more precise
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
+
+  // More precise role detection based on the first segment of the path
+  const pathSegments = pathname.split("/").filter(Boolean)
+  const roleSegment = pathSegments.length > 0 ? pathSegments[0] : ""
+
+  const isStudent = roleSegment === "student"
+  const isParent = roleSegment === "parent"
+  const isAdmin = roleSegment === "admin"
+  const isTutor = roleSegment === "tutor"
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen)
@@ -57,11 +67,6 @@ export function Sidebar() {
   }
 
   // Determine which sidebar items to show based on the path
-  const isStudent = pathname.includes("/student")
-  const isParent = pathname.includes("/parent")
-  const isAdmin = pathname.includes("/admin")
-  const isTutor = pathname.includes("/tutor")
-
   let mainNavItems = []
   let basePath = ""
 
