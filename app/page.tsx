@@ -89,7 +89,7 @@ export default function Home() {
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
           {isAuthenticated ? (
             <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-              <Link href="/dashboard">Go to Dashboard</Link>
+              <Link href={user.roles[0] + "/dashboard"}>Go to Dashboard</Link>
             </Button>
           ) : (
             <>

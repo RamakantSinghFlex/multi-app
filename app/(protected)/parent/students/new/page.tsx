@@ -1,16 +1,10 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,8 +14,7 @@ import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-
 import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
 import type { User } from "@/lib/types"
 import { TENANT_NAME } from "@/lib/config"
-// Import the shared PasswordInput component
-import { PasswordInput } from "@/components/ui/password-input"
+import { UserForm } from "@/components/shared/user-form"
 
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
@@ -99,14 +92,13 @@ export default function NewStudentPage() {
   // UI state
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>("student")
   const [creationProgress, setCreationProgress] = useState("")
 
   // Get available tabs based on creation mode
-  const getAvailableTabs = useCallback((): TabType[] => {
+  const getAvailableTabs = (): TabType[] => {
     switch (creationMode) {
       case "student":
         return ["student"]
@@ -119,7 +111,7 @@ export default function NewStudentPage() {
       default:
         return ["student"]
     }
-  }, [creationMode])
+  }
 
   // Update active tab when creation mode changes
   useEffect(() => {
@@ -127,72 +119,12 @@ export default function NewStudentPage() {
     if (!availableTabs.includes(activeTab)) {
       setActiveTab(availableTabs[0])
     }
-  }, [creationMode, activeTab, getAvailableTabs])
-
-  // Handle student form changes
-  const handleStudentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setStudentData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Handle tutor form changes
-  const handleTutorChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setTutorData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Handle parent form changes
-  const handleParentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setParentData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Handle select changes
-  const handleSelectChange = (formType: "student" | "tutor" | "parent", name: string, value: string) => {
-    if (formType === "student") {
-      setStudentData((prev) => ({ ...prev, [name]: value }))
-    } else if (formType === "tutor") {
-      setTutorData((prev) => ({ ...prev, [name]: value }))
-    } else if (formType === "parent") {
-      setParentData((prev) => ({ ...prev, [name]: value }))
-    }
-  }
-
-  // Handle password changes
-  const handlePasswordChange = (formType: "student" | "tutor" | "parent", value: string) => {
-    if (formType === "student") {
-      setStudentData((prev) => ({ ...prev, password: value }))
-    } else if (formType === "tutor") {
-      setTutorData((prev) => ({ ...prev, password: value }))
-    } else if (formType === "parent") {
-      setParentData((prev) => ({ ...prev, password: value }))
-    }
-  }
+  }, [creationMode, activeTab])
 
   // Handle creation mode change
   const handleCreationModeChange = (mode: CreationMode) => {
     setCreationMode(mode)
-
-    // Reset any errors when changing mode
     setError(null)
-
-    // Get the available tabs for the new mode
-    const availableTabs = getAvailableTabs()
-
-    // If the current active tab is not available in the new mode, switch to the first available tab
-    if (!availableTabs.includes(activeTab)) {
-      setActiveTab(availableTabs[0])
-    }
-  }
-
-  // Navigate to the next tab
-  const handleNextTab = () => {
-    const availableTabs = getAvailableTabs()
-    const currentIndex = availableTabs.indexOf(activeTab)
-
-    if (currentIndex < availableTabs.length - 1) {
-      setActiveTab(availableTabs[currentIndex + 1])
-    }
   }
 
   // Validate the current tab
@@ -220,14 +152,42 @@ export default function NewStudentPage() {
   const handleNextButtonClick = () => {
     if (validateCurrentTab()) {
       setError(null)
-      handleNextTab()
+      const availableTabs = getAvailableTabs()
+      const currentIndex = availableTabs.indexOf(activeTab)
+      if (currentIndex < availableTabs.length - 1) {
+        setActiveTab(availableTabs[currentIndex + 1])
+      }
     }
   }
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Handle student form submission
+  const handleStudentSubmit = async (data: any) => {
+    setStudentData(data)
+    if (getAvailableTabs().length > 1) {
+      handleNextButtonClick()
+    } else {
+      await handleSubmit()
+    }
+  }
 
+  // Handle parent form submission
+  const handleParentSubmit = async (data: any) => {
+    setParentData(data)
+    if (getAvailableTabs().indexOf("parent") < getAvailableTabs().length - 1) {
+      handleNextButtonClick()
+    } else {
+      await handleSubmit()
+    }
+  }
+
+  // Handle tutor form submission
+  const handleTutorSubmit = async (data: any) => {
+    setTutorData(data)
+    await handleSubmit()
+  }
+
+  // Handle form submission
+  const handleSubmit = async () => {
     // Validate the current tab first
     if (!validateCurrentTab()) {
       return
@@ -308,7 +268,7 @@ export default function NewStudentPage() {
         const tutorPayload = {
           ...tutorData,
           students: [createdStudent.id], // Link to the created student
-          parents: [userId, createdParent?.id], // Link to the created tutor
+          parents: [userId, createdParent?.id].filter(Boolean), // Link to the created tutor
         }
 
         const tutorResponse = await createUser(tutorPayload)
@@ -373,7 +333,6 @@ export default function NewStudentPage() {
       })
 
       // Reset UI states
-      setShowConfirmPassword(false)
       setActiveTab("student")
       setCreationMode("student")
 
@@ -426,21 +385,17 @@ export default function NewStudentPage() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <Select
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
                 value={creationMode}
-                onValueChange={(value) => handleCreationModeChange(value as CreationMode)}
+                onChange={(e) => handleCreationModeChange(e.target.value as CreationMode)}
                 disabled={isLoading}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select creation mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Create Student Only</SelectItem>
-                  <SelectItem value="student-parent">Create Student & Parent</SelectItem>
-                  <SelectItem value="student-tutor">Create Student & Tutor</SelectItem>
-                  <SelectItem value="student-parent-tutor">Create Student, Parent & Tutor</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="student">Create Student Only</option>
+                <option value="student-parent">Create Student & Parent</option>
+                <option value="student-tutor">Create Student & Tutor</option>
+                <option value="student-parent-tutor">Create Student, Parent & Tutor</option>
+              </select>
             </div>
           </div>
         </CardContent>
@@ -469,349 +424,35 @@ export default function NewStudentPage() {
 
         {/* Student Tab */}
         <TabsContent value="student">
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Information</CardTitle>
-              <CardDescription>Enter the details for the new student</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="studentFirstName">
-                      First Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="studentFirstName"
-                      name="firstName"
-                      value={studentData.firstName}
-                      onChange={handleStudentChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="studentLastName">
-                      Last Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="studentLastName"
-                      name="lastName"
-                      value={studentData.lastName}
-                      onChange={handleStudentChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="studentEmail">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="studentEmail"
-                    name="email"
-                    type="email"
-                    value={studentData.email}
-                    onChange={handleStudentChange}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                {/* Use the shared PasswordInput component */}
-                <PasswordInput
-                  id="studentPassword"
-                  value={studentData.password}
-                  onChange={(value) => handlePasswordChange("student", value)}
-                  disabled={isLoading}
-                  label="Password"
-                  required={true}
-                />
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="gradeLevel">Grade Level</Label>
-                    <Select
-                      value={studentData.gradeLevel}
-                      onValueChange={(value) => handleSelectChange("student", "gradeLevel", value)}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger id="gradeLevel">
-                        <SelectValue placeholder="Select grade level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="elementary">Elementary School</SelectItem>
-                        <SelectItem value="middle">Middle School</SelectItem>
-                        <SelectItem value="high">High School</SelectItem>
-                        <SelectItem value="college">College</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="school">School</Label>
-                    <Input
-                      id="school"
-                      name="school"
-                      value={studentData.school}
-                      onChange={handleStudentChange}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={studentData.notes}
-                    onChange={handleStudentChange}
-                    disabled={isLoading}
-                    rows={4}
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => router.back()} disabled={isLoading}>
-                Cancel
-              </Button>
-              {availableTabs.length > 1 && availableTabs.indexOf(activeTab) < availableTabs.length - 1 ? (
-                <Button onClick={handleNextButtonClick} disabled={isLoading}>
-                  Next: {availableTabs[availableTabs.indexOf(activeTab) + 1] === "parent" ? "Parent" : "Tutor"}{" "}
-                  Information
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : userLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Create Student"
-                  )}
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
+          <UserForm
+            userType="student"
+            initialData={studentData}
+            onSubmit={handleStudentSubmit}
+            onCancel={() => router.back()}
+            isLoading={isLoading || userLoading}
+          />
         </TabsContent>
 
         {/* Parent Tab */}
         <TabsContent value="parent">
-          <Card>
-            <CardHeader>
-              <CardTitle>Parent Information</CardTitle>
-              <CardDescription>Enter the details for the student's parent</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="parentFirstName">
-                      First Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="parentFirstName"
-                      name="firstName"
-                      value={parentData.firstName}
-                      onChange={handleParentChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="parentLastName">
-                      Last Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="parentLastName"
-                      name="lastName"
-                      value={parentData.lastName}
-                      onChange={handleParentChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentEmail">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="parentEmail"
-                    name="email"
-                    type="email"
-                    value={parentData.email}
-                    onChange={handleParentChange}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                {/* Use the shared PasswordInput component */}
-                <PasswordInput
-                  id="parentPassword"
-                  value={parentData.password}
-                  onChange={(value) => handlePasswordChange("parent", value)}
-                  disabled={isLoading}
-                  label="Password"
-                  required={true}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentPhone">Phone</Label>
-                  <Input
-                    id="parentPhone"
-                    name="phone"
-                    value={parentData.phone}
-                    onChange={handleParentChange}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
-                Back to Student
-              </Button>
-              {availableTabs.indexOf(activeTab) < availableTabs.length - 1 ? (
-                <Button onClick={handleNextButtonClick} disabled={isLoading}>
-                  Next: Tutor Information
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : userLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : creationMode === "student-parent" ? (
-                    "Create Student & Parent"
-                  ) : (
-                    "Create All"
-                  )}
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
+          <UserForm
+            userType="parent"
+            initialData={parentData}
+            onSubmit={handleParentSubmit}
+            onCancel={() => setActiveTab("student")}
+            isLoading={isLoading || userLoading}
+          />
         </TabsContent>
 
         {/* Tutor Tab */}
         <TabsContent value="tutor">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tutor Information</CardTitle>
-              <CardDescription>Enter the details for the tutor</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorFirstName">
-                      First Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="tutorFirstName"
-                      name="firstName"
-                      value={tutorData.firstName}
-                      onChange={handleTutorChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorLastName">
-                      Last Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="tutorLastName"
-                      name="lastName"
-                      value={tutorData.lastName}
-                      onChange={handleTutorChange}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tutorEmail">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="tutorEmail"
-                    name="email"
-                    type="email"
-                    value={tutorData.email}
-                    onChange={handleTutorChange}
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                {/* Use the shared PasswordInput component */}
-                <PasswordInput
-                  id="tutorPassword"
-                  value={tutorData.password}
-                  onChange={(value) => handlePasswordChange("tutor", value)}
-                  disabled={isLoading}
-                  label="Password"
-                  required={true}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="tutorPhone">Phone</Label>
-                  <Input
-                    id="tutorPhone"
-                    name="phone"
-                    value={tutorData.phone}
-                    onChange={handleTutorChange}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setActiveTab("student")} disabled={isLoading}>
-                Back to Student
-              </Button>
-              <Button onClick={handleSubmit} disabled={isLoading || userLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : userLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading...
-                  </>
-                ) : creationMode === "student-tutor" ? (
-                  "Create Student & Tutor"
-                ) : (
-                  "Create All"
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+          <UserForm
+            userType="tutor"
+            initialData={tutorData}
+            onSubmit={handleTutorSubmit}
+            onCancel={() => setActiveTab(availableTabs.includes("parent") ? "parent" : "student")}
+            isLoading={isLoading || userLoading}
+          />
         </TabsContent>
       </Tabs>
 

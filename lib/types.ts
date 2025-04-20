@@ -40,53 +40,59 @@ export interface AuthResponse {
   message?: string
 }
 
-// User Types
-export interface User {
+// Base User Interface - Common properties for all user types
+export interface BaseUser {
   id: string
   email: string
   firstName?: string
   lastName?: string
   role?: string // For backward compatibility
   roles: string[] // Always use this for role-based logic
+  status?: string
+  phone?: string
+  tenantName?: string
   createdAt: string
   updatedAt: string
   [key: string]: any // Allow for additional properties
 }
 
+// User Types
+export interface User extends BaseUser {
+  // Additional user properties can be added here
+}
+
 // Domain Types
-export interface Student {
-  id: string
-  firstName?: string
-  lastName?: string
-  email?: string
+export interface Student extends BaseUser {
   gradeLevel?: string
-  tenantName?: string
+  school?: string
+  notes?: string
   subjects?: Subject[]
-  parents?: Parent[]
-  tutors?: Tutor[]
+  parents?: Array<Parent | string>
+  tutors?: Array<Tutor | string>
 }
 
-export interface Parent {
-  id: string
-  firstName?: string
-  lastName?: string
-  email?: string
-  students?: Student[]
+export interface Parent extends BaseUser {
+  students?: Array<Student | string>
+  tutors?: Array<Tutor | string>
 }
 
-export interface Tutor {
-  id: string
-  firstName?: string
-  lastName?: string
-  email?: string
+export interface Tutor extends BaseUser {
   subjects?: Subject[]
-  students?: Student[]
+  students?: Array<Student | string>
+  parents?: Array<Parent | string>
 }
 
 export interface Subject {
   id: string
   name: string
   description?: string
+}
+
+// Participant interface for unified handling of users in appointments
+export interface Participant {
+  id: string
+  type: "student" | "tutor" | "parent"
+  user: BaseUser | string
 }
 
 // Update the Appointment interface to match the new schema

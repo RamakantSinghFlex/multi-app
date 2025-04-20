@@ -3,10 +3,11 @@
 import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Users, User, FileText, DollarSign } from "lucide-react"
+import { Calendar, Clock, FileText, DollarSign } from "lucide-react"
 import { cancelAppointment } from "@/lib/api/appointments"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { ParticipantDisplay } from "@/components/shared/participant-display"
 
 interface AppointmentDetailsProps {
   appointment: any
@@ -20,18 +21,6 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
 
   const startTime = parseISO(appointment.startTime)
   const endTime = parseISO(appointment.endTime)
-
-  // Format participant names
-  const formatParticipants = (participants: any[]) => {
-    if (!participants || participants.length === 0) return "None"
-
-    return participants
-      .map((p) => {
-        if (typeof p === "string") return p
-        return `${p.firstName || ""} ${p.lastName || ""}`.trim()
-      })
-      .join(", ")
-  }
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -119,34 +108,17 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
           </div>
         </div>
 
-        {appointment.students && (
-          <div className="flex items-start gap-2">
-            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Students</p>
-              <p className="text-sm">{formatParticipants(appointment.students)}</p>
-            </div>
-          </div>
+        {/* Use the shared ParticipantDisplay component */}
+        {appointment.students && appointment.students.length > 0 && (
+          <ParticipantDisplay label="Students" participantType="student" participants={appointment.students} />
         )}
 
-        {appointment.tutors && (
-          <div className="flex items-start gap-2">
-            <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Tutors</p>
-              <p className="text-sm">{formatParticipants(appointment.tutors)}</p>
-            </div>
-          </div>
+        {appointment.tutors && appointment.tutors.length > 0 && (
+          <ParticipantDisplay label="Tutors" participantType="tutor" participants={appointment.tutors} />
         )}
 
         {appointment.parents && appointment.parents.length > 0 && (
-          <div className="flex items-start gap-2">
-            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Parents</p>
-              <p className="text-sm">{formatParticipants(appointment.parents)}</p>
-            </div>
-          </div>
+          <ParticipantDisplay label="Parents" participantType="parent" participants={appointment.parents} />
         )}
 
         {appointment.payment && (

@@ -120,10 +120,10 @@ export function DayView({
                 <div className="text-xs truncate">
                   {format(startTime, "h:mm a")} - {format(endTime, "h:mm a")}
                 </div>
-                {appointment.students && (
+                {appointment.students && appointment.students.length > 0 && (
                   <div className="text-xs truncate">Students: {formatParticipants(appointment.students)}</div>
                 )}
-                {appointment.tutors && (
+                {appointment.tutors && appointment.tutors.length > 0 && (
                   <div className="text-xs truncate">Tutors: {formatParticipants(appointment.tutors)}</div>
                 )}
                 {appointment.parents && appointment.parents.length > 0 && (
