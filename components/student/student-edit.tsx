@@ -107,7 +107,13 @@ export function StudentEdit({ studentId, students, backPath }: StudentEditProps)
       const response = await updateUser(studentId, studentData)
 
       if (response.error) {
-        handleApiError(response.error, "Error updating student")
+        try {
+          const parsedErrors = parseApiError(response.error)
+          setApiErrors(parsedErrors)
+          setShowErrorModal(true)
+        } catch (e) {
+          setError(typeof response.error === "string" ? response.error : "Error updating student")
+        }
         return
       }
 
@@ -128,20 +134,6 @@ export function StudentEdit({ studentId, students, backPath }: StudentEditProps)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Helper function to handle API errors
-  const handleApiError = (error: any, defaultMessage: string) => {
-    try {
-      // Try to parse the error as JSON if it's a string
-      const parsedErrors = typeof error === "string" && error.startsWith("{") ? JSON.parse(error) : error
-
-      setApiErrors(parseApiError(parsedErrors))
-      setShowErrorModal(true)
-    } catch (e) {
-      setError(typeof error === "string" ? error : defaultMessage)
-    }
-    setIsLoading(false)
   }
 
   if (isFetching) {

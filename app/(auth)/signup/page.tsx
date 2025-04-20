@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { useAuth } from "@/lib/auth-context"
@@ -46,7 +46,6 @@ export default function SignupPage() {
   // UI state
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Validation state
   const [validationErrors, setValidationErrors] = useState<{
@@ -202,11 +201,6 @@ export default function SignupPage() {
     }
   }
 
-  // Handle password generation
-  const handlePasswordGeneration = (newPassword: string) => {
-    setConfirmPassword(newPassword)
-  }
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="mb-8">
@@ -296,7 +290,7 @@ export default function SignupPage() {
               id="password"
               value={password}
               onChange={setPassword}
-              onGeneratePassword={handlePasswordGeneration}
+              onGeneratePassword={setConfirmPassword}
               disabled={isLoading}
               label="Password"
               showStrengthIndicator={true}
@@ -305,32 +299,16 @@ export default function SignupPage() {
               error={validationErrors.password}
             />
 
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="border-input focus:border-primary focus:ring-primary pr-10"
-                  autoComplete="new-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              {validationErrors.confirmPassword && (
-                <p className="text-sm font-medium text-destructive">{validationErrors.confirmPassword}</p>
-              )}
-            </div>
+            <PasswordInput
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              disabled={isLoading}
+              label="Confirm password"
+              autoComplete="new-password"
+              required={true}
+              error={validationErrors.confirmPassword}
+            />
 
             <div className="space-y-3">
               <Label>I am a</Label>

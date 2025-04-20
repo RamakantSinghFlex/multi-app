@@ -1,20 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { format, parseISO } from "date-fns"
-import { Calendar, Clock, MapPin, Users, User, CheckCircle, XCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { GoogleCalendarView } from "@/components/calendar/google-calendar-view"
 

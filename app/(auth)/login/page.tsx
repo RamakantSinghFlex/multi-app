@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
 import { logger } from "@/lib/monitoring"
 import { FEATURES } from "@/lib/config"
@@ -32,7 +33,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{
     email?: string
@@ -257,29 +257,15 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="border-input focus:border-primary focus:ring-primary"
-                  autoComplete="current-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </Button>
-              </div>
-              {validationErrors.password && (
-                <p className="text-sm font-medium text-destructive">{validationErrors.password}</p>
-              )}
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={setPassword}
+                disabled={isLoading}
+                autoComplete="current-password"
+                required={true}
+                error={validationErrors.password}
+              />
             </div>
 
             <div className="flex items-center space-x-2">

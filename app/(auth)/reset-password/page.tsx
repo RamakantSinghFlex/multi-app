@@ -9,18 +9,15 @@ import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { resetPassword } from "@/lib/api/auth"
 import { logger } from "@/lib/monitoring"
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -159,59 +156,28 @@ export default function ResetPasswordPage() {
             </Alert>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading || !token}
-                    className="border-input focus:border-primary focus:ring-primary"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading || !token}
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </Button>
-                </div>
-                {validationErrors.password && (
-                  <p className="text-sm font-medium text-destructive">{validationErrors.password}</p>
-                )}
-              </div>
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={setPassword}
+                disabled={isLoading || !token}
+                label="New Password"
+                autoComplete="new-password"
+                required={true}
+                error={validationErrors.password}
+                showStrengthIndicator={true}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading || !token}
-                    className="border-input focus:border-primary focus:ring-primary"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isLoading || !token}
-                  >
-                    {showConfirmPassword ? "Hide" : "Show"}
-                  </Button>
-                </div>
-                {validationErrors.confirmPassword && (
-                  <p className="text-sm font-medium text-destructive">{validationErrors.confirmPassword}</p>
-                )}
-              </div>
+              <PasswordInput
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                disabled={isLoading || !token}
+                label="Confirm New Password"
+                autoComplete="new-password"
+                required={true}
+                error={validationErrors.confirmPassword}
+              />
 
               <Button type="submit" disabled={isLoading || !token} className="w-full">
                 {isLoading ? (

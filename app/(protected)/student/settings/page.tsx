@@ -5,19 +5,16 @@ import type React from "react"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2, Lock, Bell, Eye, EyeOff } from "lucide-react"
+import { Loader2, Lock, Bell } from "lucide-react"
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function StudentSettingsPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Form states
   const [passwordForm, setPasswordForm] = useState({
@@ -33,9 +30,8 @@ export default function StudentSettingsPage() {
     marketingEmails: false,
   })
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setPasswordForm((prev) => ({ ...prev, [name]: value }))
+  const handlePasswordChange = (field: string, value: string) => {
+    setPasswordForm((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleNotificationChange = (name: string, checked: boolean) => {
@@ -113,74 +109,33 @@ export default function StudentSettingsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="currentPassword"
-                      name="currentPassword"
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordChange}
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    >
-                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+                <PasswordInput
+                  id="currentPassword"
+                  value={passwordForm.currentPassword}
+                  onChange={(value) => handlePasswordChange("currentPassword", value)}
+                  disabled={loading}
+                  label="Current Password"
+                  required={true}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="newPassword"
-                      name="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      value={passwordForm.newPassword}
-                      onChange={handlePasswordChange}
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                    >
-                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+                <PasswordInput
+                  id="newPassword"
+                  value={passwordForm.newPassword}
+                  onChange={(value) => handlePasswordChange("newPassword", value)}
+                  disabled={loading}
+                  label="New Password"
+                  showStrengthIndicator={true}
+                  required={true}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordChange}
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 text-[#858585] hover:text-[#000000]"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+                <PasswordInput
+                  id="confirmPassword"
+                  value={passwordForm.confirmPassword}
+                  onChange={(value) => handlePasswordChange("confirmPassword", value)}
+                  disabled={loading}
+                  label="Confirm New Password"
+                  required={true}
+                />
 
                 <Button type="submit" disabled={loading} className="bg-[#095d40] text-white hover:bg-[#02342e]">
                   {loading ? (
