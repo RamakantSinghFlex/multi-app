@@ -1,6 +1,7 @@
 import { handleResponse, createAuthHeaders } from "../api-utils"
 import type { ApiResponse, PaginatedResponse, Appointment } from "../types"
 import { API_URL } from "../config"
+import { getMe } from "@/lib/api";
 
 // Create appointment
 export async function createAppointment(data: any): Promise<ApiResponse<any>> {
@@ -58,7 +59,7 @@ export async function cancelAppointment(id: string): Promise<ApiResponse<any>> {
   }
 }
 
-// Get appointments
+// Update the getAppointments function to also refresh user data
 export async function getAppointments(params: {
   student?: string
   tutor?: string
@@ -99,6 +100,14 @@ export async function getAppointments(params: {
       const nextWeek = new Date(today)
       nextWeek.setDate(nextWeek.getDate() + 7)
 
+      // Also refresh user data
+      try {
+        await getMe()
+      } catch (refreshError) {
+        console.warn("Failed to refresh user data:", refreshError)
+        // Continue with appointments fetch even if user refresh fails
+      }
+
       return {
         data: [
           {
@@ -138,12 +147,21 @@ export async function getAppointments(params: {
       }
     }
 
+    // First, fetch appointments
     const response = await fetch(`${API_URL}/appointments${queryString}`, {
       headers,
       credentials: "include",
     })
 
     const result = await handleResponse<PaginatedResponse<Appointment>>(response)
+
+    // After fetching appointments, also refresh user data
+    try {
+      await getMe()
+    } catch (refreshError) {
+      console.warn("Failed to refresh user data:", refreshError)
+      // Continue with appointments response even if user refresh fails
+    }
 
     // Transform the paginated response to match our expected format
     if (result.data) {

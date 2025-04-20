@@ -42,7 +42,7 @@ export interface GoogleCalendarViewProps {
 }
 
 export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarViewProps) {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,6 +71,9 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
         // The data is now directly available as an array
         setAppointments(response.data)
       }
+
+      // Refresh user data in the auth context
+      await refreshUser()
     } catch (error) {
       console.error("Error fetching appointments:", error)
       setError(error instanceof Error ? error.message : "Failed to load appointments")
