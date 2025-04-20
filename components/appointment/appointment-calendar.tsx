@@ -44,6 +44,9 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const students = (user?.students || []) as Student[]
   const parents = (user?.parents || []) as Parent[]
 
+  const userRoles = user?.roles || []
+  const userId = user?.id
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
   }
@@ -161,13 +164,30 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
     setLoading(true)
 
     try {
+      // Automatically include the current user based on their role
+      const updatedTutors = [...selectedTutors]
+      const updatedStudents = [...selectedStudents]
+      const updatedParents = [...selectedParents]
+
+      if (userId) {
+        if (userRoles.includes("tutor") && !updatedTutors.includes(userId)) {
+          updatedTutors.push(userId)
+        }
+        if (userRoles.includes("student") && !updatedStudents.includes(userId)) {
+          updatedStudents.push(userId)
+        }
+        if (userRoles.includes("parent") && !updatedParents.includes(userId)) {
+          updatedParents.push(userId)
+        }
+      }
+
       const response = await createAppointment({
         title,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
-        tutors: selectedTutors,
-        students: selectedStudents,
-        parents: selectedParents,
+        tutors: updatedTutors,
+        students: updatedStudents,
+        parents: updatedParents,
         status,
         notes,
       })

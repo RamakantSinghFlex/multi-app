@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { ParticipantSelector } from "@/components/shared/participant-selector"
 import type { Student, Tutor, Parent, Appointment } from "@/lib/types"
+import { useAuth } from "@/lib/auth-context"
 
 interface AppointmentFormProps {
   initialData?: Partial<Appointment>
@@ -58,6 +59,10 @@ export function AppointmentForm({
   })
 
   const [validationError, setValidationError] = useState<string | null>(null)
+
+  const { user } = useAuth()
+  const userRoles = user?.roles || []
+  const userId = user?.id
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -159,6 +164,23 @@ export function AppointmentForm({
     setLoading(true)
 
     try {
+      // Automatically include the current user based on their role
+      const updatedTutors = [...formData.selectedTutors]
+      const updatedStudents = [...formData.selectedStudents]
+      const updatedParents = [...formData.selectedParents]
+
+      if (userId) {
+        if (userRoles.includes("tutor") && !updatedTutors.includes(userId)) {
+          updatedTutors.push(userId)
+        }
+        if (userRoles.includes("student") && !updatedStudents.includes(userId)) {
+          updatedStudents.push(userId)
+        }
+        if (userRoles.includes("parent") && !updatedParents.includes(userId)) {
+          updatedParents.push(userId)
+        }
+      }
+
       const appointmentData = {
         id: initialData?.id,
         title: formData.title,
@@ -166,9 +188,9 @@ export function AppointmentForm({
         endTime: formData.endTime,
         notes: formData.notes,
         status: formData.status,
-        tutors: formData.selectedTutors,
-        students: formData.selectedStudents,
-        parents: formData.selectedParents,
+        tutors: updatedTutors,
+        students: updatedStudents,
+        parents: updatedParents,
       }
 
       let response

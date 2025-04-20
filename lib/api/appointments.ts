@@ -22,8 +22,15 @@ export async function createAppointment(data: any): Promise<ApiResponse<any>> {
 }
 
 // Update appointment
-export async function updateAppointment(id: string, data: any): Promise<ApiResponse<any>> {
+export async function updateAppointment(data: any): Promise<ApiResponse<any>> {
   try {
+    const id = data.id
+    if (!id) {
+      return {
+        error: "Appointment ID is required for updates",
+      }
+    }
+
     const response = await fetch(`${API_URL}/appointments/${id}`, {
       method: "PATCH",
       headers: createAuthHeaders(),
@@ -34,8 +41,7 @@ export async function updateAppointment(id: string, data: any): Promise<ApiRespo
     return await handleResponse<any>(response)
   } catch (error) {
     return {
-      error:
-        error instanceof Error ? error.message : `An unknown error occurred while updating appointment with ID ${id}`,
+      error: error instanceof Error ? error.message : "An unknown error occurred while updating appointment",
     }
   }
 }
