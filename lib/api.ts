@@ -449,5 +449,7 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
   })
 }
 
+
+
 // Export types
 export type { User }

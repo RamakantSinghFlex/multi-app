@@ -1,4 +1,4 @@
-import { handleApiResponse } from "../api-utils"
+import { handleResponse } from "@/lib/api-utils";
 
 export async function getContentByCollection(collectionSlug: string, page = 1, limit = 10) {
   try {
@@ -19,9 +19,9 @@ export async function getContentByCollection(collectionSlug: string, page = 1, l
       page,
     }
 
-    return handleApiResponse({ data: mockResponse })
+    return handleResponse({ data: mockResponse })
   } catch (error) {
-    return handleApiResponse({ error: error instanceof Error ? error.message : "Failed to fetch collection content" })
+    return handleResponse({ error: error instanceof Error ? error.message : "Failed to fetch collection content" })
   }
 }
 
@@ -55,8 +55,8 @@ export async function getContentById(collection: string, id: string) {
       updatedAt: new Date().toISOString(),
     }
 
-    return handleApiResponse({ data: mockResponse })
+    return handleResponse({ data: mockResponse })
   } catch (error) {
-    return handleApiResponse({ error: error instanceof Error ? error.message : "Failed to fetch content" })
+    return handleResponse({ error: error instanceof Error ? error.message : "Failed to fetch content" })
   }
 }

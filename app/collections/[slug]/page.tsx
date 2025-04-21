@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { getContentByCollection } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +16,7 @@ import { BookOpen, Filter } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { sanitizeHtml } from "@/lib/utils"
+import { getContentByCollection } from "@/lib/api/collections";
 
 export default function CollectionPage() {
   const params = useParams()
