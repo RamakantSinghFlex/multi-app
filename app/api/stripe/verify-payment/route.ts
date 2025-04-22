@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { AUTH_COOKIE_NAME } from "@/lib/config"
 
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization") || ""
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get("session_id")
 
     if (!sessionId) {
       return NextResponse.json({ error: "Session ID is required" }, { status: 400 })
-    }
-
-    // Get the auth token from cookies
-    const cookieStore = cookies()
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     // Forward the request to the PayloadCMS Stripe endpoint
@@ -25,7 +16,7 @@ export async function GET(request: Request) {
       {
         method: "GET",
         headers: {
-          Authorization: `JWT ${token}`,
+          Authorization: authHeader,
         },
       },
     )

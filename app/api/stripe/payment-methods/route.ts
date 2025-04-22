@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { AUTH_COOKIE_NAME } from "@/lib/config"
 
 export async function GET(request: Request) {
   try {
-    // Get the auth token from cookies
-    const cookieStore = cookies()
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-    }
+    const authHeader = request.headers.get("authorization") || ""
 
     // Get payment methods using Stripe REST API
     const response = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_API_URL}/stripe/rest`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `JWT ${token}`,
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         stripeMethod: "stripe.paymentMethods.list",

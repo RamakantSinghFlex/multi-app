@@ -258,6 +258,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         endTime: endDateTime.toISOString(),
         notes,
       })
+      debugger
 
       if (stripeResponse.error) {
         throw new Error(stripeResponse.error)

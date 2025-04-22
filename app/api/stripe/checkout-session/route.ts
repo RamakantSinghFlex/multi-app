@@ -1,26 +1,17 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { AUTH_COOKIE_NAME } from "@/lib/config"
 
 export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization") || ""
     const body = await request.json()
     const { stripeMethod, stripeArgs } = body
-
-    // Get the auth token from cookies
-    const cookieStore = cookies()
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-    }
 
     // Forward the request to the PayloadCMS Stripe REST endpoint
     const response = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_API_URL}/stripe/rest`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `JWT ${token}`,
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         method: stripeMethod,

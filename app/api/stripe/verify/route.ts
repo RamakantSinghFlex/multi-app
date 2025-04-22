@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { AUTH_COOKIE_NAME } from "@/lib/config"
 
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization") || ""
     const url = new URL(request.url)
     const sessionId = url.searchParams.get("session_id")
 
@@ -11,20 +10,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Session ID is required" }, { status: 400 })
     }
 
-    // Get the auth token from cookies
-    const cookieStore = cookies()
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-    }
-
     // Verify payment status using Stripe REST API
     const response = await fetch(`${process.env.NEXT_PUBLIC_PAYLOAD_API_URL}/stripe/rest`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `JWT ${token}`,
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         stripeMethod: "stripe.checkout.sessions.retrieve",

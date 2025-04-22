@@ -1,6 +1,5 @@
 import { handleResponse, createAuthHeaders } from "../api-utils"
 import type { ApiResponse } from "../types"
-import { API_URL } from "../config"
 
 /**
  * Create a Stripe checkout session for an appointment

@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { AUTH_COOKIE_NAME, APP_URL } from "@/lib/config"
+import { APP_URL } from "@/lib/config"
 
 export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization") || ""
     const body = await request.json()
     const { appointmentId, title, price, tutorIds, studentIds, startTime, endTime, notes } = body
-
-    // Get the auth token from cookies
-    const cookieStore = cookies()
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-
-    if (!token) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-    }
 
     // Format the appointment data for the API
     const appointmentData = {
@@ -32,7 +24,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `JWT ${token}`,
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         appointment: appointmentData,
