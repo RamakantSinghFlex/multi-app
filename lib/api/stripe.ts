@@ -21,7 +21,7 @@ export async function createStripeCheckoutSession(appointmentData: {
     // Use the server-side API route instead of direct Stripe API call
     const response = await fetch(`/api/stripe/checkout`, {
       method: "POST",
-      headers: createAuthHeaders(),
+      headers: createAuthHeaders(true),
       body: JSON.stringify({ appointmentData }),
       credentials: "include",
     })
