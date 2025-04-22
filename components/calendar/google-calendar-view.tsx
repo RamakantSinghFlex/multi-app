@@ -221,7 +221,6 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
         {/* Sidebar with mini calendar */}
         <div className="md:col-span-1">
           <Card className="p-4">
-
             <div>
               <h4 className="text-sm font-medium mb-2">Legend</h4>
               <div className="space-y-2">

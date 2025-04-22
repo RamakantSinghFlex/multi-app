@@ -8,7 +8,6 @@
  * - Response processing
  */
 
-import type { ApiResponse } from "./types"
 import { logger } from "./monitoring"
 
 // Constants
@@ -102,7 +101,7 @@ export function extractErrorMessage(errorData: any): string {
  * @param response Fetch Response object
  * @returns Standardized ApiResponse object
  */
-export async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+export async function handleResponse<T>(response: Response): Promise<{ data?: T; error?: string }> {
   if (!response.ok) {
     try {
       const errorData = await response.json()
@@ -123,4 +122,10 @@ export async function handleResponse<T>(response: Response): Promise<ApiResponse
     logger.error("Failed to parse response data:", error)
     return { error: "Failed to parse response data" }
   }
+}
+
+// Export types
+export type ApiResponse<T> = {
+  data?: T
+  error?: string
 }

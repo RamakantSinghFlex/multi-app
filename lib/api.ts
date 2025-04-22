@@ -449,7 +449,25 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
   })
 }
 
+/**
+ * Get user sessions
+ * @returns A response containing the sessions data
+ */
+export async function getSessions(): Promise<ApiResponse<{ sessions: any[] }>> {
+  try {
+    const response = await fetch(`${API_URL}/api/sessions`, {
+      method: "GET",
+      headers: createAuthHeaders(),
+      credentials: "include",
+    })
 
+    return await handleResponse<{ sessions: any[] }>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching sessions",
+    }
+  }
+}
 
 // Export types
 export type { User }

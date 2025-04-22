@@ -1,4 +1,4 @@
-import { handleResponse } from "@/lib/api-utils";
+import { handleResponse } from "@/lib/api-utils"
 
 export async function getContentByCollection(collectionSlug: string, page = 1, limit = 10) {
   try {

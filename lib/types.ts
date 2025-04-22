@@ -80,6 +80,7 @@ export interface Tutor extends BaseUser {
   subjects?: Subject[]
   students?: Array<Student | string>
   parents?: Array<Parent | string>
+  hourlyRate?: number // Added hourly rate for payment calculation
 }
 
 export interface Subject {
@@ -101,12 +102,14 @@ export interface Appointment {
   title: string
   startTime: string
   endTime: string
-  status: "pending" | "confirmed" | "cancelled" | "completed"
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "awaiting_payment"
   notes?: string
   tutors: Array<Tutor | string>
   students: Array<Student | string>
   parents?: Array<Parent | string>
   payment?: Payment | string
+  price?: number // Added price field
+  stripeSessionId?: string // Added Stripe session ID
 }
 
 // Add Payment interface
@@ -117,6 +120,7 @@ export interface Payment {
   status: "pending" | "completed" | "failed" | "refunded"
   createdAt: string
   updatedAt: string
+  stripePaymentIntentId?: string // Added Stripe payment intent ID
 }
 
 export interface Session {
@@ -180,4 +184,15 @@ export interface AuthState {
   isAuthenticated: boolean
   error: string | null
   successMessage: string | null
+}
+
+// Stripe Types
+export interface StripeCheckoutSession {
+  id: string
+  url: string
+}
+
+export interface StripePaymentStatus {
+  status: "complete" | "incomplete" | "expired"
+  appointmentId?: string
 }

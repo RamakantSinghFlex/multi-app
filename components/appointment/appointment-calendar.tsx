@@ -10,14 +10,16 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarView } from "@/components/ui/calendar-view"
-import { format, setHours, setMinutes, isPast, isToday } from "date-fns"
+import { format, setHours, setMinutes, isPast, isToday, differenceInMinutes } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { createAppointment } from "@/lib/api/appointments"
+import { createStripeCheckoutSession } from "@/lib/api/stripe"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, X } from "lucide-react"
+import { AlertCircle, X, CreditCard } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/auth-context"
 import type { Student, Tutor, Parent } from "@/lib/types"
+import { useRouter } from "next/navigation"
 
 interface AppointmentCalendarProps {
   onSuccess?: () => void
@@ -27,6 +29,7 @@ interface AppointmentCalendarProps {
 export default function AppointmentCalendar({ onSuccess, onCancel }: AppointmentCalendarProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [title, setTitle] = useState("")
@@ -38,6 +41,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [selectedParents, setSelectedParents] = useState<string[]>([])
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [price, setPrice] = useState<number | null>(null)
 
   // Use user data from auth context
   const tutors = (user?.tutors || []) as Tutor[]
@@ -54,11 +58,14 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const handleAddTutor = (tutorId: string) => {
     if (!selectedTutors.includes(tutorId)) {
       setSelectedTutors([...selectedTutors, tutorId])
+      calculatePrice([...selectedTutors, tutorId], startTime, endTime)
     }
   }
 
   const handleRemoveTutor = (tutorId: string) => {
-    setSelectedTutors(selectedTutors.filter((id) => id !== tutorId))
+    const updatedTutors = selectedTutors.filter((id) => id !== tutorId)
+    setSelectedTutors(updatedTutors)
+    calculatePrice(updatedTutors, startTime, endTime)
   }
 
   const handleAddStudent = (studentId: string) => {
@@ -79,6 +86,46 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
 
   const handleRemoveParent = (parentId: string) => {
     setSelectedParents(selectedParents.filter((id) => id !== parentId))
+  }
+
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value)
+    calculatePrice(selectedTutors, value, endTime)
+  }
+
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value)
+    calculatePrice(selectedTutors, startTime, value)
+  }
+
+  const calculatePrice = (tutorIds: string[], start: string, end: string) => {
+    // Parse times
+    const [startHour, startMinute] = start.split(":").map(Number)
+    const [endHour, endMinute] = end.split(":").map(Number)
+
+    const startDateTime = new Date(selectedDate)
+    startDateTime.setHours(startHour, startMinute, 0, 0)
+
+    const endDateTime = new Date(selectedDate)
+    endDateTime.setHours(endHour, endMinute, 0, 0)
+
+    // Calculate duration in minutes
+    const durationMinutes = differenceInMinutes(endDateTime, startDateTime)
+
+    if (durationMinutes <= 0) {
+      setPrice(null)
+      return
+    }
+
+    // Calculate price based on tutors' hourly rates
+    let totalPrice = 0
+    tutorIds.forEach((tutorId) => {
+      const tutor = tutors.find((t) => t.id === tutorId)
+      const hourlyRate = tutor?.hourlyRate || 50 // Default rate if not specified
+      totalPrice += (hourlyRate * durationMinutes) / 60
+    })
+
+    setPrice(totalPrice)
   }
 
   const getTutorName = (id: string) => {
@@ -181,28 +228,47 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         }
       }
 
-      const response = await createAppointment({
+      // First create the appointment with status "awaiting_payment"
+      const appointmentResponse = await createAppointment({
         title,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         tutors: updatedTutors,
         students: updatedStudents,
         parents: updatedParents,
-        status,
+        status: "awaiting_payment", // Set initial status to awaiting payment
         notes,
+        price: price || 0,
       })
 
-      if (response.error) {
-        throw new Error(response.error)
+      if (appointmentResponse.error) {
+        throw new Error(appointmentResponse.error)
       }
 
-      toast({
-        title: "Success",
-        description: "Appointment created successfully",
-      })
+      const appointmentId = appointmentResponse.data?.id
 
-      if (onSuccess) {
-        onSuccess()
+      // Then create a Stripe checkout session
+      const stripeResponse = await createStripeCheckoutSession({
+        appointmentId,
+        title,
+        price: price || 0,
+        tutorIds: updatedTutors,
+        studentIds: updatedStudents,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        notes,
+      })
+      debugger;
+
+      if (stripeResponse.error) {
+        throw new Error(stripeResponse.error)
+      }
+
+      // Redirect to Stripe checkout
+      if (stripeResponse.data?.url) {
+        window.location.href = stripeResponse.data.url
+      } else {
+        throw new Error("No checkout URL returned from Stripe")
       }
     } catch (error) {
       console.error("Error creating appointment:", error)
@@ -211,7 +277,6 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         description: error instanceof Error ? error.message : "Failed to create appointment",
         variant: "destructive",
       })
-    } finally {
       setLoading(false)
     }
   }
@@ -260,13 +325,19 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                   id="startTime"
                   type="time"
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  onChange={(e) => handleStartTimeChange(e.target.value)}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="endTime">End Time</Label>
-                <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => handleEndTimeChange(e.target.value)}
+                  required
+                />
               </div>
             </div>
 
@@ -280,7 +351,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                   <SelectContent>
                     {tutors.map((tutor) => (
                       <SelectItem key={tutor.id} value={tutor.id}>
-                        {tutor.firstName} {tutor.lastName}
+                        {tutor.firstName} {tutor.lastName} {tutor.hourlyRate ? `(${tutor.hourlyRate}/hr)` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -361,21 +432,6 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
             )}
 
             <div>
-              <Label htmlFor="status">Appointment Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
@@ -386,12 +442,27 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
               />
             </div>
 
+            {price !== null && (
+              <div className="bg-slate-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-slate-500" />
+                    <span className="font-medium">Total Price:</span>
+                  </div>
+                  <span className="text-lg font-bold">${price.toFixed(2)}</span>
+                </div>
+                <p className="text-sm text-slate-500 mt-2">
+                  You will be redirected to a secure payment page after submitting.
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Appointment"}
+              <Button type="submit" disabled={loading || price === null}>
+                {loading ? "Processing..." : "Proceed to Payment"}
               </Button>
             </div>
           </form>
