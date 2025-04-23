@@ -50,8 +50,11 @@ export function AppointmentPaymentStatus() {
           if (paymentStatus === "complete") {
             await updateAppointmentPayment(apptId, {
               paymentId: sessionId,
-              paymentStatus: "paid",
-              paymentAmount: 0, // This would be retrieved from the session data in a real implementation
+              status: "paid",
+              amount: response.data?.amount || 0,
+              currency: response.data?.currency || "usd",
+              paymentMethod: response.data?.paymentMethod || "card",
+              paymentDate: new Date().toISOString(),
             })
           }
         }

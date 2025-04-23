@@ -244,7 +244,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       if (appointmentResponse.error) {
         throw new Error(appointmentResponse.error)
       }
-      debugger;
+      debugger
       const appointmentId = appointmentResponse.data?.doc?.id
 
       // Then create a Stripe checkout session
