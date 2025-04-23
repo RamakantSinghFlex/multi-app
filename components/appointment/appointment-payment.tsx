@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ export function AppointmentPaymentStatus() {
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<"success" | "pending" | "error">("pending")
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const requestMadeRef = useRef(false)
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id")
@@ -32,8 +33,14 @@ export function AppointmentPaymentStatus() {
       return
     }
 
+    // Prevent duplicate requests
+    if (requestMadeRef.current) {
+      return
+    }
+
     const verifyPayment = async () => {
       try {
+        requestMadeRef.current = true
         const response = await verifyStripePayment(sessionId)
 
         if (response.error) {
