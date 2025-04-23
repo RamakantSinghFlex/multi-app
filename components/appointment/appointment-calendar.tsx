@@ -244,8 +244,8 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       if (appointmentResponse.error) {
         throw new Error(appointmentResponse.error)
       }
-
-      const appointmentId = appointmentResponse.data?.id
+      debugger;
+      const appointmentId = appointmentResponse.data?.doc?.id
 
       // Then create a Stripe checkout session
       const stripeResponse = await createStripeCheckoutSession({
@@ -253,6 +253,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         title,
         price: price || 0,
         tutorIds: updatedTutors,
+        parentIds: updatedParents,
         studentIds: updatedStudents,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),

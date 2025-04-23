@@ -7,15 +7,16 @@ import type { ApiResponse } from "../types"
  * @returns A response containing the checkout URL
  */
 export async function createStripeCheckoutSession(appointmentData: {
-  appointmentId?: string
+  notes: string;
+  appointmentId: any;
+  price: number;
+  tutorIds?: string[];
+  parentIds?: string[];
+  startTime: string;
+  studentIds?: string[];
+  endTime: string;
   title: string
-  price: number
-  tutorIds: string[]
-  studentIds: string[]
-  startTime: string
-  endTime: string
-  notes?: string
-}): Promise<ApiResponse<{ url: string }>> {
+}): Promise<ApiResponse<{url: string}>> {
   try {
     // Use the server-side API route instead of direct Stripe API call
     const response = await fetch(`/api/stripe/checkout`, {

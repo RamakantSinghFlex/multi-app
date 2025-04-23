@@ -29,8 +29,9 @@ export async function POST(request: Request) {
     // Create metadata for the session
     const metadata = {
       appointmentId: appointmentData.appointmentId || "",
-      tutorIds: appointmentData.tutorIds.join(","),
-      studentIds: appointmentData.studentIds.join(","),
+      tutorIds: appointmentData.tutorIds && appointmentData.tutorIds.join(","),
+      studentIds: appointmentData.studentIds && appointmentData.studentIds.join(","),
+      parentIds: appointmentData.parentIds && appointmentData.parentIds.join(","),
       startTime: appointmentData.startTime,
       endTime: appointmentData.endTime,
       notes: appointmentData.notes || "",
