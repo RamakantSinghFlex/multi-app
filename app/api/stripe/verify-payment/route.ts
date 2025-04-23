@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: errorData.message || "Failed to verify payment" }, { status: response.status })
     }
 
-    const data = await response.json()
+    const { data } = await response.json()
     return NextResponse.json(data)
   } catch (error) {
     console.error("Error verifying payment:", error)

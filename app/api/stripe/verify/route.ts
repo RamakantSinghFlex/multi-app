@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        stripeMethod: "stripe.checkout.sessions.retrieve",
+        stripeMethod: "checkout.sessions.retrieve",
         stripeArgs: [sessionId, { expand: ["payment_intent"] }],
       }),
     })
@@ -28,11 +28,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: errorData.message || "Failed to verify payment" }, { status: response.status })
     }
 
-    const sessionData = await response.json()
-
+    const { data } = await response.json()
     // Extract payment status and appointment ID from session data
-    const paymentStatus = sessionData.payment_status
-    const appointmentId = sessionData.metadata?.appointmentId
+    const paymentStatus = data.payment_status
+    const appointmentId = data.metadata?.appointmentId
 
     let status = "pending"
     if (paymentStatus === "paid") {

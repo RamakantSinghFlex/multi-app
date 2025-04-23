@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button"
 import { verifyStripePayment, updateAppointmentPayment } from "@/lib/api/stripe"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export function AppointmentPaymentStatus() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<"success" | "pending" | "error">("pending")
   const [appointmentId, setAppointmentId] = useState<string | null>(null)
@@ -91,15 +93,33 @@ export function AppointmentPaymentStatus() {
   }, [searchParams, toast])
 
   const handleViewAppointment = () => {
+    if (!user || !user.roles || user.roles.length === 0) {
+      // Fallback if no user or roles
+      if (appointmentId) {
+        router.push(`/appointments/${appointmentId}`)
+      } else {
+        router.push("/appointments")
+      }
+      return
+    }
+
+    const userRole = user.roles[0]
     if (appointmentId) {
-      router.push(`/appointments/${appointmentId}`)
+      router.push(`/${userRole}/appointments/${appointmentId}`)
     } else {
-      router.push("/appointments")
+      router.push(`/${userRole}/appointments`)
     }
   }
 
   const handleGoToDashboard = () => {
-    router.push("/dashboard")
+    if (!user || !user.roles || user.roles.length === 0) {
+      // Fallback if no user or roles
+      router.push("/dashboard")
+      return
+    }
+
+    const userRole = user.roles[0]
+    router.push(`/${userRole}/dashboard`)
   }
 
   return (

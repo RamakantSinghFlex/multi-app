@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        stripeMethod: "stripe.customers.create",
+        stripeMethod: "customers.create",
         stripeArgs: [
           {
             email,
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorData.message || "Failed to create customer" }, { status: response.status })
     }
 
-    const data = await response.json()
+    const { data } = await response.json()
     return NextResponse.json(data)
   } catch (error) {
     console.error("Error creating customer:", error)

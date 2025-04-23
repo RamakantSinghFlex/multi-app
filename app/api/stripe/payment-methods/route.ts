@@ -12,7 +12,7 @@ export async function GET(request: Request) {
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        stripeMethod: "stripe.paymentMethods.list",
+        stripeMethod: "paymentMethods.list",
         stripeArgs: [{ type: "card", limit: 10 }],
       }),
     })
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const data = await response.json()
+    const { data } = await response.json()
     return NextResponse.json(data)
   } catch (error) {
     console.error("Error fetching payment methods:", error)

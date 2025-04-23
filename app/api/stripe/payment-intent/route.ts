@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        stripeMethod: "stripe.paymentIntents.create",
+        stripeMethod: "paymentIntents.create",
         stripeArgs: [
           {
             amount: Math.round(amount * 100), // Convert to cents
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const data = await response.json()
+    const { data } = await response.json()
     return NextResponse.json({ clientSecret: data.client_secret })
   } catch (error) {
     console.error("Error creating payment intent:", error)
