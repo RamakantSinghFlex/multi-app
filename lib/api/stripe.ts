@@ -7,32 +7,32 @@ import type { ApiResponse } from "../types"
  * @returns A response containing the checkout URL
  */
 export async function createStripeCheckoutSession(appointmentData: {
-    notes: string
-    appointmentId: any
-    price: number
-    tutorIds?: string[]
-    parentIds?: string[]
-    startTime: string
-    studentIds?: string[]
-    endTime: string
-    title: string
-}): Promise<ApiResponse<{url: string}>> {
-    try {
-        // Use the server-side API route instead of direct Stripe API call
-        const response = await fetch(`/api/stripe/checkout`, {
-            method: "POST",
-            headers: createAuthHeaders(true),
-            body: JSON.stringify({ appointmentData }),
-            credentials: "include",
-        })
+  notes: string
+  appointmentId: any
+  price: number
+  tutorIds?: string[]
+  parentIds?: string[]
+  startTime: string
+  studentIds?: string[]
+  endTime: string
+  title: string
+}): Promise<ApiResponse<{ url: string }>> {
+  try {
+    // Use the server-side API route instead of direct Stripe API call
+    const response = await fetch(`/api/stripe/checkout`, {
+      method: "POST",
+      headers: createAuthHeaders(true),
+      body: JSON.stringify({ appointmentData }),
+      credentials: "include",
+    })
 
-        return await handleResponse<{url: string}>(response)
-    } catch (error) {
-        console.error("Error creating checkout session:", error)
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while creating checkout session",
-        }
+    return await handleResponse<{ url: string }>(response)
+  } catch (error) {
+    console.error("Error creating checkout session:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating checkout session",
     }
+  }
 }
 
 /**
@@ -41,23 +41,23 @@ export async function createStripeCheckoutSession(appointmentData: {
  * @returns A response containing the payment status
  */
 export async function verifyStripePayment(
-    sessionId: string,
-): Promise<ApiResponse<{status: string; appointmentId?: string}>> {
-    try {
-        // Use the server-side API route instead of direct Stripe API call
-        const response = await fetch(`/api/stripe/verify?session_id=${sessionId}`, {
-            method: "GET",
-            headers: createAuthHeaders(),
-            credentials: "include",
-        })
+  sessionId: string,
+): Promise<ApiResponse<{ status: string; appointmentId?: string }>> {
+  try {
+    // Use the server-side API route instead of direct Stripe API call
+    const response = await fetch(`/api/stripe/verify?session_id=${sessionId}`, {
+      method: "GET",
+      headers: createAuthHeaders(),
+      credentials: "include",
+    })
 
-        return await handleResponse<{status: string; appointmentId?: string}>(response)
-    } catch (error) {
-        console.error("Error verifying payment:", error)
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while verifying payment",
-        }
+    return await handleResponse<{ status: string; appointmentId?: string }>(response)
+  } catch (error) {
+    console.error("Error verifying payment:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while verifying payment",
     }
+  }
 }
 
 /**
@@ -65,20 +65,20 @@ export async function verifyStripePayment(
  * @returns A response containing the customer's saved payment methods
  */
 export async function getCustomerPaymentMethods(): Promise<ApiResponse<any>> {
-    try {
-        const response = await fetch(`/api/stripe/payment-methods`, {
-            method: "GET",
-            headers: createAuthHeaders(),
-            credentials: "include",
-        })
+  try {
+    const response = await fetch(`/api/stripe/payment-methods`, {
+      method: "GET",
+      headers: createAuthHeaders(),
+      credentials: "include",
+    })
 
-        return await handleResponse<any>(response)
-    } catch (error) {
-        console.error("Error fetching payment methods:", error)
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while fetching payment methods",
-        }
+    return await handleResponse<any>(response)
+  } catch (error) {
+    console.error("Error fetching payment methods:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while fetching payment methods",
     }
+  }
 }
 
 /**
@@ -87,25 +87,25 @@ export async function getCustomerPaymentMethods(): Promise<ApiResponse<any>> {
  * @returns A response containing the created customer
  */
 export async function createStripeCustomer(customerData: {
-    email: string
-    name: string
-    metadata?: Record<string, string>
+  email: string
+  name: string
+  metadata?: Record<string, string>
 }): Promise<ApiResponse<any>> {
-    try {
-        const response = await fetch(`/api/stripe/customer`, {
-            method: "POST",
-            headers: createAuthHeaders(),
-            body: JSON.stringify(customerData),
-            credentials: "include",
-        })
+  try {
+    const response = await fetch(`/api/stripe/customer`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(customerData),
+      credentials: "include",
+    })
 
-        return await handleResponse<any>(response)
-    } catch (error) {
-        console.error("Error creating customer:", error)
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while creating customer",
-        }
+    return await handleResponse<any>(response)
+  } catch (error) {
+    console.error("Error creating customer:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating customer",
     }
+  }
 }
 
 /**
@@ -114,26 +114,26 @@ export async function createStripeCustomer(customerData: {
  * @returns A response containing the client secret
  */
 export async function createStripePaymentIntent(paymentData: {
-    amount: number
-    currency?: string
-    metadata?: Record<string, string>
-    appointmentId?: string
-}): Promise<ApiResponse<{clientSecret: string}>> {
-    try {
-        const response = await fetch(`/api/stripe/payment-intent`, {
-            method: "POST",
-            headers: createAuthHeaders(),
-            body: JSON.stringify(paymentData),
-            credentials: "include",
-        })
+  amount: number
+  currency?: string
+  metadata?: Record<string, string>
+  appointmentId?: string
+}): Promise<ApiResponse<{ clientSecret: string }>> {
+  try {
+    const response = await fetch(`/api/stripe/payment-intent`, {
+      method: "POST",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(paymentData),
+      credentials: "include",
+    })
 
-        return await handleResponse<{clientSecret: string}>(response)
-    } catch (error) {
-        console.error("Error creating payment intent:", error)
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while creating payment intent",
-        }
+    return await handleResponse<{ clientSecret: string }>(response)
+  } catch (error) {
+    console.error("Error creating payment intent:", error)
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while creating payment intent",
     }
+  }
 }
 
 /**
@@ -143,22 +143,22 @@ export async function createStripePaymentIntent(paymentData: {
  * @returns A response containing the updated appointment
  */
 export async function updateAppointmentPayment(appointmentId: string, paymentData: any): Promise<ApiResponse<any>> {
-    try {
-        const response = await fetch(`/api/appointments/${appointmentId}/payment`, {
-            method: "PUT",
-            headers: createAuthHeaders(),
-            body: JSON.stringify(paymentData),
-        })
+  try {
+    const response = await fetch(`/api/appointments/${appointmentId}/payment`, {
+      method: "PUT",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(paymentData),
+    })
 
-        if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || "Failed to update appointment payment")
-        }
-
-        return await response.json()
-    } catch (error) {
-        return {
-            error: error instanceof Error ? error.message : "An unknown error occurred while updating appointment payment",
-        }
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to update appointment payment")
     }
+
+    return await response.json()
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "An unknown error occurred while updating appointment payment",
+    }
+  }
 }
