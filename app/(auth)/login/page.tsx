@@ -265,6 +265,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required={true}
                 error={validationErrors.password}
+                showGenerateButton={false}
               />
             </div>
 

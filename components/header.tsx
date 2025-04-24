@@ -94,7 +94,11 @@ export function Header() {
               <Link href="/profile">Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings">Settings</Link>
+              {user?.roles?.includes("student") && <Link href="/student/settings">Settings</Link>}
+              {user?.roles?.includes("tutor") && <Link href="/tutor/settings">Settings</Link>}
+              {user?.roles?.includes("parent") && <Link href="/parent/settings">Settings</Link>}
+              {user?.roles?.includes("admin") && <Link href="/admin/settings">Settings</Link>}
+              {!user?.roles?.length && <Link href="/settings">Settings</Link>}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logout()}>Sign out</DropdownMenuItem>

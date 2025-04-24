@@ -19,9 +19,17 @@ interface UserFormProps {
   onSubmit: (data: any) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
+  disableFields?: string[] // Add this new prop
 }
 
-export function UserForm({ userType, initialData = {}, onSubmit, onCancel, isLoading = false }: UserFormProps) {
+export function UserForm({
+  userType,
+  initialData = {},
+  onSubmit,
+  onCancel,
+  isLoading = false,
+  disableFields = [], // Default to empty array
+}: UserFormProps) {
   const [formData, setFormData] = useState({
     firstName: initialData.firstName || "",
     lastName: initialData.lastName || "",
@@ -107,7 +115,7 @@ export function UserForm({ userType, initialData = {}, onSubmit, onCancel, isLoa
               type="email"
               value={formData.email}
               onChange={handleChange}
-              disabled={isLoading}
+              disabled={isLoading || disableFields.includes("email")}
               required
             />
           </div>

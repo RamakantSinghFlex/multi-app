@@ -23,6 +23,7 @@ export interface PasswordInputProps {
   label?: string
   placeholder?: string
   showStrengthIndicator?: boolean
+  showGenerateButton?: boolean
   autoComplete?: string
   required?: boolean
   className?: string
@@ -38,6 +39,7 @@ export function PasswordInput({
   label,
   placeholder,
   showStrengthIndicator = false,
+  showGenerateButton = true,
   autoComplete = "new-password",
   required = false,
   className = "",
@@ -113,17 +115,19 @@ export function PasswordInput({
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-full px-2 text-xs"
-            onClick={handleGeneratePassword}
-            disabled={disabled}
-          >
-            <RefreshCw className="mr-1 h-3 w-3" />
-            Generate
-          </Button>
+          {showGenerateButton && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-full px-2 text-xs"
+              onClick={handleGeneratePassword}
+              disabled={disabled}
+            >
+              <RefreshCw className="mr-1 h-3 w-3" />
+              Generate
+            </Button>
+          )}
         </div>
       </div>
 

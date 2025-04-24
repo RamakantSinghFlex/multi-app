@@ -67,6 +67,7 @@ export default function TutorSettingsPage() {
             onSubmit={handleProfileUpdate}
             onCancel={() => router.back()}
             isLoading={isLoading}
+            disableFields={["email"]} // Disable email editing
           />
         </TabsContent>
 
