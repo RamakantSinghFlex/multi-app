@@ -228,6 +228,9 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         }
       }
 
+      // Check if the current user is a tutor
+      const isTutor = userRoles.includes("tutor")
+
       // First create the appointment with status "awaiting_payment"
       const appointmentResponse = await createAppointment({
         title,
@@ -244,9 +247,26 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       if (appointmentResponse.error) {
         throw new Error(appointmentResponse.error)
       }
+
       const appointmentId = appointmentResponse.data?.doc?.id
 
-      // Then create a Stripe checkout session
+      // If the user is a tutor, just create the appointment without payment
+      if (isTutor) {
+        toast({
+          title: "Success",
+          description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
+        })
+
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push("/tutor/appointments")
+        }
+        return
+      }
+
+      // For students and parents, proceed with payment flow
+      // Create a Stripe checkout session
       const stripeResponse = await createStripeCheckoutSession({
         appointmentId,
         title,
@@ -461,7 +481,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                 Cancel
               </Button>
               <Button type="submit" disabled={loading || price === null}>
-                {loading ? "Processing..." : "Proceed to Payment"}
+                {loading ? "Processing..." : userRoles.includes("tutor") ? "Create Appointment" : "Proceed to Payment"}
               </Button>
             </div>
           </form>
