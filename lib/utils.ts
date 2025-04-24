@@ -1,16 +1,21 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
 import DOMPurify from "dompurify"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+/**
+ * Sanitize HTML content to prevent XSS attacks
+ * @param html The HTML string to sanitize
+ * @returns The sanitized HTML string
+ */
+export function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html)
 }
 
-export const sanitizeHtml = (html: string): string => {
-  if (typeof window === "undefined") {
-    // Use a basic sanitizer on the server
-    return String(html).replace(/<[^>]*>/g, "")
-  }
+/**
+ * Class names utility
+ *
+ * Conditionally join classNames together.
+ */
+type ClassValue = string | number | boolean | undefined | null
 
-  return DOMPurify.sanitize(html)
+export function cn(...inputs: ClassValue[]): string {
+  return inputs.filter(Boolean).join(" ")
 }

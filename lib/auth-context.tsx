@@ -29,6 +29,7 @@ interface AuthContextType extends AuthState {
   checkAuth: () => Promise<boolean>
   setError: (error: string) => void
   refreshUser: () => Promise<void>
+  setUser: (user: User | null) => void
 }
 
 // Initial auth state
@@ -51,6 +52,7 @@ type AuthAction =
   | { type: "LOGOUT_SUCCESS"; payload: string }
   | { type: "CLEAR_SUCCESS_MESSAGE" }
   | { type: "REFRESH_USER_SUCCESS"; payload: { user: User } }
+  | { type: "SET_USER"; payload: User | null }
 
 // Auth reducer with improved error handling
 function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
@@ -108,6 +110,11 @@ function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
         user: action.payload.user,
         isAuthenticated: true,
       }
+    case "SET_USER":
+      return {
+        ...state,
+        user: action.payload,
+      }
     default:
       return state
   }
@@ -124,6 +131,7 @@ const AuthContext = createContext<AuthContextType>({
   checkAuth: async () => false,
   setError: () => {},
   refreshUser: async () => {},
+  setUser: () => {},
 })
 
 // Auth provider component with improved error handling and security
@@ -506,6 +514,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth,
     refreshUser,
     setError: (error: string) => dispatch({ type: "AUTH_FAILURE", payload: error }),
+    setUser: (user: User | null) => dispatch({ type: "SET_USER", payload: user }),
   }
 
   // Provide a value to indicate if the initial auth check is complete

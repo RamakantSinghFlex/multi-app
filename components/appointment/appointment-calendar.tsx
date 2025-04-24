@@ -130,7 +130,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
 
   const getTutorName = (id: string) => {
     const tutor = tutors.find((t) => t.id === id)
-    return tutor ? `${tutor.firstName} ${tutor.lastName}` : id
+    return tutor ? `${tutor.firstName} ${tutor.lastName} (${tutor.hourlyRate || 50}/hr)` : id
   }
 
   const getStudentName = (id: string) => {
@@ -350,7 +350,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                   <SelectContent>
                     {tutors.map((tutor) => (
                       <SelectItem key={tutor.id} value={tutor.id}>
-                        {tutor.firstName} {tutor.lastName} {tutor.hourlyRate ? `(${tutor.hourlyRate}/hr)` : ""}
+                        {tutor.firstName} {tutor.lastName} {tutor.hourlyRate ? `($${tutor.hourlyRate}/hr)` : "($50/hr)"}
                       </SelectItem>
                     ))}
                   </SelectContent>
