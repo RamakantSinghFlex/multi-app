@@ -38,6 +38,24 @@ export async function updateUser(id: string, data: Partial<User>): Promise<ApiRe
   }
 }
 
+// Update user with PATCH method
+export async function patchUser(id: string, data: Partial<User>): Promise<ApiResponse<User>> {
+  try {
+    const response = await fetch(`${API_URL}/users/${id}`, {
+      method: "PATCH",
+      headers: createAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    })
+
+    return await handleResponse<User>(response)
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : `An unknown error occurred while patching user with ID ${id}`,
+    }
+  }
+}
+
 // Delete user
 export async function deleteUser(id: string): Promise<ApiResponse<{ success: boolean }>> {
   try {

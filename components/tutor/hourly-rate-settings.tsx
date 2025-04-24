@@ -9,14 +9,25 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
-import { updateUser } from "@/lib/api/users"
+import { patchUser } from "@/lib/api/users"
 import { Loader2, DollarSign } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { CheckCircle } from "lucide-react"
 
 export function HourlyRateSettings() {
   const { user, setUser } = useAuth()
   const { toast } = useToast()
   const [hourlyRate, setHourlyRate] = useState<number>(user?.hourlyRate || 50)
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseFloat(e.target.value)
@@ -38,7 +49,8 @@ export function HourlyRateSettings() {
     setIsLoading(true)
 
     try {
-      const response = await updateUser(user?.id as string, {
+      // Use PATCH method instead of upsert
+      const response = await patchUser(user?.id as string, {
         hourlyRate,
       })
 
@@ -54,10 +66,9 @@ export function HourlyRateSettings() {
         })
       }
 
-      toast({
-        title: "Success",
-        description: "Your hourly rate has been updated",
-      })
+      // Set success message and show modal instead of just toast
+      setSuccessMessage(response.data?.message || "Your hourly rate has been updated successfully")
+      setShowSuccessModal(true)
     } catch (error) {
       console.error("Error updating hourly rate:", error)
       toast({
@@ -113,6 +124,21 @@ export function HourlyRateSettings() {
           )}
         </Button>
       </CardFooter>
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+              Success
+            </DialogTitle>
+            <DialogDescription>{successMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowSuccessModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

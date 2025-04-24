@@ -1,40 +1,38 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Loader2 } from "lucide-react"
 import { TENANT_NAME } from "@/lib/config"
 
 interface UserFormProps {
   userType: "student" | "tutor" | "parent"
   initialData?: any
-  onSubmit: (data: any) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
-  disableFields?: string[] // Add this new prop
+  disableFields?: string[]
+  isEditMode?: boolean
+  readOnly?: boolean
+  hideBackButton?: boolean
 }
 
 export function UserForm({
   userType,
   initialData = {},
-  onSubmit,
   onCancel,
   isLoading = false,
-  disableFields = [], // Default to empty array
+  disableFields = [],
+  isEditMode = false,
+  readOnly = false,
+  hideBackButton = false,
 }: UserFormProps) {
-  const [formData, setFormData] = useState({
+  const [formData] = useState({
     firstName: initialData.firstName || "",
     lastName: initialData.lastName || "",
     email: initialData.email || "",
-    password: initialData.password || "",
     phone: initialData.phone || "",
     // Student-specific fields
     gradeLevel: initialData.gradeLevel || "",
@@ -47,91 +45,77 @@ export function UserForm({
     ...initialData,
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+  // Get the form title based on user type and edit mode
+  const getFormTitle = () => {
+    const typeLabel = userType === "student" ? "Student" : userType === "tutor" ? "Tutor" : "Parent"
+    return readOnly ? `${typeLabel} Profile` : isEditMode ? `Edit ${typeLabel} Information` : `${typeLabel} Information`
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handlePasswordChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, password: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await onSubmit(formData)
+  // Get the form description based on user type and read-only status
+  const getFormDescription = () => {
+    if (readOnly) {
+      return `Your profile information`
+    }
+    return isEditMode ? `Update the details for the ${userType}` : `Enter the details for the ${userType}`
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          {userType === "student" ? "Student" : userType === "tutor" ? "Tutor" : "Parent"} Information
-        </CardTitle>
-        <CardDescription>Enter the details for the {userType}</CardDescription>
+        <CardTitle>{getFormTitle()}</CardTitle>
+        <CardDescription>{getFormDescription()}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">
-                First Name <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="firstName">First Name</Label>
               <Input
                 id="firstName"
                 name="firstName"
                 value={formData.firstName}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
+                readOnly
+                disabled={true}
+                className={readOnly ? "bg-muted cursor-not-allowed" : ""}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">
-                Last Name <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="lastName">Last Name</Label>
               <Input
                 id="lastName"
                 name="lastName"
                 value={formData.lastName}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
+                readOnly
+                disabled={true}
+                className={readOnly ? "bg-muted cursor-not-allowed" : ""}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">
-              Email <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
               value={formData.email}
-              onChange={handleChange}
-              disabled={isLoading || disableFields.includes("email")}
-              required
+              readOnly
+              disabled={true}
+              className={readOnly ? "bg-muted cursor-not-allowed" : ""}
             />
           </div>
 
-          <PasswordInput
-            id="password"
-            value={formData.password}
-            onChange={handlePasswordChange}
-            disabled={isLoading}
-            label="Password"
-            required={true}
-          />
-
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} disabled={isLoading} />
+            <Input
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              readOnly
+              disabled={true}
+              className={readOnly ? "bg-muted cursor-not-allowed" : ""}
+            />
           </div>
 
           {/* Student-specific fields */}
@@ -140,21 +124,24 @@ export function UserForm({
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="gradeLevel">Grade Level</Label>
-                  <Select
-                    value={formData.gradeLevel}
-                    onValueChange={(value) => handleSelectChange("gradeLevel", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="gradeLevel">
-                      <SelectValue placeholder="Select grade level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="elementary">Elementary School</SelectItem>
-                      <SelectItem value="middle">Middle School</SelectItem>
-                      <SelectItem value="high">High School</SelectItem>
-                      <SelectItem value="college">College</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="gradeLevel"
+                    name="gradeLevel"
+                    value={
+                      formData.gradeLevel === "elementary"
+                        ? "Elementary School"
+                        : formData.gradeLevel === "middle"
+                          ? "Middle School"
+                          : formData.gradeLevel === "high"
+                            ? "High School"
+                            : formData.gradeLevel === "college"
+                              ? "College"
+                              : formData.gradeLevel || ""
+                    }
+                    readOnly
+                    disabled={true}
+                    className={readOnly ? "bg-muted cursor-not-allowed" : ""}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -163,8 +150,9 @@ export function UserForm({
                     id="school"
                     name="school"
                     value={formData.school}
-                    onChange={handleChange}
-                    disabled={isLoading}
+                    readOnly
+                    disabled={true}
+                    className={readOnly ? "bg-muted cursor-not-allowed" : ""}
                   />
                 </div>
               </div>
@@ -175,29 +163,22 @@ export function UserForm({
                   id="notes"
                   name="notes"
                   value={formData.notes}
-                  onChange={handleChange}
-                  disabled={isLoading}
+                  readOnly
+                  disabled={true}
                   rows={3}
+                  className={readOnly ? "bg-muted cursor-not-allowed" : ""}
                 />
               </div>
             </>
           )}
-        </form>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            `Save ${userType === "student" ? "Student" : userType === "tutor" ? "Tutor" : "Parent"}`
-          )}
-        </Button>
+      <CardFooter className="flex justify-end">
+        {!hideBackButton && (
+          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+            {readOnly ? "Back" : "Cancel"}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   )

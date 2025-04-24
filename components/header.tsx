@@ -43,6 +43,15 @@ export function Header() {
     headerTitle = "Students"
   }
 
+  // Determine the settings path based on user role
+  const getSettingsPath = () => {
+    if (user?.roles?.includes("student")) return "/student/settings"
+    if (user?.roles?.includes("tutor")) return "/tutor/settings"
+    if (user?.roles?.includes("parent")) return "/parent/settings"
+    if (user?.roles?.includes("admin")) return "/admin/settings"
+    return "/settings"
+  }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // Implement search functionality
@@ -94,11 +103,7 @@ export function Header() {
               <Link href="/profile">Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              {user?.roles?.includes("student") && <Link href="/student/settings">Settings</Link>}
-              {user?.roles?.includes("tutor") && <Link href="/tutor/settings">Settings</Link>}
-              {user?.roles?.includes("parent") && <Link href="/parent/settings">Settings</Link>}
-              {user?.roles?.includes("admin") && <Link href="/admin/settings">Settings</Link>}
-              {!user?.roles?.length && <Link href="/settings">Settings</Link>}
+              <Link href={getSettingsPath()}>Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logout()}>Sign out</DropdownMenuItem>
