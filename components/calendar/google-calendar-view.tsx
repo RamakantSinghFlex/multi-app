@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
   format,
   addDays,
@@ -16,79 +16,33 @@ import {
   isAfter,
   parseISO,
 } from "date-fns"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import AppointmentCalendar from "@/components/appointment/appointment-calendar"
 import { CalendarHeader } from "./calendar-header"
 import { DayView } from "./day-view"
 import { WeekView } from "./week-view"
 import { MonthView } from "./month-view"
 import { AppointmentDetails } from "./appointment-details"
-import { getAppointments } from "@/lib/api/appointments"
-import { useAuth } from "@/lib/auth-context"
 
 export type CalendarViewType = "day" | "week" | "month"
 
-export interface GoogleCalendarViewProps {
+interface GoogleCalendarViewProps {
   userRole: "student" | "tutor" | "parent"
   className?: string
+  appointments: any[]
+  loading: boolean
 }
 
-export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarViewProps) {
-  const { user, refreshUser } = useAuth()
+export function GoogleCalendarView({ userRole, className = "", appointments, loading }: GoogleCalendarViewProps) {
   const { toast } = useToast()
-  const [appointments, setAppointments] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [viewType, setViewType] = useState<CalendarViewType>("week")
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
-
-  // Fetch appointments
-  const fetchAppointments = async () => {
-    if (!user?.id) return
-
-    setLoading(true)
-    try {
-      const response = await getAppointments({
-        [userRole + "s"]: user.id, // Note the plural form to match the API schema
-      })
-
-      if (response.error) {
-        throw new Error(response.error)
-      }
-
-      if (response.data) {
-        // The data is now directly available as an array
-        setAppointments(response.data)
-      }
-
-      // Refresh user data in the auth context
-      await refreshUser()
-    } catch (error) {
-      console.error("Error fetching appointments:", error)
-      setError(error instanceof Error ? error.message : "Failed to load appointments")
-      toast({
-        title: "Error",
-        description: "Failed to load appointments. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchAppointments()
-  }, [user?.id])
 
   // Navigation functions
   const goToToday = () => {
@@ -182,41 +136,6 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
 
   return (
     <div className={cn("flex flex-col space-y-4", className)}>
-      <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold md:text-3xl">Calendar</h1>
-          <p className="text-muted-foreground">
-            {userRole === "student" && "View and manage your tutoring appointments"}
-            {userRole === "tutor" && "View and manage your tutoring appointments"}
-            {userRole === "parent" && "View and manage your children's tutoring appointments"}
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogTitle>
-                {userRole === "student" && "Schedule an Appointment"}
-                {userRole === "tutor" && "Schedule an Appointment"}
-                {userRole === "parent" && "Book an Appointment"}
-              </DialogTitle>
-              <AppointmentCalendar
-                onSuccess={() => {
-                  setCreateDialogOpen(false)
-                  fetchAppointments()
-                }}
-                onCancel={() => setCreateDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         {/* Sidebar with mini calendar */}
         <div className="md:col-span-1">
@@ -302,11 +221,7 @@ export function GoogleCalendarView({ userRole, className = "" }: GoogleCalendarV
             <AppointmentDetails
               appointment={selectedAppointment}
               onClose={() => setDetailsDialogOpen(false)}
-              onCancel={async () => {
-                // Handle cancellation
-                setDetailsDialogOpen(false)
-                await fetchAppointments()
-              }}
+              onCancel={() => setDetailsDialogOpen(false)}
             />
           )}
         </DialogContent>

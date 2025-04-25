@@ -3,18 +3,19 @@
 import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, CreditCard, FileText, Users } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Calendar, Clock, FileText, DollarSign, CreditCard } from "lucide-react"
 import { cancelAppointment } from "@/lib/api/appointments"
 import { useState } from "react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/hooks/use-toast"
+import { ParticipantDisplay } from "@/components/shared/participant-display"
+import { useAuth } from "@/lib/auth-context"
+import { createStripeCheckoutSession } from "@/lib/api/stripe"
 
 interface AppointmentDetailsProps {
   appointment: any
   onClose: () => void
   onCancel: () => Promise<void>
-  onPayment?: (appointment: any) => void
-  userRole?: "student" | "parent" | "tutor"
+  userRole?: string
   paymentLoading?: boolean
 }
 
@@ -22,76 +23,59 @@ export function AppointmentDetails({
   appointment,
   onClose,
   onCancel,
-  onPayment,
-  userRole = "student",
-  paymentLoading = false,
+  userRole,
+  paymentLoading,
 }: AppointmentDetailsProps) {
+  const { user } = useAuth()
   const { toast } = useToast()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
 
   const startTime = parseISO(appointment.startTime)
   const endTime = parseISO(appointment.endTime)
-  const isPast = new Date(appointment.startTime) < new Date()
-  const canCancel = !isPast && appointment.status !== "cancelled" && appointment.status !== "completed"
 
-  // Format participant names
-  const formatParticipants = (participants: any[]) => {
-    if (!participants || participants.length === 0) return "None"
+  const userRoles = user?.roles || []
+  const isStudentOrParent = userRoles.includes("student") || userRoles.includes("parent")
+  const needsPayment = appointment.status === "awaiting_payment" && isStudentOrParent
 
-    return participants
-      .map((p) => {
-        if (typeof p === "string") return p
-        return `${p.firstName || ""} ${p.lastName || ""}`.trim() || p.id || "Unknown"
-      })
-      .join(", ")
-  }
-
-  // Get status badge color
+  // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
-            Pending
-          </Badge>
-        )
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-400">Pending</Badge>
       case "confirmed":
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400">
-            Confirmed
-          </Badge>
-        )
+        return <Badge className="bg-green-100 text-green-800 border-green-400">Confirmed</Badge>
       case "cancelled":
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400">
-            Cancelled
-          </Badge>
-        )
+        return <Badge className="bg-red-100 text-red-800 border-red-400">Cancelled</Badge>
       case "completed":
-        return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-400">
-            Completed
-          </Badge>
-        )
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-400">Completed</Badge>
       case "awaiting_payment":
-        return (
-          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-400">
-            Awaiting Payment
-          </Badge>
-        )
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-400">Awaiting Payment</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge>{status}</Badge>
     }
   }
 
+  // Handle appointment cancellation
   const handleCancel = async () => {
-    if (!canCancel) return
+    if (appointment.status === "cancelled") {
+      toast({
+        title: "Already Cancelled",
+        description: "This appointment is already cancelled.",
+      })
+      return
+    }
 
-    setLoading(true)
-    setError(null)
+    if (appointment.status === "completed") {
+      toast({
+        title: "Cannot Cancel",
+        description: "Completed appointments cannot be cancelled.",
+      })
+      return
+    }
 
     try {
+      setCancelling(true)
       const response = await cancelAppointment(appointment.id)
 
       if (response.error) {
@@ -106,112 +90,154 @@ export function AppointmentDetails({
       await onCancel()
     } catch (error) {
       console.error("Error cancelling appointment:", error)
-      setError(error instanceof Error ? error.message : "Failed to cancel appointment")
       toast({
         title: "Error",
-        description: "Failed to cancel appointment. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to cancel appointment",
         variant: "destructive",
       })
     } finally {
-      setLoading(false)
+      setCancelling(false)
+    }
+  }
+
+  // Handle payment
+  const handlePayment = async () => {
+    try {
+      setProcessingPayment(true)
+
+      // Get tutor, student, and parent IDs from the appointment
+      const tutorIds = appointment.tutors.map((tutor: any) => (typeof tutor === "string" ? tutor : tutor.id))
+
+      const studentIds = appointment.students.map((student: any) =>
+        typeof student === "string" ? student : student.id,
+      )
+
+      const parentIds =
+        appointment.parents?.map((parent: any) => (typeof parent === "string" ? parent : parent.id)) || []
+
+      // Create a Stripe checkout session
+      const stripeResponse = await createStripeCheckoutSession({
+        appointmentId: appointment.id,
+        title: appointment.title,
+        price: appointment.price || 0,
+        tutorIds,
+        parentIds,
+        studentIds,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        notes: appointment.notes || "",
+      })
+
+      if (stripeResponse.error) {
+        throw new Error(stripeResponse.error)
+      }
+
+      // Redirect to Stripe checkout
+      if (stripeResponse.data?.url) {
+        window.location.href = stripeResponse.data.url
+      } else {
+        throw new Error("No checkout URL returned from Stripe")
+      }
+    } catch (error) {
+      console.error("Error creating payment session:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create payment session",
+        variant: "destructive",
+      })
+      setProcessingPayment(false)
     }
   }
 
   return (
     <div className="space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">{appointment.title}</h3>
+        <h3 className="text-lg font-semibold">{appointment.title}</h3>
         {getStatusBadge(appointment.status)}
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-start">
-          <Calendar className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2">
+          <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
           <div>
-            <p className="font-medium">Date</p>
-            <p className="text-sm text-muted-foreground">{format(startTime, "EEEE, MMMM d, yyyy")}</p>
+            <p className="text-sm font-medium">Date</p>
+            <p className="text-sm">{format(startTime, "EEEE, MMMM d, yyyy")}</p>
           </div>
         </div>
 
-        <div className="flex items-start">
-          <Clock className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2">
+          <Clock className="h-4 w-4 mt-0.5 text-muted-foreground" />
           <div>
-            <p className="font-medium">Time</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-medium">Time</p>
+            <p className="text-sm">
               {format(startTime, "h:mm a")} - {format(endTime, "h:mm a")}
             </p>
           </div>
         </div>
 
-        <div className="flex items-start">
-          <Users className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium">Tutors</p>
-            <p className="text-sm text-muted-foreground">{formatParticipants(appointment.tutors || [])}</p>
-          </div>
-        </div>
+        {/* Use the shared ParticipantDisplay component */}
+        {appointment.students && appointment.students.length > 0 && (
+          <ParticipantDisplay label="Students" participantType="student" participants={appointment.students} />
+        )}
 
-        <div className="flex items-start">
-          <Users className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium">Students</p>
-            <p className="text-sm text-muted-foreground">{formatParticipants(appointment.students || [])}</p>
-          </div>
-        </div>
+        {appointment.tutors && appointment.tutors.length > 0 && (
+          <ParticipantDisplay label="Tutors" participantType="tutor" participants={appointment.tutors} />
+        )}
 
-        <div className="flex items-start">
-          <Users className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium">Parents</p>
-            <p className="text-sm text-muted-foreground">{formatParticipants(appointment.parents || [])}</p>
-          </div>
-        </div>
+        {appointment.parents && appointment.parents.length > 0 && (
+          <ParticipantDisplay label="Parents" participantType="parent" participants={appointment.parents} />
+        )}
 
-        {appointment.price > 0 && (
-          <div className="flex items-start">
-            <CreditCard className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+        {appointment.payment && (
+          <div className="flex items-start gap-2">
+            <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
             <div>
-              <p className="font-medium">Price</p>
-              <p className="text-sm text-muted-foreground">${appointment.price.toFixed(2)}</p>
+              <p className="text-sm font-medium">Payment</p>
+              <p className="text-sm">
+                ${appointment.payment.amount} ({appointment.payment.status})
+              </p>
+            </div>
+          </div>
+        )}
+
+        {appointment.price && !appointment.payment && (
+          <div className="flex items-start gap-2">
+            <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Price</p>
+              <p className="text-sm">${appointment.price.toFixed(2)}</p>
             </div>
           </div>
         )}
 
         {appointment.notes && (
-          <div className="flex items-start">
-            <FileText className="mr-2 h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2">
+            <FileText className="h-4 w-4 mt-0.5 text-muted-foreground" />
             <div>
-              <p className="font-medium">Notes</p>
-              <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+              <p className="text-sm font-medium">Notes</p>
+              <p className="text-sm whitespace-pre-wrap">{appointment.notes}</p>
             </div>
           </div>
         )}
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">
-        {canCancel && (
-          <Button variant="destructive" onClick={handleCancel} disabled={loading}>
-            {loading ? "Cancelling..." : "Cancel Appointment"}
-          </Button>
-        )}
-
-        {appointment.status === "awaiting_payment" &&
-          (userRole === "student" || userRole === "parent") &&
-          onPayment && (
-            <Button onClick={() => onPayment(appointment)} disabled={paymentLoading}>
-              {paymentLoading ? "Processing..." : "Pay Now"}
-            </Button>
-          )}
-
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
+
+        {needsPayment && (
+          <Button variant="default" onClick={handlePayment} disabled={processingPayment} className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            {processingPayment ? "Processing..." : "Pay Now"}
+          </Button>
+        )}
+
+        {appointment.status !== "cancelled" && appointment.status !== "completed" && (
+          <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
+            {cancelling ? "Cancelling..." : "Cancel Appointment"}
+          </Button>
+        )}
       </div>
     </div>
   )

@@ -20,35 +20,35 @@ export default function ParentAppointmentsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("list")
 
-  const fetchAppointments = async () => {
-    if (!user?.id) return
-
-    setLoading(true)
-    try {
-      const response = await getAppointments({
-        parents: user.id,
-      })
-
-      if (response.error) {
-        throw new Error(response.error)
-      }
-
-      if (response.data) {
-        setAppointments(response.data)
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load appointments. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user?.id) return
+
+      setLoading(true)
+      try {
+        const response = await getAppointments({
+          parents: user.id,
+        })
+
+        if (response.error) {
+          throw new Error(response.error)
+        }
+
+        if (response.data) {
+          setAppointments(response.data)
+        }
+      } catch (error) {
+        console.error("Error fetching appointments:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load appointments. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchAppointments()
   }, [user?.id])
 
@@ -72,7 +72,6 @@ export default function ParentAppointmentsPage() {
               <AppointmentCalendar
                 onSuccess={() => {
                   setCreateDialogOpen(false)
-                  fetchAppointments()
                 }}
                 onCancel={() => setCreateDialogOpen(false)}
               />
@@ -88,16 +87,11 @@ export default function ParentAppointmentsPage() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
-          <AppointmentList
-            appointments={appointments}
-            loading={loading}
-            userRole="parent"
-            onAppointmentUpdated={fetchAppointments}
-          />
+          <AppointmentList appointments={appointments} loading={loading} userRole="parent" />
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-4">
-          <GoogleCalendarView userRole="parent" />
+          <GoogleCalendarView userRole="parent" appointments={appointments} loading={loading} />
         </TabsContent>
       </Tabs>
     </div>

@@ -175,7 +175,7 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
 
       {/* Appointment details dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogTitle>Appointment Details</DialogTitle>
           {selectedAppointment && (
             <AppointmentDetails
@@ -187,9 +187,6 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
                   onAppointmentUpdated()
                 }
               }}
-              onPayment={handlePayment}
-              userRole={userRole}
-              paymentLoading={paymentLoading}
             />
           )}
         </DialogContent>
