@@ -61,20 +61,17 @@ export default function Home() {
           />
         </div>
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
-            <Button asChild>
-              <Link href={user.roles[0] + "/dashboard"}>Go to Dashboard</Link>
+          {isAuthenticated && (
+            <Button asChild className="mr-2">
+              <Link href={user?.roles[0] + "/dashboard"}>Go to Dashboard</Link>
             </Button>
-          ) : (
-            <>
-              <Button variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/signup">Create Account</Link>
-              </Button>
-            </>
           )}
+          <Button variant="outline" asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/signup">Create Account</Link>
+          </Button>
         </div>
       </header>
 
@@ -87,20 +84,17 @@ export default function Home() {
           Personalized tutoring services for high-achieving students. Reach your academic goals with our expert tutors.
         </p>
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-          {isAuthenticated ? (
-            <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-              <Link href={user.roles[0] + "/dashboard"}>Go to Dashboard</Link>
+          {isAuthenticated && (
+            <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e] mb-4 sm:mb-0" asChild>
+              <Link href={user?.roles[0] + "/dashboard"}>Go to Dashboard</Link>
             </Button>
-          ) : (
-            <>
-              <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-                <Link href="/signup">Get Started</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </>
           )}
+          <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
+            <Link href="/signup">Get Started</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
         </div>
       </section>
 
