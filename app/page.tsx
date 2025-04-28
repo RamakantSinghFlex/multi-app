@@ -11,10 +11,17 @@ export default function Home() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
-  // Set up page loading state
+  
+  // Additional check for valid authentication with proper optional chaining
+  const isReallyAuthenticated = isAuthenticated && user && user.roles && Array.isArray(user.roles) && user.roles?.length > 0
+
   useEffect(() => {
     if (!isLoading) {
-      logger.info("Home page: Auth check complete", { isAuthenticated: isAuthenticated, user: user })
+      logger.info("Home page: Auth check complete", { 
+        isAuthenticated: isAuthenticated, 
+        user: user,
+        hasRoles: user?.roles && Array.isArray(user?.roles) ? user.roles?.length > 0 : false
+      })
       setPageLoading(false)
     }
   }, [isLoading, isAuthenticated, user])
@@ -49,33 +56,31 @@ export default function Home() {
   // Landing page content
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Header */}
+      {/* Header - No dashboard button here */}
       <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-card px-4 md:px-6">
         <div className="flex items-center">
-          <Image
-            src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
-            alt="Milestone Learning Logo"
-            width={150}
-            height={40}
-            className="h-auto w-auto"
-          />
+          <Link href="/">
+            <Image
+              src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
+              alt="Milestone Learning Logo"
+              width={150}
+              height={40}
+              className="h-auto w-auto"
+            />
+          </Link>
         </div>
-        <div className="flex items-center space-x-4">
-          {isAuthenticated && (
-            <Button asChild className="mr-2">
-              <Link href={user?.roles[0] + "/dashboard"}>Go to Dashboard</Link>
-            </Button>
-          )}
+        <nav className="flex items-center space-x-4">
+          {/* Always show these buttons in the header regardless of auth status */}
           <Button variant="outline" asChild>
             <Link href="/login">Sign In</Link>
           </Button>
           <Button asChild>
             <Link href="/signup">Create Account</Link>
           </Button>
-        </div>
+        </nav>
       </header>
 
-      {/* Hero section */}
+      {/* Hero section - Dashboard button only here if truly authenticated */}
       <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4 text-center md:p-8">
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-[#02342e] md:text-5xl lg:text-6xl">
           Welcome to Milestone Learning
@@ -83,18 +88,24 @@ export default function Home() {
         <p className="mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl">
           Personalized tutoring services for high-achieving students. Reach your academic goals with our expert tutors.
         </p>
+        
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-          {isAuthenticated && (
-            <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e] mb-4 sm:mb-0" asChild>
-              <Link href={user?.roles[0] + "/dashboard"}>Go to Dashboard</Link>
+          {isReallyAuthenticated ? (
+            // Only show dashboard button for actually authenticated users with roles
+            <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
+              <Link href={`/${user?.roles?.[0] || "dashboard"}/dashboard`}>Go to Dashboard</Link>
             </Button>
+          ) : (
+            // Show these buttons for non-authenticated users
+            <>
+              <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
+                <Link href="/signup">Get Started</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+            </>
           )}
-          <Button size="lg" className="bg-[#095d40] hover:bg-[#02342e]" asChild>
-            <Link href="/signup">Get Started</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/login">Sign In</Link>
-          </Button>
         </div>
       </section>
 
