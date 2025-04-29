@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -24,9 +26,7 @@ export function CalendarView({
   // Initialize with current date if initial month is current month
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(initialMonth)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(
-    isSameDay(initialMonth, today) ? today : null
-  )
+  const [selectedDate, setSelectedDate] = useState<Date | null>(isSameDay(initialMonth, today) ? today : null)
 
   // Use useEffect with empty dependency array to run only once on mount
   useEffect(() => {
@@ -68,7 +68,7 @@ export function CalendarView({
       e.stopPropagation()
       e.preventDefault()
     }
-    
+
     // Check if the date and time are in the past and if past dates should be disabled
     if (disablePastDates) {
       if (isPast(date) && !isToday(date)) {
@@ -78,7 +78,7 @@ export function CalendarView({
 
     // Always set the selected date, regardless of which date it is
     setSelectedDate(date)
-    
+
     // Always call onDateSelect if it exists, ensuring it works for all dates including today and 28
     if (onDateSelect) {
       onDateSelect(date)
@@ -102,7 +102,7 @@ export function CalendarView({
 
     // Allow today's date to be clickable even with disablePastDates
     if (isToday(date)) return false
-    
+
     return isBefore(date, new Date())
   }
 
@@ -111,7 +111,7 @@ export function CalendarView({
     const month = currentMonth.getMonth()
     const daysInMonth = getDaysInMonth(year, month)
     const firstDay = getFirstDayOfMonth(year, month)
-    const now = new Date() 
+    const now = new Date()
 
     const days = []
 
@@ -126,15 +126,15 @@ export function CalendarView({
       const isActive = isHighlighted(date) || (selectedDate && isSameDay(date, selectedDate))
       const isTodayDate = isToday(date)
       const isPast = isPastDate(date)
-      
+
       // Enhanced handling for today's date and day 28
       const isSpecialDay = day === 28 || isTodayDate
-      
+
       if (isSpecialDay) {
         days.push(
-          <div 
-            key={`day-${month}-${day}`} 
-            className="relative h-8 w-8 cursor-pointer" 
+          <div
+            key={`day-${month}-${day}`}
+            className="relative h-8 w-8 cursor-pointer"
             onClick={(e) => handleDateClick(date, e)}
           >
             <div
@@ -150,7 +150,7 @@ export function CalendarView({
             >
               {day}
             </div>
-          </div>
+          </div>,
         )
       } else {
         days.push(
@@ -168,7 +168,7 @@ export function CalendarView({
             data-day={day}
           >
             {day}
-          </button>
+          </button>,
         )
       }
     }

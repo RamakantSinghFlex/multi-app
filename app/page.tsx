@@ -11,16 +11,17 @@ export default function Home() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
-  
+
   // Additional check for valid authentication with proper optional chaining
-  const isReallyAuthenticated = isAuthenticated && user && user.roles && Array.isArray(user.roles) && user.roles?.length > 0
+  const isReallyAuthenticated =
+    isAuthenticated && user && user.roles && Array.isArray(user.roles) && user.roles?.length > 0
 
   useEffect(() => {
     if (!isLoading) {
-      logger.info("Home page: Auth check complete", { 
-        isAuthenticated: isAuthenticated, 
+      logger.info("Home page: Auth check complete", {
+        isAuthenticated: isAuthenticated,
         user: user,
-        hasRoles: user?.roles && Array.isArray(user?.roles) ? user.roles?.length > 0 : false
+        hasRoles: user?.roles && Array.isArray(user?.roles) ? user.roles?.length > 0 : false,
       })
       setPageLoading(false)
     }
@@ -88,7 +89,7 @@ export default function Home() {
         <p className="mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl">
           Personalized tutoring services for high-achieving students. Reach your academic goals with our expert tutors.
         </p>
-        
+
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
           {isReallyAuthenticated ? (
             // Only show dashboard button for actually authenticated users with roles

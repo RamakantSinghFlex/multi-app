@@ -15,6 +15,8 @@ import { getMe } from "@/lib/api" // Import getMe directly instead of using useA
 import type { User } from "@/lib/types"
 import { TENANT_NAME } from "@/lib/config"
 import { UserForm } from "@/components/shared/user-form"
+import { PasswordDisplayModal } from "@/components/shared/password-display-modal"
+import { generateSecurePassword } from "@/lib/utils/password-generator"
 
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
@@ -54,12 +56,17 @@ export default function NewStudentPage() {
     fetchUser()
   }, [])
 
+  // Generate secure passwords for each user type
+  const studentPassword = generateSecurePassword()
+  const parentPassword = generateSecurePassword()
+  const tutorPassword = generateSecurePassword()
+
   // Student form state
   const [studentData, setStudentData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
+    password: studentPassword,
     gradeLevel: "",
     school: "",
     notes: "",
@@ -72,7 +79,7 @@ export default function NewStudentPage() {
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
+    password: parentPassword,
     phone: "",
     tenantName: TENANT_NAME,
     roles: ["parent"],
@@ -83,7 +90,7 @@ export default function NewStudentPage() {
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
+    password: tutorPassword,
     phone: "",
     tenantName: TENANT_NAME,
     roles: ["tutor"],
@@ -96,6 +103,10 @@ export default function NewStudentPage() {
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>("student")
   const [creationProgress, setCreationProgress] = useState("")
+
+  // Add state for the password display modal
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [createdUsers, setCreatedUsers] = useState<Array<{ email: string; userType: string; name?: string }>>([])
 
   // Get available tabs based on creation mode
   const getAvailableTabs = (): TabType[] => {
@@ -130,17 +141,17 @@ export default function NewStudentPage() {
   // Validate the current tab
   const validateCurrentTab = (): boolean => {
     if (activeTab === "student") {
-      if (!studentData.firstName || !studentData.lastName || !studentData.email || !studentData.password) {
+      if (!studentData.firstName || !studentData.lastName || !studentData.email) {
         setError("Please fill in all required student fields")
         return false
       }
     } else if (activeTab === "parent") {
-      if (!parentData.firstName || !parentData.lastName || !parentData.email || !parentData.password) {
+      if (!parentData.firstName || !parentData.lastName || !parentData.email) {
         setError("Please fill in all required parent fields")
         return false
       }
     } else if (activeTab === "tutor") {
-      if (!tutorData.firstName || !tutorData.lastName || !tutorData.email || !tutorData.password) {
+      if (!tutorData.firstName || !tutorData.lastName || !tutorData.email) {
         setError("Please fill in all required tutor fields")
         return false
       }
@@ -162,7 +173,28 @@ export default function NewStudentPage() {
 
   // Handle student form submission
   const handleStudentSubmit = async (data: any) => {
-    setStudentData(data)
+    // Make sure we're not losing any fields during the update
+    setStudentData({
+      ...studentData,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      gradeLevel: data.gradeLevel,
+      school: data.school,
+      notes: data.notes,
+      // Keep the password we generated
+      password: studentPassword,
+    })
+
+    // Store the generated password in localStorage for temporary access
+    try {
+      const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+      passwordsMap[data.email] = studentPassword
+      localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+    } catch (err) {
+      console.error("Error storing password in localStorage:", err)
+    }
+
     if (getAvailableTabs().length > 1) {
       handleNextButtonClick()
     } else {
@@ -172,7 +204,26 @@ export default function NewStudentPage() {
 
   // Handle parent form submission
   const handleParentSubmit = async (data: any) => {
-    setParentData(data)
+    // Make sure we're not losing any fields during the update
+    setParentData({
+      ...parentData,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      // Keep the password we generated
+      password: parentPassword,
+    })
+
+    // Store the generated password in localStorage for temporary access
+    try {
+      const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+      passwordsMap[data.email] = parentPassword
+      localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+    } catch (err) {
+      console.error("Error storing password in localStorage:", err)
+    }
+
     if (getAvailableTabs().indexOf("parent") < getAvailableTabs().length - 1) {
       handleNextButtonClick()
     } else {
@@ -182,7 +233,26 @@ export default function NewStudentPage() {
 
   // Handle tutor form submission
   const handleTutorSubmit = async (data: any) => {
-    setTutorData(data)
+    // Make sure we're not losing any fields during the update
+    setTutorData({
+      ...tutorData,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      // Keep the password we generated
+      password: tutorPassword,
+    })
+
+    // Store the generated password in localStorage for temporary access
+    try {
+      const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+      passwordsMap[data.email] = tutorPassword
+      localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+    } catch (err) {
+      console.error("Error storing password in localStorage:", err)
+    }
+
     await handleSubmit()
   }
 
@@ -247,7 +317,11 @@ export default function NewStudentPage() {
         const parentPayload = {
           ...parentData,
           students: [createdStudent.id], // Link to the created student
-          tutors: [userId],
+        }
+
+        // Only add the current user ID to tutors if it exists
+        if (userId) {
+          parentPayload.tutors = [userId]
         }
 
         const parentResponse = await createUser(parentPayload)
@@ -268,8 +342,16 @@ export default function NewStudentPage() {
         const tutorPayload = {
           ...tutorData,
           students: [createdStudent.id], // Link to the created student
-          parents: [createdParent?.id], // Link to the created student
-          tutors: [userId], // Link to the created student
+        }
+
+        // Add parents array only if we have valid parent IDs
+        if (createdParent?.id) {
+          tutorPayload.parents = [createdParent.id]
+        }
+
+        // Add tutors array if current user ID exists
+        if (userId) {
+          tutorPayload.tutors = [userId]
         }
 
         const tutorResponse = await createUser(tutorPayload)
@@ -281,6 +363,34 @@ export default function NewStudentPage() {
 
         createdTutor = tutorResponse.data
       }
+
+      // Prepare the list of created users for the password modal
+      const usersWithPasswords = []
+      if (createdStudent) {
+        usersWithPasswords.push({
+          email: createdStudent.email,
+          userType: "student",
+          name: `${createdStudent.firstName} ${createdStudent.lastName}`,
+        })
+      }
+      if (createdParent) {
+        usersWithPasswords.push({
+          email: createdParent.email,
+          userType: "parent",
+          name: `${createdParent.firstName} ${createdParent.lastName}`,
+        })
+      }
+      if (createdTutor) {
+        usersWithPasswords.push({
+          email: createdTutor.email,
+          userType: "tutor",
+          name: `${createdTutor.firstName} ${createdTutor.lastName}`,
+        })
+      }
+
+      // Set the created users and show the password modal
+      setCreatedUsers(usersWithPasswords)
+      setShowPasswordModal(true)
 
       // Success
       let successMessage = "Student created successfully"
@@ -297,7 +407,13 @@ export default function NewStudentPage() {
       // Show success message
       toast({
         title: "Success",
-        description: successMessage,
+        description: (
+          <div>
+            {successMessage}
+            <p className="mt-2 text-sm">Passwords have been generated and stored temporarily.</p>
+          </div>
+        ),
+        duration: 5000, // Keep toast visible for 5 seconds
       })
 
       // Reset all form states
@@ -305,7 +421,7 @@ export default function NewStudentPage() {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
+        password: generateSecurePassword(),
         gradeLevel: "",
         school: "",
         notes: "",
@@ -317,7 +433,7 @@ export default function NewStudentPage() {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
+        password: generateSecurePassword(),
         phone: "",
         tenantName: TENANT_NAME,
         roles: ["tutor"],
@@ -327,7 +443,7 @@ export default function NewStudentPage() {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
+        password: generateSecurePassword(),
         phone: "",
         tenantName: TENANT_NAME,
         roles: ["parent"],
@@ -340,8 +456,11 @@ export default function NewStudentPage() {
       // Refresh the router cache before redirecting
       router.refresh()
 
-      // Redirect to students list
-      router.push("/tutor/students")
+      // Delay redirect to allow toast to be visible
+      setTimeout(() => {
+        // Redirect to students list
+        router.push("/tutor/students")
+      }, 2000) // 2 second delay before redirect
     } catch (err) {
       console.error("Error creating users:", err)
       setError("An unexpected error occurred. Please try again.")
@@ -463,6 +582,14 @@ export default function NewStudentPage() {
         errors={apiErrors}
         title="Error Creating Student"
         description="Please correct the following errors and try again."
+      />
+
+      {/* Password Display Modal */}
+      <PasswordDisplayModal
+        open={showPasswordModal}
+        onOpenChange={setShowPasswordModal}
+        users={createdUsers}
+        currentUserRole="tutor" // Pass the current user role
       />
     </div>
   )
