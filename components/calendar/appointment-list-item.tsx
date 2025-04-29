@@ -4,7 +4,7 @@ import { format, parseISO } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, CreditCard, Users } from "lucide-react"
+import { Calendar, Clock, CreditCard, Users, Loader2 } from "lucide-react"
 
 interface AppointmentListItemProps {
   appointment: any
@@ -98,6 +98,34 @@ export function AppointmentListItem({
     return "Participants"
   }
 
+  // Calculate price based on tutors if price is 0 or not set
+  const getPrice = () => {
+    // If price is already set and valid, use it
+    if (typeof appointment.price === "number" && appointment.price > 0) {
+      return appointment.price
+    }
+
+    // Otherwise, calculate based on tutors and duration
+    let calculatedPrice = 0
+
+    // If we have tutors with hourly rates
+    if (appointment.tutors && appointment.tutors.length > 0) {
+      const startDate = new Date(appointment.startTime)
+      const endDate = new Date(appointment.endTime)
+      const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+
+      appointment.tutors.forEach((tutor: any) => {
+        const hourlyRate = tutor.hourlyRate || 50 // Default to $50/hr if not specified
+        calculatedPrice += hourlyRate * durationHours
+      })
+    } else {
+      // Default minimum price if we can't calculate
+      calculatedPrice = 50
+    }
+
+    return calculatedPrice
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
@@ -127,12 +155,10 @@ export function AppointmentListItem({
               </span>
             </div>
 
-            {appointment.price > 0 && (
-              <div className="flex items-center text-muted-foreground">
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>${appointment.price.toFixed(2)}</span>
-              </div>
-            )}
+            <div className="flex items-center text-muted-foreground">
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>${getPrice().toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -144,7 +170,14 @@ export function AppointmentListItem({
 
         {appointment.status === "awaiting_payment" && (userRole === "student" || userRole === "parent") && (
           <Button size="sm" onClick={() => onPayment(appointment)} disabled={paymentLoading}>
-            {paymentLoading ? "Processing..." : "Pay Now"}
+            {paymentLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Pay Now"
+            )}
           </Button>
         )}
       </CardFooter>

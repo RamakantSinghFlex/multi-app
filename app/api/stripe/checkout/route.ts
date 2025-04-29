@@ -6,6 +6,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { appointmentData } = body
 
+    // Validate the price - must be greater than 0
+    if (!appointmentData.price || appointmentData.price <= 0) {
+      return NextResponse.json({ error: "Invalid price. Price must be greater than 0." }, { status: 400 })
+    }
+
     // Format line items for Stripe
     const lineItems = [
       {

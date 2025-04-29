@@ -22,6 +22,7 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
   const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
+  const [processingAppointmentId, setProcessingAppointmentId] = useState<string | null>(null)
 
   // Filter appointments by status
   const upcomingAppointments = appointments.filter(
@@ -45,12 +46,26 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
   const handlePayment = async (appointment: any) => {
     if (userRole === "tutor") return // Tutors don't make payments
 
+    // Set the specific appointment as processing
+    setProcessingAppointmentId(appointment.id)
     setPaymentLoading(true)
+
     try {
+      // Ensure price is valid and greater than 0
+      const price = typeof appointment.price === "number" && appointment.price > 0 ? appointment.price : 50 // Default to $50 if price is invalid
+
+      // Log the appointment data for debugging
+      console.log("Processing payment for appointment:", {
+        id: appointment.id,
+        price: price,
+        originalPrice: appointment.price,
+        title: appointment.title,
+      })
+
       const stripeResponse = await createStripeCheckoutSession({
         appointmentId: appointment.id,
         title: appointment.title,
-        price: appointment.price || 0,
+        price: price,
         tutorIds: appointment.tutors?.map((t: any) => (typeof t === "object" ? t.id : t)) || [],
         parentIds: appointment.parents?.map((p: any) => (typeof p === "object" ? p.id : p)) || [],
         studentIds: appointment.students?.map((s: any) => (typeof s === "object" ? s.id : s)) || [],
@@ -76,6 +91,8 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
         description: error instanceof Error ? error.message : "Failed to process payment",
         variant: "destructive",
       })
+      // Clear the loading state for this specific appointment
+      setProcessingAppointmentId(null)
       setPaymentLoading(false)
     }
   }
@@ -111,7 +128,7 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
                   onClick={() => handleAppointmentClick(appointment)}
                   onPayment={handlePayment}
                   userRole={userRole}
-                  paymentLoading={paymentLoading}
+                  paymentLoading={paymentLoading && processingAppointmentId === appointment.id}
                 />
               ))}
             </div>
@@ -134,7 +151,7 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
                   onClick={() => handleAppointmentClick(appointment)}
                   onPayment={handlePayment}
                   userRole={userRole}
-                  paymentLoading={paymentLoading}
+                  paymentLoading={paymentLoading && processingAppointmentId === appointment.id}
                 />
               ))}
             </div>
@@ -158,7 +175,7 @@ export function AppointmentList({ appointments, loading, userRole, onAppointment
                     onClick={() => handleAppointmentClick(appointment)}
                     onPayment={handlePayment}
                     userRole={userRole}
-                    paymentLoading={paymentLoading}
+                    paymentLoading={paymentLoading && processingAppointmentId === appointment.id}
                   />
                 ))}
               </div>

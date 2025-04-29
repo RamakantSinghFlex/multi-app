@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,11 +14,12 @@ import { format, setHours, setMinutes, isPast, isToday, differenceInMinutes } fr
 import { useToast } from "@/hooks/use-toast"
 import { createAppointment } from "@/lib/api/appointments"
 import { createStripeCheckoutSession } from "@/lib/api/stripe"
+import { getUserById } from "@/lib/api/users"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, X, CreditCard, ChevronDown } from "lucide-react"
+import { AlertCircle, X, CreditCard, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/auth-context"
-import type { Student, Tutor, Parent } from "@/lib/types"
+import type { Student, Tutor, Parent, ApiResponse } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
 interface AppointmentCalendarProps {
@@ -26,11 +27,16 @@ interface AppointmentCalendarProps {
   onCancel?: () => void
 }
 
+interface TutorCache {
+  [key: string]: Tutor | null
+}
+
 export default function AppointmentCalendar({ onSuccess, onCancel }: AppointmentCalendarProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [fetchingTutors, setFetchingTutors] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [title, setTitle] = useState("")
   const [startTime, setStartTime] = useState("09:00")
@@ -42,6 +48,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const [selectedParents, setSelectedParents] = useState<string[]>([])
   const [validationError, setValidationError] = useState<string | null>(null)
   const [price, setPrice] = useState<number | null>(null)
+  const [tutorCache, setTutorCache] = useState<TutorCache>({})
 
   // Use user data from auth context
   const tutors = (user?.tutors || []) as Tutor[]
@@ -50,6 +57,76 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
 
   const userRoles = user?.roles || []
   const userId = user?.id
+
+  // Fetch tutor data if not available in the user context
+  const fetchTutorData = async (tutorId: string): Promise<Tutor | null> => {
+    // Check if we already have this tutor in the cache
+    if (tutorCache[tutorId] !== undefined) {
+      return tutorCache[tutorId]
+    }
+
+    // Check if we already have this tutor in the user context
+    const existingTutor = tutors.find((t) => t.id === tutorId)
+    if (existingTutor) {
+      // Add to cache and return
+      setTutorCache((prev) => ({ ...prev, [tutorId]: existingTutor }))
+      return existingTutor
+    }
+
+    try {
+      setFetchingTutors(true)
+      const response: ApiResponse<Tutor> = await getUserById(tutorId)
+
+      if (response.error || !response.data) {
+        console.error("Error fetching tutor:", response.error)
+        setTutorCache((prev) => ({ ...prev, [tutorId]: null }))
+        return null
+      }
+
+      const tutorData = response.data as Tutor
+
+      // Add to cache
+      setTutorCache((prev) => ({ ...prev, [tutorId]: tutorData }))
+      return tutorData
+    } catch (error) {
+      console.error("Error fetching tutor:", error)
+      setTutorCache((prev) => ({ ...prev, [tutorId]: null }))
+      return null
+    } finally {
+      setFetchingTutors(false)
+    }
+  }
+
+  // Fetch tutor data for all selected tutors
+  useEffect(() => {
+    const fetchMissingTutors = async () => {
+      if (selectedTutors.length === 0) return
+
+      setFetchingTutors(true)
+      const tutorsToFetch = selectedTutors.filter(
+        (id) => !tutors.some((t) => t.id === id) && tutorCache[id] === undefined,
+      )
+
+      if (tutorsToFetch.length === 0) {
+        setFetchingTutors(false)
+        return
+      }
+
+      try {
+        const fetchPromises = tutorsToFetch.map((id) => fetchTutorData(id))
+        await Promise.all(fetchPromises)
+
+        // Recalculate price after fetching tutors
+        calculatePrice(selectedTutors, startTime, endTime)
+      } catch (error) {
+        console.error("Error fetching tutors:", error)
+      } finally {
+        setFetchingTutors(false)
+      }
+    }
+
+    fetchMissingTutors()
+  }, [selectedTutors])
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
@@ -98,7 +175,23 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
     calculatePrice(selectedTutors, startTime, value)
   }
 
-  const calculatePrice = (tutorIds: string[], start: string, end: string) => {
+  const getTutorHourlyRate = (tutorId: string): number => {
+    // First check the cache
+    if (tutorCache[tutorId]) {
+      return tutorCache[tutorId]?.hourlyRate || 50
+    }
+
+    // Then check the user context
+    const tutor = tutors.find((t) => t.id === tutorId)
+    if (tutor) {
+      return tutor.hourlyRate || 50
+    }
+
+    // Default fallback
+    return 50
+  }
+
+  const calculatePrice = async (tutorIds: string[], start: string, end: string) => {
     // Parse times
     const [startHour, startMinute] = start.split(":").map(Number)
     const [endHour, endMinute] = end.split(":").map(Number)
@@ -117,20 +210,64 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       return
     }
 
+    // If no tutors selected, return null price
+    if (tutorIds.length === 0) {
+      setPrice(null)
+      return
+    }
+
+    // Check if we need to fetch any tutor data
+    const missingTutors = tutorIds.filter((id) => !tutors.some((t) => t.id === id) && tutorCache[id] === undefined)
+
+    if (missingTutors.length > 0) {
+      setFetchingTutors(true)
+      try {
+        // Fetch missing tutor data
+        await Promise.all(missingTutors.map((id) => fetchTutorData(id)))
+      } catch (error) {
+        console.error("Error fetching tutors for price calculation:", error)
+      } finally {
+        setFetchingTutors(false)
+      }
+    }
+
     // Calculate price based on tutors' hourly rates
     let totalPrice = 0
+
     tutorIds.forEach((tutorId) => {
-      const tutor = tutors.find((t) => t.id === tutorId)
-      const hourlyRate = tutor?.hourlyRate || 50 // Default rate if not specified
+      // Get hourly rate from cache, user context, or default
+      const hourlyRate = getTutorHourlyRate(tutorId)
+
+      // Calculate price based on duration (convert minutes to hours)
       totalPrice += (hourlyRate * durationMinutes) / 60
     })
+
+    // Round to 2 decimal places for currency
+    totalPrice = Math.round(totalPrice * 100) / 100
+
+    // Set minimum price per tutor if calculation results in 0 or very small amount
+    if (totalPrice < 5 && tutorIds.length > 0) {
+      totalPrice = 5 * tutorIds.length // Minimum $5 per tutor
+    }
 
     setPrice(totalPrice)
   }
 
   const getTutorName = (id: string) => {
+    // First check the cache
+    if (tutorCache[id]) {
+      const tutor = tutorCache[id]
+      return tutor ? `${tutor.firstName} ${tutor.lastName} ($${tutor.hourlyRate || 50}/hr)` : id
+    }
+
+    // Then check the user context
     const tutor = tutors.find((t) => t.id === id)
-    return tutor ? `${tutor.firstName} ${tutor.lastName} (${tutor.hourlyRate || 50}/hr)` : id
+    if (tutor) {
+      return `${tutor.firstName} ${tutor.lastName} ($${tutor.hourlyRate || 50}/hr)`
+    }
+
+    // If we don't have the data yet, show loading state
+    return `${id} (loading...)`
   }
 
   const getStudentName = (id: string) => {
@@ -191,6 +328,12 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       return false
     }
 
+    // Validate that we have a valid price
+    if (price === null || price <= 0) {
+      setValidationError("Unable to calculate a valid price. Please check tutor selection and appointment duration.")
+      return false
+    }
+
     return true
   }
 
@@ -201,79 +344,105 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       return
     }
 
+    // Recalculate price to ensure it's up-to-date
+    await calculatePrice(selectedTutors, startTime, endTime)
+
+    // If price is still null or 0 after calculation, show error
+    if (price === null || price <= 0) {
+      setValidationError("Unable to calculate price. Please check tutor selection and appointment duration.")
+      return
+    }
+
+    // Create start and end time Date objects
+    const [startHour, startMinute] = startTime.split(":").map(Number)
+    const [endHour, endMinute] = endTime.split(":").map(Number)
+
+    const startDateTime = setHours(setMinutes(selectedDate, startMinute), startHour)
+    const endDateTime = setHours(setMinutes(selectedDate, endMinute), endHour)
+
     setLoading(true)
 
     try {
-      // Parse times
-      const [startHour, startMinute] = startTime.split(":").map(Number)
-      const [endHour, endMinute] = endTime.split(":").map(Number)
+      // Automatically include the current user based on their role
+      const updatedTutors = [...selectedTutors]
+      const updatedStudents = [...selectedStudents]
+      const updatedParents = [...selectedParents]
 
-      const startDateTime = new Date(selectedDate)
-      startDateTime.setHours(startHour, startMinute, 0, 0)
+      if (userId) {
+        if (userRoles.includes("tutor") && !updatedTutors.includes(userId)) {
+          updatedTutors.push(userId)
+        }
+        if (userRoles.includes("student") && !updatedStudents.includes(userId)) {
+          updatedStudents.push(userId)
+        }
+        if (userRoles.includes("parent") && !updatedParents.includes(userId)) {
+          updatedParents.push(userId)
+        }
+      }
 
-      const endDateTime = new Date(selectedDate)
-      endDateTime.setHours(endHour, endMinute, 0, 0)
+      // Check if the current user is a tutor
+      const isTutor = userRoles.includes("tutor")
 
-      // Create the appointment
-      const appointmentData = {
+      // Calculate final price based on tutors' hourly rates
+      const finalPrice = price
+
+      // First create the appointment with status "awaiting_payment"
+      const appointmentResponse = await createAppointment({
         title,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
+        tutors: updatedTutors,
+        students: updatedStudents,
+        parents: updatedParents,
+        status: "awaiting_payment", // Set initial status to awaiting payment
         notes,
-        status,
-        amount: price as number,
-        tutors: selectedTutors,
-        students: selectedStudents,
-        parents: selectedParents.length > 0 ? selectedParents : user?.id ? [user.id] : [],
+        price: finalPrice,
+      })
+
+      if (appointmentResponse.error) {
+        throw new Error(appointmentResponse.error)
       }
 
-      const response = await createAppointment(appointmentData)
+      const appointmentId = appointmentResponse.data?.doc?.id
 
-      if (response.error) {
-        throw new Error(response.error)
-      }
-
-      const appointmentId = response.data?.id
-
-      if (!appointmentId) {
-        throw new Error("Failed to create appointment: No ID returned")
-      }
-
-      // If the current user is a parent, redirect to payment
-      if (userRoles.includes("parent") && price !== null) {
-        // Using parameters that match the expected API interface
-        const stripeResponse = await createStripeCheckoutSession({
-          appointmentId,
-          price: price, 
-          title: title,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          notes,
-          tutorIds: selectedTutors,
-          parentIds: selectedParents.length > 0 ? selectedParents : user?.id ? [user.id] : undefined,
-          studentIds: selectedStudents
-        })
-
-        if (stripeResponse.error) {
-          throw new Error(stripeResponse.error)
-        }
-
-        // Redirect to Stripe Checkout
-        if (stripeResponse.data?.url) {
-          router.push(stripeResponse.data.url)
-        } else {
-          throw new Error("No payment URL received")
-        }
-      } else {
-        // For tutors or admins, just show success message
+      // If the user is a tutor, just create the appointment without payment
+      if (isTutor) {
         toast({
           title: "Success",
-          description: "Appointment created successfully",
+          description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
         })
 
         if (onSuccess) {
           onSuccess()
+        } else {
+          router.push("/tutor/appointments")
         }
+        return
+      }
+
+      // For students and parents, proceed with payment flow
+      // Create a Stripe checkout session
+      const stripeResponse = await createStripeCheckoutSession({
+        appointmentId,
+        title,
+        price: finalPrice, // Use the calculated price
+        tutorIds: updatedTutors,
+        parentIds: updatedParents,
+        studentIds: updatedStudents,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        notes,
+      })
+
+      if (stripeResponse.error) {
+        throw new Error(stripeResponse.error)
+      }
+
+      // Redirect to Stripe checkout
+      if (stripeResponse.data?.url) {
+        window.location.href = stripeResponse.data.url
+      } else {
+        throw new Error("No checkout URL returned from Stripe")
       }
     } catch (error) {
       console.error("Error creating appointment:", error)
@@ -287,8 +456,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[80vh]">
-      {/* Left Column - Calendar */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="md:col-span-1">
         <CardContent className="p-4">
           <h3 className="text-lg font-medium mb-4">Select Date</h3>
@@ -303,130 +471,115 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         </CardContent>
       </Card>
 
-      {/* Right Column - Form */}
-      <Card className="md:col-span-2 flex flex-col max-h-[80vh]">
-        {/* Top validation error if any */}
-        {validationError && (
-          <Alert variant="destructive" className="m-4 mb-0">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{validationError}</AlertDescription>
-          </Alert>
-        )}
+      <Card className="md:col-span-2">
+        <CardContent className="p-6">
+          {validationError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{validationError}</AlertDescription>
+            </Alert>
+          )}
 
-        {/* Scrollable form area */}
-        <div className="overflow-y-auto flex-grow p-4" style={{ overflowY: 'auto', scrollbarWidth: 'thin' }}>
-          <form id="appointment-form" onSubmit={handleSubmit} className="space-y-5">
-            {/* Title */}
-            <div className="mb-5">
-              <Label htmlFor="title" className="text-sm font-semibold mb-1.5 block">Title</Label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Math Tutoring Session"
                 required
-                className="w-full"
               />
             </div>
 
-            {/* Time Selection */}
-            <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="startTime" className="text-sm font-semibold mb-1.5 block">Start Time</Label>
+                <Label htmlFor="startTime">Start Time</Label>
                 <Input
                   id="startTime"
                   type="time"
                   value={startTime}
                   onChange={(e) => handleStartTimeChange(e.target.value)}
                   required
-                  className="w-full"
                 />
               </div>
               <div>
-                <Label htmlFor="endTime" className="text-sm font-semibold mb-1.5 block">End Time</Label>
+                <Label htmlFor="endTime">End Time</Label>
                 <Input
                   id="endTime"
                   type="time"
                   value={endTime}
                   onChange={(e) => handleEndTimeChange(e.target.value)}
                   required
-                  className="w-full"
                 />
               </div>
             </div>
 
-            {/* Tutors Section */}
-            <div className="mb-5 p-4 border border-slate-200 rounded-md">
-              <Label htmlFor="tutors" className="text-sm font-semibold mb-2 block">Tutors</Label>
-              <Select onValueChange={handleAddTutor}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select tutors" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tutors.map((tutor) => (
-                    <SelectItem key={tutor.id} value={tutor.id}>
-                      {tutor.firstName} {tutor.lastName} {tutor.hourlyRate ? `($${tutor.hourlyRate}/hr)` : "($50/hr)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedTutors.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedTutors.map((tutorId) => (
-                    <Badge key={tutorId} variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
-                      {getTutorName(tutorId)}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveTutor(tutorId)}
-                        className="text-red-500 hover:text-red-700 rounded-full ml-1 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            {tutors.length > 0 && (
+              <div>
+                <Label htmlFor="tutors">Tutors</Label>
+                <Select onValueChange={handleAddTutor}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select tutors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tutors.map((tutor) => (
+                      <SelectItem key={tutor.id} value={tutor.id}>
+                        {tutor.firstName} {tutor.lastName} {tutor.hourlyRate ? `($${tutor.hourlyRate}/hr)` : "($50/hr)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTutors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedTutors.map((tutorId) => (
+                      <Badge key={tutorId} variant="secondary" className="flex items-center gap-1">
+                        {getTutorName(tutorId)}
+                        <button type="button" onClick={() => handleRemoveTutor(tutorId)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Students Section */}
-            <div className="mb-5 p-4 border border-slate-200 rounded-md">
-              <Label htmlFor="students" className="text-sm font-semibold mb-2 block">Students</Label>
-              <Select onValueChange={handleAddStudent}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select students" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((student) => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.firstName} {student.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedStudents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedStudents.map((studentId) => (
-                    <Badge key={studentId} variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
-                      {getStudentName(studentId)}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveStudent(studentId)}
-                        className="text-red-500 hover:text-red-700 rounded-full ml-1 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            {students.length > 0 && (
+              <div>
+                <Label htmlFor="students">Students</Label>
+                <Select onValueChange={handleAddStudent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select students" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.firstName} {student.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedStudents.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedStudents.map((studentId) => (
+                      <Badge key={studentId} variant="secondary" className="flex items-center gap-1">
+                        {getStudentName(studentId)}
+                        <button type="button" onClick={() => handleRemoveStudent(studentId)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Parents Section */}
             {parents.length > 0 && (
-              <div className="mb-5 p-4 border border-slate-200 rounded-md">
-                <Label htmlFor="parents" className="text-sm font-semibold mb-2 block">Parents</Label>
+              <div>
+                <Label htmlFor="parents">Parents</Label>
                 <Select onValueChange={handleAddParent}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select parents" />
                   </SelectTrigger>
                   <SelectContent>
@@ -440,13 +593,9 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                 {selectedParents.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedParents.map((parentId) => (
-                      <Badge key={parentId} variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
+                      <Badge key={parentId} variant="secondary" className="flex items-center gap-1">
                         {getParentName(parentId)}
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveParent(parentId)}
-                          className="text-red-500 hover:text-red-700 rounded-full ml-1 p-0.5"
-                        >
+                        <button type="button" onClick={() => handleRemoveParent(parentId)}>
                           <X className="h-3 w-3" />
                         </button>
                       </Badge>
@@ -456,58 +605,49 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
               </div>
             )}
 
-            {/* Notes Section */}
-            <div className="mb-5 p-4 border border-slate-200 rounded-md">
-              <Label htmlFor="notes" className="text-sm font-semibold mb-2 block">Notes</Label>
+            <div>
+              <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add any additional notes here..."
                 rows={3}
-                className="w-full"
               />
             </div>
 
-            {/* Price Display */}
-            {price !== null && (
-              <div className="mb-5 bg-green-50 p-4 rounded-lg border border-green-200">
+            {fetchingTutors && (
+              <div className="flex items-center justify-center p-4 bg-slate-50 rounded-lg border">
+                <Loader2 className="h-5 w-5 text-slate-500 animate-spin mr-2" />
+                <span>Calculating price based on tutor rates...</span>
+              </div>
+            )}
+
+            {!fetchingTutors && price !== null && (
+              <div className="bg-slate-50 p-4 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-600" />
+                    <CreditCard className="h-5 w-5 text-slate-500" />
                     <span className="font-medium">Total Price:</span>
                   </div>
-                  <span className="text-lg font-bold text-green-700">${price.toFixed(2)}</span>
+                  <span className="text-lg font-bold">${price.toFixed(2)}</span>
                 </div>
-                <p className="text-sm text-green-600 mt-2">
+                <p className="text-sm text-slate-500 mt-2">
                   You will be redirected to a secure payment page after submitting.
                 </p>
               </div>
             )}
 
-            {/* Scroll indicator */}
-            <div className="absolute bottom-24 right-6 animate-bounce bg-slate-100 rounded-full p-1 shadow-md hidden md:block">
-              <ChevronDown className="h-5 w-5 text-slate-500" />
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel} disabled={loading || fetchingTutors}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading || fetchingTutors || price === null}>
+                {loading ? "Processing..." : userRoles.includes("tutor") ? "Create Appointment" : "Proceed to Payment"}
+              </Button>
             </div>
           </form>
-        </div>
-
-        {/* Fixed footer with action buttons */}
-        <div className="p-4 border-t border-slate-200 bg-white rounded-b-lg mt-auto">
-          <div className="flex justify-end space-x-3">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              form="appointment-form" 
-              disabled={loading || price === null} 
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
-            >
-              {loading ? "Processing..." : userRoles.includes("tutor") ? "Create Appointment" : "Proceed to Payment"}
-            </Button>
-          </div>
-        </div>
+        </CardContent>
       </Card>
     </div>
   )
