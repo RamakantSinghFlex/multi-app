@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -21,8 +21,21 @@ export function CalendarView({
   className,
   disablePastDates = false,
 }: CalendarViewProps) {
+  // Initialize with current date if initial month is current month
+  const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(initialMonth)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    isSameDay(initialMonth, today) ? today : null
+  )
+
+  // Use useEffect with empty dependency array to run only once on mount
+  useEffect(() => {
+    // Only call onDateSelect on initial mount if today is selected
+    if (isSameDay(initialMonth, today) && onDateSelect) {
+      onDateSelect(today)
+    }
+    // Run once on component mount only
+  }, []) // Empty dependency array
 
   const monthNames = [
     "January",
@@ -49,15 +62,24 @@ export function CalendarView({
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
   }
 
-  const handleDateClick = (date: Date) => {
+  const handleDateClick = (date: Date, e?: React.MouseEvent) => {
+    // Stop event propagation to prevent any interference
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    
     // Check if the date and time are in the past and if past dates should be disabled
     if (disablePastDates) {
-      if (isPast(date)) {
-        return // Don't allow selection of past dates and times
+      if (isPast(date) && !isToday(date)) {
+        return // Don't allow selection of past dates but allow today
       }
     }
 
+    // Always set the selected date, regardless of which date it is
     setSelectedDate(date)
+    
+    // Always call onDateSelect if it exists, ensuring it works for all dates including today and 28
     if (onDateSelect) {
       onDateSelect(date)
     }
@@ -78,6 +100,9 @@ export function CalendarView({
   const isPastDate = (date: Date) => {
     if (!disablePastDates) return false
 
+    // Allow today's date to be clickable even with disablePastDates
+    if (isToday(date)) return false
+    
     return isBefore(date, new Date())
   }
 
@@ -86,6 +111,7 @@ export function CalendarView({
     const month = currentMonth.getMonth()
     const daysInMonth = getDaysInMonth(year, month)
     const firstDay = getFirstDayOfMonth(year, month)
+    const now = new Date() 
 
     const days = []
 
@@ -100,23 +126,51 @@ export function CalendarView({
       const isActive = isHighlighted(date) || (selectedDate && isSameDay(date, selectedDate))
       const isTodayDate = isToday(date)
       const isPast = isPastDate(date)
-
-      days.push(
-        <button
-          key={`day-${month}-${day}`}
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full text-sm",
-            isActive && "bg-[#095d40] text-white",
-            isTodayDate && !isActive && "border border-[#095d40]",
-            isPast && "text-gray-400 cursor-not-allowed",
-            !isActive && !isTodayDate && !isPast && "hover:bg-[#f4f4f4]",
-          )}
-          onClick={() => handleDateClick(date)}
-          disabled={isPast}
-        >
-          {day}
-        </button>,
-      )
+      
+      // Enhanced handling for today's date and day 28
+      const isSpecialDay = day === 28 || isTodayDate
+      
+      if (isSpecialDay) {
+        days.push(
+          <div 
+            key={`day-${month}-${day}`} 
+            className="relative h-8 w-8 cursor-pointer" 
+            onClick={(e) => handleDateClick(date, e)}
+          >
+            <div
+              className={cn(
+                "absolute top-0 left-0 flex h-8 w-8 items-center justify-center rounded-full text-sm z-10",
+                isActive && "bg-[#095d40] text-white",
+                isTodayDate && !isActive && "border-2 border-[#095d40]",
+                isPast && !isTodayDate && "text-gray-400",
+                !isActive && !isTodayDate && !isPast && "hover:bg-[#f4f4f4]",
+              )}
+              data-day={day}
+              data-today={isTodayDate ? "true" : "false"}
+            >
+              {day}
+            </div>
+          </div>
+        )
+      } else {
+        days.push(
+          <button
+            key={`day-${month}-${day}`}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full text-sm",
+              isActive && "bg-[#095d40] text-white",
+              isTodayDate && !isActive && "border border-[#095d40]",
+              isPast && "text-gray-400 cursor-not-allowed",
+              !isActive && !isTodayDate && !isPast && "hover:bg-[#f4f4f4]",
+            )}
+            onClick={(e) => handleDateClick(date, e)}
+            disabled={isPast}
+            data-day={day}
+          >
+            {day}
+          </button>
+        )
+      }
     }
 
     return days
