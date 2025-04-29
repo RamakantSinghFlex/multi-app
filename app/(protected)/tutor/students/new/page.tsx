@@ -275,6 +275,13 @@ export default function NewStudentPage() {
     await handleSubmit()
   }
 
+  // Handle modal close and redirect
+  const handleModalClose = () => {
+    setShowPasswordModal(false)
+    // Redirect to students list when modal is closed
+    router.push("/tutor/students")
+  }
+
   // Handle form submission
   const handleSubmit = async () => {
     // We've already validated in the individual form submit handlers
@@ -468,14 +475,10 @@ export default function NewStudentPage() {
       setActiveTab("student")
       setCreationMode("student")
 
-      // Refresh the router cache before redirecting
+      // Refresh the router cache
       router.refresh()
 
-      // Delay redirect to allow toast to be visible
-      setTimeout(() => {
-        // Redirect to students list
-        router.push("/tutor/students")
-      }, 2000) // 2 second delay before redirect
+      // No automatic redirect - we'll redirect when the user closes the modal
     } catch (err) {
       console.error("Error creating users:", err)
       setError("An unexpected error occurred. Please try again.")
@@ -602,9 +605,10 @@ export default function NewStudentPage() {
       {/* Password Display Modal */}
       <PasswordDisplayModal
         open={showPasswordModal}
-        onOpenChange={setShowPasswordModal}
+        onOpenChange={handleModalClose}
         users={createdUsers}
         currentUserRole="tutor" // Pass the current user role
+        showCloseButton={true} // Add close button to redirect
       />
     </div>
   )
