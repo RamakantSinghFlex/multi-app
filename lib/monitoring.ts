@@ -196,8 +196,24 @@ class Logger {
   }
 }
 
-// Export a singleton instance
-export const logger = new Logger()
+// Simple logger implementation that doesn't rely on external dependencies
+export const logger = {
+  info: (message: string, data?: any) => {
+    if (typeof window !== "undefined" && window.console) {
+      console.info(`[INFO] ${message}`, data || "")
+    }
+  },
+  warn: (message: string, data?: any) => {
+    if (typeof window !== "undefined" && window.console) {
+      console.warn(`[WARN] ${message}`, data || "")
+    }
+  },
+  error: (message: string, error?: any) => {
+    if (typeof window !== "undefined" && window.console) {
+      console.error(`[ERROR] ${message}`, error || "")
+    }
+  },
+}
 
 /**
  * Report errors to monitoring service

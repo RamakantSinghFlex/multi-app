@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createUser } from "@/lib/api/users"
 import { useToast } from "@/hooks/use-toast"
 import { ErrorModal, parseApiError, type ApiError } from "@/components/ui/error-modal"
-import { getMe } from "@/lib/api" // Import getMe directly instead of using useAuth
+import { getMe } from "@/lib/api"
 import type { User } from "@/lib/types"
 import { TENANT_NAME } from "@/lib/config"
 import { UserForm } from "@/components/shared/user-form"
@@ -41,10 +41,9 @@ export default function NewStudentPage() {
     const fetchUser = async () => {
       try {
         const { data } = await getMe()
-        const userData = data
-        if (userData && userData.id) {
-          setUserId(userData.id)
-          setUserRole(userData.role || (userData.roles && userData.roles.length > 0 ? userData.roles[0] : null))
+        if (data && data.id) {
+          setUserId(data.id)
+          setUserRole(data.role || (data.roles && data.roles.length > 0 ? data.roles[0] : null))
         }
       } catch (error) {
         console.error("Error fetching user:", error)
@@ -57,11 +56,11 @@ export default function NewStudentPage() {
   }, [])
 
   // Generate secure passwords for each user type
-  const studentPassword = generateSecurePassword()
-  const parentPassword = generateSecurePassword()
-  const tutorPassword = generateSecurePassword()
+  const [studentPassword] = useState(generateSecurePassword())
+  const [parentPassword] = useState(generateSecurePassword())
+  const [tutorPassword] = useState(generateSecurePassword())
 
-  // Student form state
+  // Form data states
   const [studentData, setStudentData] = useState({
     firstName: "",
     lastName: "",
@@ -70,11 +69,10 @@ export default function NewStudentPage() {
     gradeLevel: "",
     school: "",
     notes: "",
-    tenantName: TENANT_NAME, // Add default tenant name
+    tenantName: TENANT_NAME,
     roles: ["student"],
   })
 
-  // Parent form state
   const [parentData, setParentData] = useState({
     firstName: "",
     lastName: "",
@@ -85,7 +83,6 @@ export default function NewStudentPage() {
     roles: ["parent"],
   })
 
-  // Tutor form state
   const [tutorData, setTutorData] = useState({
     firstName: "",
     lastName: "",
@@ -104,7 +101,7 @@ export default function NewStudentPage() {
   const [activeTab, setActiveTab] = useState<TabType>("student")
   const [creationProgress, setCreationProgress] = useState("")
 
-  // Add state for the password display modal
+  // Password modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [createdUsers, setCreatedUsers] = useState<Array<{ email: string; userType: string; name?: string }>>([])
 
@@ -138,52 +135,34 @@ export default function NewStudentPage() {
     setError(null)
   }
 
-  // Modify the validateCurrentTab function to accept form data as a parameter
-  const validateCurrentTab = (formData?: any): boolean => {
-    // Use the passed form data or fall back to the state data
-    const dataToValidate =
-      formData || (activeTab === "student" ? studentData : activeTab === "parent" ? parentData : tutorData)
-
-    if (activeTab === "student") {
-      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
-        setError("Please fill in all required student fields")
-        return false
-      }
-    } else if (activeTab === "parent") {
-      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
-        setError("Please fill in all required parent fields")
-        return false
-      }
-    } else if (activeTab === "tutor") {
-      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
-        setError("Please fill in all required tutor fields")
-        return false
-      }
+  // Validate the current tab's data
+  const validateCurrentTab = (formData: any): boolean => {
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      const userType = activeTab === "student" ? "student" : activeTab === "parent" ? "parent" : "tutor"
+      setError(`Please fill in all required ${userType} fields`)
+      return false
     }
     return true
   }
 
-  // Update the handleNextButtonClick function to use the current state
+  // Handle next button click
   const handleNextButtonClick = () => {
-    if (validateCurrentTab()) {
-      setError(null)
-      const availableTabs = getAvailableTabs()
-      const currentIndex = availableTabs.indexOf(activeTab)
-      if (currentIndex < availableTabs.length - 1) {
-        setActiveTab(availableTabs[currentIndex + 1])
-      }
+    setError(null)
+    const availableTabs = getAvailableTabs()
+    const currentIndex = availableTabs.indexOf(activeTab)
+    if (currentIndex < availableTabs.length - 1) {
+      setActiveTab(availableTabs[currentIndex + 1])
     }
   }
 
-  // Update the handleStudentSubmit function to validate with the current form data
+  // Handle student form submission
   const handleStudentSubmit = async (data: any) => {
-    // Validate with the current form data
     if (!validateCurrentTab(data)) {
       return
     }
 
-    // Make sure we're not losing any fields during the update
-    setStudentData({
+    // Update student data state
+    const updatedStudentData = {
       ...studentData,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -191,11 +170,12 @@ export default function NewStudentPage() {
       gradeLevel: data.gradeLevel,
       school: data.school,
       notes: data.notes,
-      // Keep the password we generated
       password: studentPassword,
-    })
+    }
 
-    // Store the generated password in localStorage for temporary access
+    setStudentData(updatedStudentData)
+
+    // Store password in localStorage
     try {
       const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
       passwordsMap[data.email] = studentPassword
@@ -207,29 +187,29 @@ export default function NewStudentPage() {
     if (getAvailableTabs().length > 1) {
       handleNextButtonClick()
     } else {
-      await handleSubmit()
+      await handleSubmit(updatedStudentData)
     }
   }
 
-  // Update the handleParentSubmit function to validate with the current form data
+  // Handle parent form submission
   const handleParentSubmit = async (data: any) => {
-    // Validate with the current form data
     if (!validateCurrentTab(data)) {
       return
     }
 
-    // Make sure we're not losing any fields during the update
-    setParentData({
+    // Update parent data state
+    const updatedParentData = {
       ...parentData,
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
       phone: data.phone,
-      // Keep the password we generated
       password: parentPassword,
-    })
+    }
 
-    // Store the generated password in localStorage for temporary access
+    setParentData(updatedParentData)
+
+    // Store password in localStorage
     try {
       const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
       passwordsMap[data.email] = parentPassword
@@ -241,29 +221,29 @@ export default function NewStudentPage() {
     if (getAvailableTabs().indexOf("parent") < getAvailableTabs().length - 1) {
       handleNextButtonClick()
     } else {
-      await handleSubmit()
+      await handleSubmit(studentData, updatedParentData)
     }
   }
 
-  // Update the handleTutorSubmit function to validate with the current form data
+  // Handle tutor form submission
   const handleTutorSubmit = async (data: any) => {
-    // Validate with the current form data
     if (!validateCurrentTab(data)) {
       return
     }
 
-    // Make sure we're not losing any fields during the update
-    setTutorData({
+    // Update tutor data state
+    const updatedTutorData = {
       ...tutorData,
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
       phone: data.phone,
-      // Keep the password we generated
       password: tutorPassword,
-    })
+    }
 
-    // Store the generated password in localStorage for temporary access
+    setTutorData(updatedTutorData)
+
+    // Store password in localStorage
     try {
       const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
       passwordsMap[data.email] = tutorPassword
@@ -272,7 +252,7 @@ export default function NewStudentPage() {
       console.error("Error storing password in localStorage:", err)
     }
 
-    await handleSubmit()
+    await handleSubmit(studentData, parentData, updatedTutorData)
   }
 
   // Handle modal close and redirect
@@ -283,8 +263,11 @@ export default function NewStudentPage() {
   }
 
   // Handle form submission
-  const handleSubmit = async () => {
-    // We've already validated in the individual form submit handlers
+  const handleSubmit = async (
+    currentStudentData = studentData,
+    currentParentData = parentData,
+    currentTutorData = tutorData,
+  ) => {
     setIsLoading(true)
     setError(null)
     setApiErrors(null)
@@ -293,12 +276,10 @@ export default function NewStudentPage() {
     try {
       // Step 1: Create Student
       setCreationProgress("Creating student...")
-      const studentPayload = {
-        ...studentData,
-      }
+      const studentPayload = { ...currentStudentData }
 
-      if (userId && userRole === "parent") {
-        studentPayload.parents = [userId]
+      if (userId && userRole === "tutor") {
+        studentPayload.tutors = [userId]
       }
 
       const studentResponse = await createUser(studentPayload)
@@ -315,17 +296,12 @@ export default function NewStudentPage() {
         return
       }
 
-      // Store the newly created student in localStorage for immediate access
+      // Store the newly created student in localStorage
       try {
-        // Get existing students from localStorage or initialize empty array
         const existingStudentsJson = localStorage.getItem("recentlyCreatedStudents") || "[]"
         const existingStudents = JSON.parse(existingStudentsJson)
-
-        // Add the new student and keep only the 5 most recent
         existingStudents.unshift(createdStudent)
         const recentStudents = existingStudents.slice(0, 5)
-
-        // Save back to localStorage
         localStorage.setItem("recentlyCreatedStudents", JSON.stringify(recentStudents))
       } catch (err) {
         console.error("Error storing student in localStorage:", err)
@@ -337,8 +313,8 @@ export default function NewStudentPage() {
         setCreationProgress("Creating parent...")
 
         const parentPayload = {
-          ...parentData,
-          students: [createdStudent.id], // Link to the created student
+          ...currentParentData,
+          students: [createdStudent.id],
         }
 
         // Only add the current user ID to tutors if it exists
@@ -362,8 +338,8 @@ export default function NewStudentPage() {
         setCreationProgress("Creating tutor...")
 
         const tutorPayload = {
-          ...tutorData,
-          students: [createdStudent.id], // Link to the created student
+          ...currentTutorData,
+          students: [createdStudent.id],
         }
 
         // Add parents array only if we have valid parent IDs
@@ -414,10 +390,8 @@ export default function NewStudentPage() {
       setCreatedUsers(usersWithPasswords)
       setShowPasswordModal(true)
 
-      // Success
+      // Success message
       let successMessage = "Student created successfully"
-
-      // Add details about parent/tutor creation if applicable
       if (creationMode === "student-parent" && createdParent) {
         successMessage = "Student and parent created successfully"
       } else if (creationMode === "student-tutor" && createdTutor) {
@@ -426,7 +400,6 @@ export default function NewStudentPage() {
         successMessage = "Student, parent, and tutor created successfully"
       }
 
-      // Show success message
       toast({
         title: "Success",
         description: (
@@ -435,10 +408,10 @@ export default function NewStudentPage() {
             <p className="mt-2 text-sm">Passwords have been generated and stored temporarily.</p>
           </div>
         ),
-        duration: 5000, // Keep toast visible for 5 seconds
+        duration: 5000,
       })
 
-      // Reset all form states
+      // Reset form states
       setStudentData({
         firstName: "",
         lastName: "",
@@ -451,16 +424,6 @@ export default function NewStudentPage() {
         roles: ["student"],
       })
 
-      setTutorData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: generateSecurePassword(),
-        phone: "",
-        tenantName: TENANT_NAME,
-        roles: ["tutor"],
-      })
-
       setParentData({
         firstName: "",
         lastName: "",
@@ -469,6 +432,16 @@ export default function NewStudentPage() {
         phone: "",
         tenantName: TENANT_NAME,
         roles: ["parent"],
+      })
+
+      setTutorData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: generateSecurePassword(),
+        phone: "",
+        tenantName: TENANT_NAME,
+        roles: ["tutor"],
       })
 
       // Reset UI states
@@ -491,9 +464,7 @@ export default function NewStudentPage() {
   // Helper function to handle API errors
   const handleApiError = (error: any, defaultMessage: string) => {
     try {
-      // Try to parse the error as JSON if it's a string
       const parsedErrors = typeof error === "string" && error.startsWith("{") ? JSON.parse(error) : error
-
       setApiErrors(parseApiError(parsedErrors))
       setShowErrorModal(true)
     } catch (e) {
@@ -607,8 +578,8 @@ export default function NewStudentPage() {
         open={showPasswordModal}
         onOpenChange={handleModalClose}
         users={createdUsers}
-        currentUserRole="tutor" // Pass the current user role
-        showCloseButton={true} // Add close button to redirect
+        currentUserRole="tutor"
+        showCloseButton={true}
       />
     </div>
   )

@@ -5,6 +5,13 @@
  * Environment variables are accessed here to provide a single source of truth.
  */
 
+// Enable or disable logging
+export const ENABLE_LOGGING = false
+
+// Other configuration values
+export const APP_NAME = "Milestone Learning"
+export const APP_DESCRIPTION = "Personalized tutoring services for high-achieving students"
+
 // API Configuration
 export const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "/api"
 
@@ -17,10 +24,6 @@ export const TENANT_NAME = process.env.TENANT_NAME || "Tenant 1"
 // Authentication Configuration
 export const AUTH_TOKEN_KEY = "milestone-token"
 export const AUTH_COOKIE_NAME = "payload-token"
-
-// Enable logging based on environment variable
-export const ENABLE_LOGGING =
-  process.env.NEXT_PUBLIC_ENABLE_LOGGING === "true" || process.env.NODE_ENV === "development"
 
 // JWT Configuration
 export const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-CHANGE-IN-PRODUCTION"
