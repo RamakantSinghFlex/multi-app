@@ -138,20 +138,24 @@ export default function NewStudentPage() {
     setError(null)
   }
 
-  // Validate the current tab
-  const validateCurrentTab = (): boolean => {
+  // Modify the validateCurrentTab function to accept form data as a parameter
+  const validateCurrentTab = (formData?: any): boolean => {
+    // Use the passed form data or fall back to the state data
+    const dataToValidate =
+      formData || (activeTab === "student" ? studentData : activeTab === "parent" ? parentData : tutorData)
+
     if (activeTab === "student") {
-      if (!studentData.firstName || !studentData.lastName || !studentData.email) {
+      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
         setError("Please fill in all required student fields")
         return false
       }
     } else if (activeTab === "parent") {
-      if (!parentData.firstName || !parentData.lastName || !parentData.email) {
+      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
         setError("Please fill in all required parent fields")
         return false
       }
     } else if (activeTab === "tutor") {
-      if (!tutorData.firstName || !tutorData.lastName || !tutorData.email) {
+      if (!dataToValidate.firstName || !dataToValidate.lastName || !dataToValidate.email) {
         setError("Please fill in all required tutor fields")
         return false
       }
@@ -159,7 +163,7 @@ export default function NewStudentPage() {
     return true
   }
 
-  // Handle next button click
+  // Update the handleNextButtonClick function to use the current state
   const handleNextButtonClick = () => {
     if (validateCurrentTab()) {
       setError(null)
@@ -171,8 +175,13 @@ export default function NewStudentPage() {
     }
   }
 
-  // Handle student form submission
+  // Update the handleStudentSubmit function to validate with the current form data
   const handleStudentSubmit = async (data: any) => {
+    // Validate with the current form data
+    if (!validateCurrentTab(data)) {
+      return
+    }
+
     // Make sure we're not losing any fields during the update
     setStudentData({
       ...studentData,
@@ -202,8 +211,13 @@ export default function NewStudentPage() {
     }
   }
 
-  // Handle parent form submission
+  // Update the handleParentSubmit function to validate with the current form data
   const handleParentSubmit = async (data: any) => {
+    // Validate with the current form data
+    if (!validateCurrentTab(data)) {
+      return
+    }
+
     // Make sure we're not losing any fields during the update
     setParentData({
       ...parentData,
@@ -231,8 +245,13 @@ export default function NewStudentPage() {
     }
   }
 
-  // Handle tutor form submission
+  // Update the handleTutorSubmit function to validate with the current form data
   const handleTutorSubmit = async (data: any) => {
+    // Validate with the current form data
+    if (!validateCurrentTab(data)) {
+      return
+    }
+
     // Make sure we're not losing any fields during the update
     setTutorData({
       ...tutorData,
@@ -256,13 +275,9 @@ export default function NewStudentPage() {
     await handleSubmit()
   }
 
-  // Handle form submission
+  // Update the handleSubmit function to skip validation since it's already done
   const handleSubmit = async () => {
-    // Validate the current tab first
-    if (!validateCurrentTab()) {
-      return
-    }
-
+    // We've already validated in the individual form submit handlers
     setIsLoading(true)
     setError(null)
     setApiErrors(null)
