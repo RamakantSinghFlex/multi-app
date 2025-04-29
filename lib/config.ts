@@ -7,6 +7,7 @@
 
 // API Configuration
 export const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "/api"
+export const LANDING_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://ancient-yeti-453713-d0.uk.r.appspot.com/api"
 
 // App URL with fallback for development
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
