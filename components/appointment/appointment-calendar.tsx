@@ -42,7 +42,6 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const [startTime, setStartTime] = useState("09:00")
   const [endTime, setEndTime] = useState("10:00")
   const [notes, setNotes] = useState("")
-  const [status, setStatus] = useState("pending")
   const [selectedTutors, setSelectedTutors] = useState<string[]>([])
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [selectedParents, setSelectedParents] = useState<string[]>([])
@@ -57,6 +56,11 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
 
   const userRoles = user?.roles || []
   const userId = user?.id
+
+  // Determine user's primary role
+  const isTutor = userRoles.includes("tutor")
+  const isStudent = userRoles.includes("student")
+  const isParent = userRoles.includes("parent")
 
   // Fetch tutor data if not available in the user context
   const fetchTutorData = async (tutorId: string): Promise<Tutor | null> => {
@@ -369,24 +373,23 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       const updatedParents = [...selectedParents]
 
       if (userId) {
-        if (userRoles.includes("tutor") && !updatedTutors.includes(userId)) {
+        if (isTutor && !updatedTutors.includes(userId)) {
           updatedTutors.push(userId)
         }
-        if (userRoles.includes("student") && !updatedStudents.includes(userId)) {
+        if (isStudent && !updatedStudents.includes(userId)) {
           updatedStudents.push(userId)
         }
-        if (userRoles.includes("parent") && !updatedParents.includes(userId)) {
+        if (isParent && !updatedParents.includes(userId)) {
           updatedParents.push(userId)
         }
       }
 
-      // Check if the current user is a tutor
-      const isTutor = userRoles.includes("tutor")
+      // Set appropriate status based on user role
+      // If a tutor creates the appointment, it's "awaiting_payment"
+      // If a student/parent creates it, it will be updated after payment
+      const initialStatus = isTutor ? "awaiting_payment" : "pending"
 
-      // Calculate final price based on tutors' hourly rates
-      const finalPrice = price
-
-      // First create the appointment with status "awaiting_payment"
+      // Create the appointment
       const appointmentResponse = await createAppointment({
         title,
         startTime: startDateTime.toISOString(),
@@ -394,9 +397,9 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         tutors: updatedTutors,
         students: updatedStudents,
         parents: updatedParents,
-        status: "awaiting_payment", // Set initial status to awaiting payment
+        status: initialStatus,
         notes,
-        price: finalPrice,
+        price: price, // Always save the calculated price
       })
 
       if (appointmentResponse.error) {
@@ -421,11 +424,10 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       }
 
       // For students and parents, proceed with payment flow
-      // Create a Stripe checkout session
       const stripeResponse = await createStripeCheckoutSession({
         appointmentId,
         title,
-        price: finalPrice, // Use the calculated price
+        price: price,
         tutorIds: updatedTutors,
         parentIds: updatedParents,
         studentIds: updatedStudents,
@@ -632,9 +634,15 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                   </div>
                   <span className="text-lg font-bold">${price.toFixed(2)}</span>
                 </div>
-                <p className="text-sm text-slate-500 mt-2">
-                  You will be redirected to a secure payment page after submitting.
-                </p>
+                {isTutor ? (
+                  <p className="text-sm text-slate-500 mt-2">
+                    This price will be charged to the student/parent when they confirm the appointment.
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-500 mt-2">
+                    You will be redirected to a secure payment page after submitting.
+                  </p>
+                )}
               </div>
             )}
 
@@ -643,7 +651,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
                 Cancel
               </Button>
               <Button type="submit" disabled={loading || fetchingTutors || price === null}>
-                {loading ? "Processing..." : userRoles.includes("tutor") ? "Create Appointment" : "Proceed to Payment"}
+                {loading ? "Processing..." : isTutor ? "Create Appointment" : "Proceed to Payment"}
               </Button>
             </div>
           </form>

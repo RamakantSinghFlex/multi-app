@@ -58,7 +58,7 @@ export function AppointmentPaymentStatus() {
             await updateAppointmentPayment(apptId, {
               paymentId: sessionId,
               status: "paid",
-              amount: response.data?.amount || 0,
+              amount: response.data?.amount_total || 0,
               currency: response.data?.currency || "usd",
               paymentMethod: response.data?.paymentMethod || "card",
               paymentDate: new Date().toISOString(),

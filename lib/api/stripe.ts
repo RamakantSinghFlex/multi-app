@@ -40,9 +40,27 @@ export async function createStripeCheckoutSession(appointmentData: {
  * @param sessionId The Stripe session ID to verify
  * @returns A response containing the payment status
  */
-export async function verifyStripePayment(
-  sessionId: string,
-): Promise<ApiResponse<{ status: string; appointmentId?: string }>> {
+export async function verifyStripePayment(sessionId: string): Promise<
+  ApiResponse<{
+    status: string
+    appointmentId?: string
+    amount?: number
+    currency?: string
+    transactionId?: string
+    chargeId?: string
+    paymentMethod?: string
+    receiptUrl?: string
+    paymentDetails?: {
+      sessionId: string
+      paymentIntentId: string
+      chargeId: string
+      amount: number
+      currency: string
+      status: string
+      receiptUrl: string
+    }
+  }>
+> {
   try {
     // Use the server-side API route instead of direct Stripe API call
     const response = await fetch(`/api/stripe/verify?session_id=${sessionId}`, {
@@ -51,7 +69,25 @@ export async function verifyStripePayment(
       credentials: "include",
     })
 
-    return await handleResponse<{ status: string; appointmentId?: string }>(response)
+    return await handleResponse<{
+      status: string
+      appointmentId?: string
+      amount?: number
+      currency?: string
+      transactionId?: string
+      chargeId?: string
+      paymentMethod?: string
+      receiptUrl?: string
+      paymentDetails?: {
+        sessionId: string
+        paymentIntentId: string
+        chargeId: string
+        amount: number
+        currency: string
+        status: string
+        receiptUrl: string
+      }
+    }>(response)
   } catch (error) {
     console.error("Error verifying payment:", error)
     return {

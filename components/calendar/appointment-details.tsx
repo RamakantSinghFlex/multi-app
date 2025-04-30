@@ -194,7 +194,7 @@ export function AppointmentDetails({
             <div>
               <p className="text-sm font-medium">Payment</p>
               <p className="text-sm">
-                ${appointment.payment.amount} ({appointment.payment.status})
+                ${(appointment.payment.amount / 100).toFixed(2)} ({appointment.payment.status})
               </p>
             </div>
           </div>

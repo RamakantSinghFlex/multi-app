@@ -45,6 +45,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       status,
       appointmentId,
+      ...data
     })
   } catch (error) {
     console.error("Error verifying payment:", error)
