@@ -19,7 +19,7 @@ export const API_URL = process.env.NEXT_PUBLIC_PAYLOAD_API_URL || "/api"
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
 // Tenant configuration
-export const TENANT_NAME = process.env.TENANT_NAME || "Tenant 1"
+export const TENANT_NAME = process.env.TENANT_NAME || "Milestone"
 
 // Authentication Configuration
 export const AUTH_TOKEN_KEY = "milestone-token"
