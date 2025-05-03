@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
 import { logger } from "@/lib/monitoring"
 
 export default function Home() {
@@ -58,27 +57,63 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header - No dashboard button here */}
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-card px-4 md:px-6">
+      <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b border-border bg-card px-4 md:px-6 lg:px-10">
         <div className="flex items-center">
-          <Link href="/">
-            <Image
-              src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
-              alt="Milestone Learning Logo"
-              width={150}
-              height={40}
-              className="h-auto w-auto"
-            />
+          <Link href="/" className="flex items-center">
+            <span className="text-2xl font-bold text-[#02342e]">Milestone</span>
+            <span className="mx-2 text-2xl text-[#02342e]">|</span>
+            <span className="text-2xl text-[#02342e]">Learning</span>
           </Link>
         </div>
-        <nav className="flex items-center space-x-4">
-          {/* Always show these buttons in the header regardless of auth status */}
-          <Button variant="outline" asChild>
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/signup">Create Account</Link>
-          </Button>
+
+        <nav className="hidden md:flex items-center space-x-8">
+          <Link href="/about-us" className="text-base font-medium text-[#02342e] hover:text-[#095d40]">
+            About Us
+          </Link>
+          <Link href="/what-we-do" className="text-base font-medium text-[#02342e] hover:text-[#095d40]">
+            What We Do
+          </Link>
+          <Link href="/resources" className="text-base font-medium text-[#02342e] hover:text-[#095d40]">
+            Resources
+          </Link>
+          <Link href="/contact-us" className="text-base font-medium text-[#02342e] hover:text-[#095d40]">
+            Contact Us
+          </Link>
         </nav>
+
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            className="rounded-full border-[#02342e] text-[#02342e] hover:bg-[#f5f5f5] px-6"
+            asChild
+          >
+            <Link href="/book-session">Book A Session</Link>
+          </Button>
+          <Button
+            variant="ghost"
+            className="rounded-full text-[#02342e] hover:bg-[#f5f5f5] flex items-center gap-2"
+            asChild
+          >
+            <Link href="/login">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-user"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Login
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {/* Hero section - Dashboard button only here if truly authenticated */}
