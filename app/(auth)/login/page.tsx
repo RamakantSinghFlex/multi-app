@@ -59,19 +59,19 @@ export default function LoginPage() {
           const primaryRole = user.roles[0]
 
           if (primaryRole === "admin") {
-            router.push("/admin/dashboard")
+            router.push("/admin")
           } else if (primaryRole === "parent") {
-            router.push("/parent/dashboard")
+            router.push("/parent")
           } else if (primaryRole === "tutor") {
-            router.push("/tutor/dashboard")
+            router.push("/tutor")
           } else if (primaryRole === "student") {
-            router.push("/student/dashboard")
+            router.push("/student")
           } else {
-            router.push("/dashboard")
+            router.push("/")
           }
         } else {
           logger.error("User has no roles")
-          router.push("/dashboard")
+          router.push("/")
         }
       }
     }

@@ -13,7 +13,7 @@ export default function PaymentCancelPage() {
   }
 
   const handleGoToDashboard = () => {
-    router.push("/dashboard")
+    router.push("/")
   }
 
   return (

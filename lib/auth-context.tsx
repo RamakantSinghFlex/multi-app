@@ -22,7 +22,7 @@ export interface AuthState extends AuthStateType {
 // Update the AuthContextType interface to include all necessary methods
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>
-  signup: (credentials: SignupCredentials) => Promise<void>
+  signup: (credentials: SignupCredentials) => Promise<any>
   logout: () => Promise<void>
   resetAuthError: () => void
   clearSuccessMessage: () => void
@@ -53,6 +53,7 @@ type AuthAction =
   | { type: "CLEAR_SUCCESS_MESSAGE" }
   | { type: "REFRESH_USER_SUCCESS"; payload: { user: User } }
   | { type: "SET_USER"; payload: User | null }
+  | { type: "SIGNUP_SUCCESS"; payload: { message: string } }
 
 // Auth reducer with improved error handling
 function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
@@ -114,6 +115,13 @@ function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
       return {
         ...state,
         user: action.payload,
+      }
+    case "SIGNUP_SUCCESS":
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+        successMessage: action.payload.message,
       }
     default:
       return state
@@ -237,7 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.info("Login successful:", { email: response.data.user.email })
 
       // Check if user's email is verified
-      if (!response.data.user['_verified']) {
+      if (response.data.user._verified === false) {
         logger.warn("User email not verified:", { email: response.data.user.email })
         dispatch({
           type: "AUTH_FAILURE",
@@ -276,11 +284,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (userRole === "student") {
           router.push("/student/dashboard")
         } else {
-          router.push("/dashboard")
+          router.push("/")
         }
       } else {
         // Fallback if no roles
-        router.push("/dashboard")
+        router.push("/")
       }
     } catch (error) {
       logger.error("Login error:", error)
@@ -311,48 +319,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           type: "AUTH_FAILURE",
           payload: response.error || "Signup failed. Please try again.",
         })
-        return
+        return response
       }
 
       logger.info("Signup successful:", { email: response.data.user.email })
 
-      // Normalize user data
-      const userData = normalizeUserData(response.data.user)
-
+      // Don't authenticate the user after signup - just dispatch a success message
       dispatch({
-        type: "AUTH_SUCCESS",
+        type: "SIGNUP_SUCCESS",
         payload: {
-          user: userData,
-          token: response.data.token,
-          message: response.data.message || "Account created successfully!",
+          message: response.data.message || "Account created successfully! Please verify your email.",
         },
       })
 
-      // Redirect based on user roles
-      if (userData.roles && userData.roles.length > 0) {
-        const userRole = userData.roles[0] // Use the first role for redirection
-
-        if (userRole === "admin") {
-          router.push("/admin/dashboard")
-        } else if (userRole === "parent") {
-          router.push("/parent/dashboard")
-        } else if (userRole === "tutor") {
-          router.push("/tutor/dashboard")
-        } else if (userRole === "student") {
-          router.push("/student/dashboard")
-        } else {
-          router.push("/dashboard")
-        }
-      } else {
-        // Fallback if no roles
-        router.push("/dashboard")
-      }
+      return response
     } catch (error) {
       logger.error("Signup error:", error)
       dispatch({
         type: "AUTH_FAILURE",
         payload: error instanceof Error ? error.message : "An unexpected error occurred",
       })
+      return null
     }
   }
 

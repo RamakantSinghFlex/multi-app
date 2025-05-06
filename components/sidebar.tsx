@@ -197,28 +197,13 @@ export function Sidebar() {
       },
     ]
   } else {
-    // Default sidebar
-    basePath = "/dashboard"
+    // Default to home page if no role is detected
+    basePath = ""
     mainNavItems = [
       {
-        title: "Dashboard",
-        href: "/dashboard",
+        title: "Home",
+        href: "/",
         icon: Home,
-      },
-      {
-        title: "Sessions",
-        href: "/sessions",
-        icon: Calendar,
-      },
-      {
-        title: "Materials",
-        href: "/materials",
-        icon: BookOpen,
-      },
-      {
-        title: "Messages",
-        href: "/messages",
-        icon: MessageSquare,
       },
     ]
   }
@@ -258,7 +243,7 @@ export function Sidebar() {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-[#e8e8e8] bg-white px-4">
-          <Link href={`${basePath}/dashboard`} onClick={closeSidebar}>
+          <Link href={basePath ? `${basePath}/dashboard` : "/"} onClick={closeSidebar}>
             <Image
               src="/placeholder.svg?height=40&width=150&text=Milestone+Learning"
               alt="Milestone Learning Logo"

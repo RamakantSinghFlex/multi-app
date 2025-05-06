@@ -124,12 +124,12 @@ export function AppointmentPaymentStatus() {
   const handleGoToDashboard = () => {
     if (!user || !user.roles || user.roles.length === 0) {
       // Fallback if no user or roles
-      router.push("/dashboard")
+      router.push("/")
       return
     }
 
     const userRole = user.roles[0]
-    router.push(`/${userRole}/dashboard`)
+    router.push(`/${userRole}`)
   }
 
   return (

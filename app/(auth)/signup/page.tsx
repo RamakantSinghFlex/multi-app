@@ -32,6 +32,7 @@ export default function SignupPage() {
     clearSuccessMessage,
     isAuthenticated,
     user,
+    setError,
   } = useAuth()
 
   // Form state
@@ -46,6 +47,7 @@ export default function SignupPage() {
   // UI state
   const [apiErrors, setApiErrors] = useState<ApiError[] | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Validation state
   const [validationErrors, setValidationErrors] = useState<{
@@ -75,19 +77,20 @@ export default function SignupPage() {
           const primaryRole = user.roles[0]
 
           if (primaryRole === "admin") {
-            router.push("/admin/dashboard")
+            router.push("/admin")
           } else if (primaryRole === "parent") {
-            router.push("/parent/dashboard")
+            router.push("/parent")
           } else if (primaryRole === "tutor") {
-            router.push("/tutor/dashboard")
+            router.push("/tutor")
           } else if (primaryRole === "student") {
-            router.push("/student/dashboard")
+            router.push("/student")
           } else {
-            router.push("/dashboard")
+            // Default fallback if role doesn't match expected values
+            router.push("/")
           }
         } else {
           logger.error("User has no roles")
-          router.push("/dashboard")
+          router.push("/")
         }
       }
     }
@@ -175,6 +178,10 @@ export default function SignupPage() {
 
     if (error) resetAuthError()
 
+    // Prevent double submission
+    if (isSubmitting) return
+    setIsSubmitting(true)
+
     const formData = {
       firstName,
       lastName,
@@ -186,12 +193,11 @@ export default function SignupPage() {
     try {
       const response = await signup(formData)
 
-      // Show a success message about email verification
       if (response && !response.error) {
+        // Show a success message about email verification
         toast({
           title: "Account created successfully!",
           description: "Please check your email to verify your account before logging in.",
-          variant: "default",
         })
 
         // Redirect to login page after signup
@@ -210,6 +216,8 @@ export default function SignupPage() {
           // The error will be handled by the auth context
         }
       }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -255,7 +263,7 @@ export default function SignupPage() {
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isSubmitting}
                   className="border-input focus:border-primary focus:ring-primary"
                   autoComplete="given-name"
                 />
@@ -270,7 +278,7 @@ export default function SignupPage() {
                   id="lastName"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isSubmitting}
                   className="border-input focus:border-primary focus:ring-primary"
                   autoComplete="family-name"
                 />
@@ -288,7 +296,7 @@ export default function SignupPage() {
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
                 className="border-input focus:border-primary focus:ring-primary"
                 autoComplete="email"
               />
@@ -303,7 +311,7 @@ export default function SignupPage() {
               value={password}
               onChange={setPassword}
               onGeneratePassword={setConfirmPassword}
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
               label="Password"
               showStrengthIndicator={true}
               autoComplete="new-password"
@@ -315,7 +323,7 @@ export default function SignupPage() {
               id="confirm-password"
               value={confirmPassword}
               onChange={setConfirmPassword}
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
               label="Confirm password"
               autoComplete="new-password"
               required={true}
@@ -349,7 +357,7 @@ export default function SignupPage() {
                 id="terms"
                 checked={terms}
                 onCheckedChange={(checked) => setTerms(checked === true)}
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="terms">
@@ -368,8 +376,8 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? (
+            <Button type="submit" disabled={isLoading || isSubmitting} className="w-full">
+              {isLoading || isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating account...
