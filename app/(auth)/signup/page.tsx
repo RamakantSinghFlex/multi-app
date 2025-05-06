@@ -20,6 +20,7 @@ import { logger } from "@/lib/monitoring"
 import { FEATURES } from "@/lib/config"
 // Import the shared PasswordInput component
 import { PasswordInput } from "@/components/ui/password-input"
+import { toast } from "sonner"
 
 export default function SignupPage() {
   const {
@@ -31,7 +32,6 @@ export default function SignupPage() {
     clearSuccessMessage,
     isAuthenticated,
     user,
-    setError,
   } = useAuth()
 
   // Form state
@@ -175,16 +175,28 @@ export default function SignupPage() {
 
     if (error) resetAuthError()
 
-    try {
-      await signup({
-        firstName,
-        lastName,
-        email,
-        password,
-        roles: [role], // Use an array for roles
-      })
+    const formData = {
+      firstName,
+      lastName,
+      email,
+      password,
+      roles: [role], // Use an array for roles
+    }
 
-      // Redirection is handled by the useEffect above
+    try {
+      const response = await signup(formData)
+
+      // Show a success message about email verification
+      if (response && !response.error) {
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account before logging in.",
+          variant: "default",
+        })
+
+        // Redirect to login page after signup
+        router.push("/login")
+      }
     } catch (err) {
       logger.error("Unhandled signup error:", err)
 

@@ -236,6 +236,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       logger.info("Login successful:", { email: response.data.user.email })
 
+      // Check if user's email is verified
+      if (!response.data.user['_verified']) {
+        logger.warn("User email not verified:", { email: response.data.user.email })
+        dispatch({
+          type: "AUTH_FAILURE",
+          payload: "Please verify your email before logging in. Check your inbox for a verification link.",
+        })
+        return
+      }
+
       // Ensure token is stored in localStorage
       if (response.data.token && typeof window !== "undefined") {
         localStorage.setItem("milestone-token", response.data.token)

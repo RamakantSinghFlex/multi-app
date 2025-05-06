@@ -59,6 +59,7 @@ export interface BaseUser {
 // User Types
 export interface User extends BaseUser {
   // Additional user properties can be added here
+  _verified?: boolean
 }
 
 // Domain Types

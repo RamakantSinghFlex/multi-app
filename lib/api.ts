@@ -51,6 +51,7 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
             roles: ["parent"],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            _verified: true, // Add the verification status
           },
           token: "mock-jwt-token",
         }

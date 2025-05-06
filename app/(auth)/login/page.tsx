@@ -221,7 +221,26 @@ export default function LoginPage() {
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {error.includes("verify your email") ? (
+                  <>
+                    {error}{" "}
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 text-destructive underline"
+                      onClick={() =>
+                        setError(
+                          "If you didn't receive a verification email, please check your spam folder or contact support.",
+                        )
+                      }
+                    >
+                      Need help?
+                    </Button>
+                  </>
+                ) : (
+                  error
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
