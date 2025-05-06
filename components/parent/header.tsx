@@ -1,7 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell, MessageCircle, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,6 +13,9 @@ import {
 } from "../ui/dropdown-menu"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import Image from "next/image"
+import chatIcon from "@/public/navbar/chat.svg"
+import bellIcon from "@/public/navbar/bell.svg"
 
 export default function ParentHeader() {
   const { user, logout } = useAuth()
@@ -49,14 +52,26 @@ export default function ParentHeader() {
           size="icon"
           className="text-muted-foreground rounded-full"
         >
-          <MessageCircle className="h-5 w-5" />
+          <Image
+            src={chatIcon}
+            alt="Chat"
+            className="h-5 w-5"
+            width={20}
+            height={20}
+          />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           className="text-muted-foreground rounded-full"
         >
-          <Bell className="h-5 w-5" />
+          <Image
+            src={bellIcon}
+            alt="Chat"
+            className="h-5 w-5"
+            width={20}
+            height={20}
+          />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -2,24 +2,21 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { useState, useEffect } from "react"
-import {
-  Home,
-  Users,
-  Calendar,
-  HelpCircle,
-  BookOpen,
-  LogOut,
-  FolderArchive,
-  Layers,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
+import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { handleLogout } from "@/lib/utils/auth-utils"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import dashboardIcon from "@/public/sidebar/dashboard.png"
+import childProfileIcon from "@/public/sidebar/child-profile.png"
+import subjectsIcon from "@/public/sidebar/subjects.png"
+import bookingsIcon from "@/public/sidebar/bookings.png"
+import docuVaultIcon from "@/public/sidebar/docu-vault.png"
+import resourcesIcon from "@/public/sidebar/resources.png"
+import supportIcon from "@/public/sidebar/support.png"
+import sidebarIcon from "@/public/sidebar/sidebar.png"
 
 export default function ParentSidebar() {
   const { logout } = useAuth()
@@ -63,37 +60,37 @@ export default function ParentSidebar() {
     {
       title: "Dashboard",
       href: "/parent/dashboard",
-      icon: Home,
+      icon: dashboardIcon,
     },
     {
       title: "Child Profile",
       href: "/parent/profile",
-      icon: Users,
+      icon: childProfileIcon,
     },
     {
       title: "Subjects",
       href: "/parent/subjects",
-      icon: BookOpen,
+      icon: subjectsIcon,
     },
     {
       title: "Bookings",
       href: "/parent/bookings",
-      icon: Calendar,
+      icon: bookingsIcon,
     },
     {
       title: "Docu Vault",
       href: "/parent/documents",
-      icon: FolderArchive,
+      icon: docuVaultIcon,
     },
     {
       title: "Resources",
       href: "/parent/resources",
-      icon: Layers,
+      icon: resourcesIcon,
     },
     {
       title: "Support",
       href: "/parent/help",
-      icon: HelpCircle,
+      icon: supportIcon,
     },
   ]
 
@@ -125,9 +122,20 @@ export default function ParentSidebar() {
           onClick={toggleSidebar}
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <Image
+              src={sidebarIcon}
+              alt="Sidebar Open"
+              width={20}
+              height={20}
+              className="rotate-180"
+            />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <Image
+              src={sidebarIcon}
+              alt="Sidebar Open"
+              width={20}
+              height={20}
+            />
           )}
         </Button>
       </div>
@@ -148,7 +156,13 @@ export default function ParentSidebar() {
                   collapsed && "justify-center px-2"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", !collapsed && "mr-3")} />
+                <Image
+                  src={item.icon}
+                  alt={item.title}
+                  className={cn("h-5 w-5", !collapsed && "mr-3")}
+                  width={20}
+                  height={20}
+                />
                 {!collapsed && <span>{item.title}</span>}
               </Link>
             )

@@ -3,14 +3,11 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  ChevronRight,
-  ChevronLeft,
-  X,
-  ArrowUpRight,
-  MessageCircle,
-} from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { ChevronRight, ChevronLeft, X, ArrowUpRight } from "lucide-react"
 import Image from "next/image"
+import scheduleIcon from "@/public/card/schedule.svg"
+import chatIcon from "@/public/card/chat.svg"
 
 export default function ParentDashboardPage() {
   const [currentMonth] = useState("March")
@@ -157,7 +154,7 @@ export default function ParentDashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-primary hover:text-primary hover:bg-secondary"
+                          className="h-7 text-primary hover:text-primary hover:bg-secondary border border-primary rounded-full"
                         >
                           Open <ArrowUpRight size={14} className="ml-1" />
                         </Button>
@@ -175,7 +172,7 @@ export default function ParentDashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-primary hover:text-primary hover:bg-secondary"
+                          className="h-7 text-primary hover:text-primary hover:bg-secondary border border-primary rounded-full"
                         >
                           Open <ArrowUpRight size={14} className="ml-1" />
                         </Button>
@@ -193,7 +190,7 @@ export default function ParentDashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-primary hover:text-primary hover:bg-secondary"
+                          className="h-7 text-primary hover:text-primary hover:bg-secondary border border-primary rounded-full"
                         >
                           Open <ArrowUpRight size={14} className="ml-1" />
                         </Button>
@@ -272,8 +269,14 @@ export default function ParentDashboardPage() {
                 {/* Math Class */}
                 <div className="mb-4">
                   <div className="flex items-start gap-3">
-                    <div className="text-xs font-medium w-12 text-right pt-1">
+                    <div className="text-xs font-medium w-12 pt-1 text-center">
                       4:30 PM
+                    </div>
+                    <div className="mx-3 h-full">
+                      <Separator
+                        orientation="vertical"
+                        className="h-full min-h-[40px]"
+                      />
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-medium">
@@ -289,8 +292,14 @@ export default function ParentDashboardPage() {
                 {/* Science Class */}
                 <div className="mb-4">
                   <div className="flex items-start gap-3">
-                    <div className="text-xs font-medium w-12 text-right pt-1">
+                    <div className="text-xs font-medium w-12 pt-1 text-center">
                       6:30 PM
+                    </div>
+                    <div className="mx-3 h-full">
+                      <Separator
+                        orientation="vertical"
+                        className="h-full min-h-[40px]"
+                      />
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-medium">
@@ -314,19 +323,22 @@ export default function ParentDashboardPage() {
               </CardTitle>
               <Button
                 size="sm"
-                className="bg-primary text-white hover:bg-primary/90"
+                className="bg-[#0B4A3F] text-white hover:bg-[#0B4A3F]/90 rounded-full px-6"
               >
                 Schedule Session
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-6">
               {/* Geometry Test */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center bg-muted h-14 w-14 rounded text-xs">
-                  <span className="uppercase text-muted-foreground text-[10px]">
-                    APR
-                  </span>
-                  <span className="text-lg font-bold">15</span>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="flex flex-col items-center justify-center bg-[#E5E5E5] h-16 w-16 rounded-lg text-center overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-black rounded-t-lg"></div>
+                    <span className="text-xl font-bold mt-1">15</span>
+                    <span className="uppercase text-[#555555] text-xs">
+                      APR
+                    </span>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Geometry</h4>
@@ -339,13 +351,18 @@ export default function ParentDashboardPage() {
                 </div>
               </div>
 
+              <Separator className="border-dashed border-[#E5E5E5]" />
+
               {/* Algebra Test */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center bg-muted h-14 w-14 rounded text-xs">
-                  <span className="uppercase text-muted-foreground text-[10px]">
-                    MAY
-                  </span>
-                  <span className="text-lg font-bold">05</span>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="flex flex-col items-center justify-center bg-[#E5E5E5] h-16 w-16 rounded-lg text-center overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-black rounded-t-lg"></div>
+                    <span className="text-xl font-bold mt-1">05</span>
+                    <span className="uppercase text-[#555555] text-xs">
+                      MAY
+                    </span>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Algebra</h4>
@@ -358,13 +375,18 @@ export default function ParentDashboardPage() {
                 </div>
               </div>
 
+              <Separator className="border-dashed border-[#E5E5E5]" />
+
               {/* Physics Test */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center bg-muted h-14 w-14 rounded text-xs">
-                  <span className="uppercase text-muted-foreground text-[10px]">
-                    MAY
-                  </span>
-                  <span className="text-lg font-bold">20</span>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="flex flex-col items-center justify-center bg-[#E5E5E5] h-16 w-16 rounded-lg text-center overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-black rounded-t-lg"></div>
+                    <span className="text-xl font-bold mt-1">20</span>
+                    <span className="uppercase text-[#555555] text-xs">
+                      MAY
+                    </span>
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Physics</h4>
@@ -400,7 +422,7 @@ export default function ParentDashboardPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-medium">Mark Jason</h4>
+                      <h4 className="text-xs font-medium">Mark Jason</h4>
                       <span className="rounded-full px-2 py-0.5 text-xs bg-[#e3fae3] text-[#095d40]">
                         Active
                       </span>
@@ -408,6 +430,28 @@ export default function ParentDashboardPage() {
                     <p className="text-xs text-muted-foreground">
                       Subject: Math
                     </p>
+                  </div>
+
+                  <div className="flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground rounded-full"
+                    >
+                      <Image
+                        src={scheduleIcon}
+                        alt="Schedule"
+                        width={16}
+                        height={16}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground rounded-full"
+                    >
+                      <Image src={chatIcon} alt="Chat" width={16} height={16} />
+                    </Button>
                   </div>
                 </div>
 
@@ -425,37 +469,6 @@ export default function ParentDashboardPage() {
                     <p className="text-sm font-medium">1</p>
                   </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs flex items-center gap-1"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Schedule
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs flex items-center gap-1"
-                  >
-                    <MessageCircle size={14} />
-                    Message
-                  </Button>
-                </div>
               </div>
 
               {/* Devon */}
@@ -471,7 +484,7 @@ export default function ParentDashboardPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-medium">Devon</h4>
+                      <h4 className="text-xs font-medium">Devon</h4>
                       <span className="rounded-full px-2 py-0.5 text-xs bg-[#f1f1f1] text-[#858585]">
                         Closed
                       </span>
@@ -479,6 +492,27 @@ export default function ParentDashboardPage() {
                     <p className="text-xs text-muted-foreground">
                       Subject: Chemistry
                     </p>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground rounded-full"
+                    >
+                      <Image
+                        src={scheduleIcon}
+                        alt="Schedule"
+                        width={16}
+                        height={16}
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground rounded-full"
+                    >
+                      <Image src={chatIcon} alt="Chat" width={16} height={16} />
+                    </Button>
                   </div>
                 </div>
 
@@ -495,37 +529,6 @@ export default function ParentDashboardPage() {
                     </p>
                     <p className="text-sm font-medium">0</p>
                   </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs flex items-center gap-1"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Schedule
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs flex items-center gap-1"
-                  >
-                    <MessageCircle size={14} />
-                    Message
-                  </Button>
                 </div>
               </div>
             </CardContent>
