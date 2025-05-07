@@ -510,32 +510,13 @@ export async function signup(
 
       // If signup was successful, automatically log the user in
       if (result.data?.doc && !result.error) {
-        const loginCredentials: LoginCredentials = {
-          email: credentials.email,
-          password: credentials.password,
-        }
-
-        // Call login API with the same credentials
-        const loginResponse = await login(loginCredentials)
-
-        if (loginResponse.data) {
-          // Return the login response with the signup success message
-          return {
-            data: {
-              ...loginResponse.data,
-              message:
-                result.data.message ||
-                "User successfully created and logged in.",
-            },
-          }
-        }
-
         // If login fails, still return the signup success
         return {
           data: {
             user: result.data.doc,
             token: "",
-            message: result.data.message || "User successfully created.",
+            message:
+              "User successfully created. Please verify your email before logging in. If you didn't receive a verification email, please check your spam folder or contact support.",
           },
         }
       }
