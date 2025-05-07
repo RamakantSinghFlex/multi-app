@@ -13,7 +13,12 @@ import {
   handleResponse,
   type ApiResponse,
 } from "./api-utils"
-import type { AuthResponse, LoginCredentials, User, SignupCredentials } from "./types"
+import type {
+  AuthResponse,
+  LoginCredentials,
+  User,
+  SignupCredentials,
+} from "./types"
 import { API_URL, FEATURES, DEV_CONFIG, TENANT_NAME } from "./config"
 import { logger, trackAsyncPerformance } from "./monitoring"
 
@@ -22,7 +27,9 @@ import { logger, trackAsyncPerformance } from "./monitoring"
  */
 async function addDevDelay(): Promise<void> {
   if (FEATURES.MOCK_API && DEV_CONFIG.SIMULATE_SLOW_API) {
-    await new Promise((resolve) => setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY))
+    await new Promise((resolve) =>
+      setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY)
+    )
   }
 }
 
@@ -31,7 +38,9 @@ async function addDevDelay(): Promise<void> {
  * @param credentials User credentials
  * @returns API response with auth data or error
  */
-export async function login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
+export async function login(
+  credentials: LoginCredentials
+): Promise<ApiResponse<AuthResponse>> {
   return trackAsyncPerformance("login", async () => {
     try {
       logger.info("API login called with:", { email: credentials.email })
@@ -99,7 +108,10 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
     } catch (error) {
       logger.error("Login API error:", error)
       return {
-        error: error instanceof Error ? error.message : "An unknown error occurred during login",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred during login",
       }
     }
   })
@@ -110,7 +122,9 @@ export async function login(credentials: LoginCredentials): Promise<ApiResponse<
  * @param email User email
  * @returns API response with message or error
  */
-export async function forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+export async function forgotPassword(
+  email: string
+): Promise<ApiResponse<{ message: string }>> {
   return trackAsyncPerformance("forgotPassword", async () => {
     try {
       logger.info("Forgot password request for email:", email)
@@ -122,7 +136,8 @@ export async function forgotPassword(email: string): Promise<ApiResponse<{ messa
 
         return {
           data: {
-            message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+            message:
+              "If a user with that email exists, a password reset link has been sent to their inbox.",
           },
         }
       }
@@ -144,10 +159,13 @@ export async function forgotPassword(email: string): Promise<ApiResponse<{ messa
       // For security reasons, we don't want to reveal if an email exists or not
       // So we return a success message even if there was an error
       if (!response.ok) {
-        logger.warn("Forgot password request failed, but returning generic success message for security")
+        logger.warn(
+          "Forgot password request failed, but returning generic success message for security"
+        )
         return {
           data: {
-            message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+            message:
+              "If a user with that email exists, a password reset link has been sent to their inbox.",
           },
         }
       }
@@ -160,7 +178,8 @@ export async function forgotPassword(email: string): Promise<ApiResponse<{ messa
       // For security reasons, return a success message even if there was an error
       return {
         data: {
-          message: "If a user with that email exists, a password reset link has been sent to their inbox.",
+          message:
+            "If a user with that email exists, a password reset link has been sent to their inbox.",
         },
       }
     }
@@ -173,7 +192,10 @@ export async function forgotPassword(email: string): Promise<ApiResponse<{ messa
  * @param password New password
  * @returns API response with message or error
  */
-export async function resetPassword(token: string, password: string): Promise<ApiResponse<{ message: string }>> {
+export async function resetPassword(
+  token: string,
+  password: string
+): Promise<ApiResponse<{ message: string }>> {
   return trackAsyncPerformance("resetPassword", async () => {
     try {
       logger.info("Reset password request with token")
@@ -185,7 +207,8 @@ export async function resetPassword(token: string, password: string): Promise<Ap
 
         return {
           data: {
-            message: "Password successfully reset. You can now log in with your new password.",
+            message:
+              "Password successfully reset. You can now log in with your new password.",
           },
         }
       }
@@ -218,7 +241,74 @@ export async function resetPassword(token: string, password: string): Promise<Ap
     } catch (error) {
       logger.error("Reset password API error:", error)
       return {
-        error: error instanceof Error ? error.message : "An unknown error occurred while resetting your password",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred while resetting your password",
+      }
+    }
+  })
+}
+
+/**
+ * Verify user email with token
+ * @param token Verification token
+ * @param collection Collection name (default: "users")
+ * @returns API response with message or error
+ */
+export async function verifyEmail(
+  token: string,
+  collection = "users"
+): Promise<ApiResponse<{ message: string }>> {
+  return trackAsyncPerformance("verifyEmail", async () => {
+    try {
+      logger.info("Email verification request with token", { collection })
+
+      // For development/testing, simulate a successful response
+      if (FEATURES.MOCK_API) {
+        logger.info("DEV MODE: Simulating successful email verification")
+        await addDevDelay()
+
+        return {
+          data: {
+            message:
+              "Email successfully verified. You can now log in with your credentials.",
+          },
+        }
+      }
+
+      // Actual API call for production
+      const verifyUrl = `${API_URL}/${collection}/verify/${token}`
+      logger.info("Making API request to:", verifyUrl)
+
+      const response = await fetch(verifyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
+
+      logger.info("Email verification response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = extractErrorMessage(errorData)
+        logger.error("Email verification request failed:", errorMessage)
+        return {
+          error: errorMessage,
+        }
+      }
+
+      const result = await response.json()
+      return { data: result }
+    } catch (error) {
+      logger.error("Email verification API error:", error)
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred while verifying your email",
       }
     }
   })
@@ -228,7 +318,9 @@ export async function resetPassword(token: string, password: string): Promise<Ap
  * Logout current user
  * @returns API response with success status or error
  */
-export async function logout(): Promise<ApiResponse<{ success: boolean; message?: string }>> {
+export async function logout(): Promise<
+  ApiResponse<{ success: boolean; message?: string }>
+> {
   return trackAsyncPerformance("logout", async () => {
     try {
       const headers = createAuthHeaders()
@@ -276,7 +368,10 @@ export async function logout(): Promise<ApiResponse<{ success: boolean; message?
     } catch (error) {
       logger.error("Logout error:", error)
       return {
-        error: error instanceof Error ? error.message : "An unknown error occurred during logout",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred during logout",
         data: { success: true }, // Consider logout successful even if API call fails
       }
     }
@@ -318,7 +413,10 @@ export async function getMe(): Promise<ApiResponse<User>> {
         return { data: mockUser }
       }
 
-      logger.info("Making API request to validate session:", `${API_URL}/users/me`)
+      logger.info(
+        "Making API request to validate session:",
+        `${API_URL}/users/me`
+      )
 
       const response = await fetch(`${API_URL}/users/me`, {
         headers,
@@ -341,7 +439,10 @@ export async function getMe(): Promise<ApiResponse<User>> {
     } catch (error) {
       logger.error("Session validation error:", error)
       return {
-        error: error instanceof Error ? error.message : "An unknown error occurred while fetching user data",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred while fetching user data",
       }
     }
   })
@@ -352,7 +453,9 @@ export async function getMe(): Promise<ApiResponse<User>> {
  * @param credentials User signup data
  * @returns API response with auth data or error
  */
-export async function signup(credentials: SignupCredentials): Promise<ApiResponse<AuthResponse>> {
+export async function signup(
+  credentials: SignupCredentials
+): Promise<ApiResponse<AuthResponse>> {
   return trackAsyncPerformance("signup", async () => {
     try {
       credentials.tenantName = TENANT_NAME
@@ -401,7 +504,9 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
         credentials: "include",
       })
 
-      const result = await handleResponse<{ doc: User; message: string }>(response)
+      const result = await handleResponse<{ doc: User; message: string }>(
+        response
+      )
 
       // If signup was successful, automatically log the user in
       if (result.data?.doc && !result.error) {
@@ -418,7 +523,9 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
           return {
             data: {
               ...loginResponse.data,
-              message: result.data.message || "User successfully created and logged in.",
+              message:
+                result.data.message ||
+                "User successfully created and logged in.",
             },
           }
         }
@@ -444,7 +551,10 @@ export async function signup(credentials: SignupCredentials): Promise<ApiRespons
     } catch (error) {
       logger.error("Signup error:", error)
       return {
-        error: error instanceof Error ? error.message : "An unknown error occurred during signup",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred during signup",
       }
     }
   })
@@ -465,7 +575,10 @@ export async function getSessions(): Promise<ApiResponse<{ sessions: any[] }>> {
     return await handleResponse<{ sessions: any[] }>(response)
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching sessions",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while fetching sessions",
     }
   }
 }
