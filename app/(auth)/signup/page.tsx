@@ -79,11 +79,11 @@ export default function SignupPage() {
           if (primaryRole === "admin") {
             router.push("/admin")
           } else if (primaryRole === "parent") {
-            router.push("/parent")
+            router.push("/parent/dashboard")
           } else if (primaryRole === "tutor") {
-            router.push("/tutor")
+            router.push("/tutor/dashboard")
           } else if (primaryRole === "student") {
-            router.push("/student")
+            router.push("/student/dashboard")
           } else {
             // Default fallback if role doesn't match expected values
             router.push("/")
