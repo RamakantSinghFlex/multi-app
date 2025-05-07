@@ -1,7 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus, Menu } from "lucide-react"
+import { Plus, Menu, MessageCircleMore, BellDot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,9 +13,6 @@ import {
 } from "../ui/dropdown-menu"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import Image from "next/image"
-import chatIcon from "@/public/navbar/chat.svg"
-import bellIcon from "@/public/navbar/bell.svg"
 import { useIsSize } from "@/hooks/use-viewport"
 import { BREAKPOINT_4XL, BREAKPOINT_7XL } from "@/lib/utils/viewports"
 import ParentSidebar from "./sidebar"
@@ -87,26 +84,14 @@ export default function ParentHeader() {
               size="icon"
               className="text-muted-foreground rounded-full"
             >
-              <Image
-                src={chatIcon || "/placeholder.svg"}
-                alt="Chat"
-                className="h-5 w-5"
-                width={20}
-                height={20}
-              />
+              <MessageCircleMore className="h-5 w-5" size={20} />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               className="text-muted-foreground rounded-full"
             >
-              <Image
-                src={bellIcon || "/placeholder.svg"}
-                alt="Chat"
-                className="h-5 w-5"
-                width={20}
-                height={20}
-              />
+              <BellDot className="h-5 w-5" size={20} />
             </Button>
           </>
         )}

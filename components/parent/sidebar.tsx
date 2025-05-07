@@ -2,7 +2,13 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { useState, useEffect, useCallback } from "react"
-import { LogOut, Paperclip, Plus } from "lucide-react"
+import {
+  BellDot,
+  LogOut,
+  MessageCircleMore,
+  Paperclip,
+  Plus,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { handleLogout } from "@/lib/utils/auth-utils"
@@ -18,8 +24,6 @@ import resourcesIcon from "@/public/sidebar/resources.png"
 import supportIcon from "@/public/sidebar/support.png"
 import sidebarIcon from "@/public/sidebar/sidebar.png"
 import { Separator } from "@/components/ui/separator"
-import chatIcon from "@/public/navbar/chat.svg"
-import bellIcon from "@/public/navbar/bell.svg"
 import { useIsSize } from "@/hooks/use-viewport"
 import { BREAKPOINT_7XL } from "@/lib/utils/viewports"
 
@@ -232,12 +236,8 @@ export default function ParentSidebar({
                     collapsed && !isMobile && "px-2"
                   )}
                 >
-                  <Image
-                    src={chatIcon || "/placeholder.svg"}
-                    alt="Chat"
+                  <MessageCircleMore
                     className={cn("h-5 w-5", !collapsed && "mr-3")}
-                    width={20}
-                    height={20}
                   />
                   {(!collapsed || isMobile) && <span>Messages</span>}
                 </Button>
@@ -249,13 +249,7 @@ export default function ParentSidebar({
                     collapsed && !isMobile && "px-2"
                   )}
                 >
-                  <Image
-                    src={bellIcon || "/placeholder.svg"}
-                    alt="Notifications"
-                    className={cn("h-5 w-5", !collapsed && "mr-3")}
-                    width={20}
-                    height={20}
-                  />
+                  <BellDot className={cn("h-5 w-5", !collapsed && "mr-3")} />
                   {(!collapsed || isMobile) && <span>Notifications</span>}
                 </Button>
               </div>
