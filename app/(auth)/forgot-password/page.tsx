@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
-import { forgotPassword } from "@/lib/api/auth"
+import { API_URL, FEATURES, DEV_CONFIG } from "@/lib/config"
 import { logger } from "@/lib/monitoring"
 
 export default function ForgotPasswordPage() {
@@ -49,18 +49,46 @@ export default function ForgotPasswordPage() {
 
     try {
       logger.info("Submitting forgot password request", { email })
-      const response = await forgotPassword(email)
 
-      if (response.error) {
-        logger.error("Forgot password request failed", { error: response.error })
-        setError(response.error)
-      } else {
-        logger.info("Forgot password request successful")
+      // For development/testing, simulate a successful response
+      if (FEATURES.MOCK_API) {
+        logger.info("DEV MODE: Simulating successful forgot password request")
+
+        if (DEV_CONFIG.SIMULATE_SLOW_API) {
+          await new Promise((resolve) => setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY))
+        }
+
         setSuccess(true)
+        setIsLoading(false)
+        return
       }
+
+      // Make the API request directly to match the curl command format
+      const response = await fetch(`${API_URL}/users/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+        credentials: "include",
+      })
+
+      logger.info("Forgot password response status:", response.status)
+
+      // For security reasons, we don't want to reveal if an email exists or not
+      // So we return a success message even if there was an error
+      if (!response.ok) {
+        logger.warn("Forgot password request failed, but returning generic success message for security")
+        setSuccess(true)
+        setIsLoading(false)
+        return
+      }
+
+      setSuccess(true)
     } catch (err) {
       logger.error("Unexpected error during forgot password request", { error: err })
-      setError("An unexpected error occurred. Please try again.")
+      // For security reasons, still show success even if there was an error
+      setSuccess(true)
     } finally {
       setIsLoading(false)
     }

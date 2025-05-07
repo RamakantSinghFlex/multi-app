@@ -3,80 +3,69 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { Loader2, AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { PasswordInput } from "@/components/ui/password-input"
-import { resetPassword } from "@/lib/api/auth"
+import { Label } from "@/components/ui/label"
+import { API_URL, FEATURES, DEV_CONFIG } from "@/lib/config"
 import { logger } from "@/lib/monitoring"
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<{
-    password?: string
-    confirmPassword?: string
-    token?: string
-  }>({})
-
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
+  const collection = searchParams.get("collection") || "users"
+
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        token: "Reset token is missing. Please use the link from the email.",
-      }))
+      setError("Reset token is missing. Please request a new password reset link.")
     }
   }, [token])
 
-  // Simple validation function
+  // Validate the form
   const validateForm = () => {
-    const errors: {
-      password?: string
-      confirmPassword?: string
-      token?: string
-    } = {}
-
-    if (!token) {
-      errors.token = "Reset token is missing. Please use the link from the email."
-    }
-
     if (!password) {
-      errors.password = "Password is required"
-    } else if (password.length < 8) {
-      errors.password = "Password must be at least 8 characters"
-    } else if (!/[A-Z]/.test(password)) {
-      errors.password = "Password must contain at least one uppercase letter"
-    } else if (!/[a-z]/.test(password)) {
-      errors.password = "Password must contain at least one lowercase letter"
-    } else if (!/[0-9]/.test(password)) {
-      errors.password = "Password must contain at least one number"
+      setValidationError("Password is required")
+      return false
     }
 
-    if (!confirmPassword) {
-      errors.confirmPassword = "Please confirm your password"
-    } else if (password !== confirmPassword) {
-      errors.confirmPassword = "Passwords don't match"
+    if (password.length < 8) {
+      setValidationError("Password must be at least 8 characters long")
+      return false
     }
 
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match")
+      return false
+    }
+
+    setValidationError(null)
+    return true
   }
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!token) {
+      setError("Reset token is missing. Please request a new password reset link.")
+      return
+    }
 
     if (!validateForm()) {
       return
@@ -88,27 +77,55 @@ export default function ResetPasswordPage() {
     try {
       logger.info("Submitting password reset request")
 
-      if (!token) {
-        throw new Error("Reset token is missing")
-      }
+      // For development/testing, simulate a successful response
+      if (FEATURES.MOCK_API) {
+        logger.info("DEV MODE: Simulating successful password reset")
 
-      const response = await resetPassword(token, password)
+        if (DEV_CONFIG.SIMULATE_SLOW_API) {
+          await new Promise((resolve) => setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY))
+        }
 
-      if (response.error) {
-        logger.error("Password reset failed", { error: response.error })
-        setError(response.error)
-      } else {
-        logger.info("Password reset successful")
         setSuccess(true)
+        setIsLoading(false)
 
-        // Redirect to login page after 3 seconds
+        // Redirect to login page after a short delay
         setTimeout(() => {
-          router.push("/login")
-        }, 3000)
+          router.push("/login?resetSuccess=true")
+        }, 2000)
+
+        return
       }
+
+      // Make the API request directly to match the format
+      const response = await fetch(`${API_URL}/api/${collection}/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, password }),
+        credentials: "include",
+      })
+
+      logger.info("Password reset response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.message || "Failed to reset password. Please try again."
+        logger.error("Password reset failed:", errorMessage)
+        setError(errorMessage)
+        setIsLoading(false)
+        return
+      }
+
+      setSuccess(true)
+
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        router.push("/login?resetSuccess=true")
+      }, 2000)
     } catch (err) {
       logger.error("Unexpected error during password reset", { error: err })
-      setError(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.")
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -128,8 +145,16 @@ export default function ResetPasswordPage() {
 
       <Card className="w-full max-w-md border-0 shadow-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
-          <CardDescription>Enter your new password</CardDescription>
+          <div className="flex items-center">
+            <Button variant="ghost" size="sm" className="mr-2 p-0" asChild>
+              <Link href="/login">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back to login</span>
+              </Link>
+            </Button>
+            <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
+          </div>
+          <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -140,46 +165,68 @@ export default function ResetPasswordPage() {
             </Alert>
           )}
 
-          {validationErrors.token && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{validationErrors.token}</AlertDescription>
-            </Alert>
-          )}
-
           {success ? (
             <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                Your password has been reset successfully. You will be redirected to the login page.
-              </AlertDescription>
+              <AlertDescription>Your password has been successfully reset. Redirecting to login...</AlertDescription>
             </Alert>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <PasswordInput
-                id="password"
-                value={password}
-                onChange={setPassword}
-                disabled={isLoading || !token}
-                label="New Password"
-                autoComplete="new-password"
-                required={true}
-                error={validationErrors.password}
-                showStrengthIndicator={true}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading || !token}
+                    className="pr-10"
+                    placeholder="••••••••"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                  </Button>
+                </div>
+              </div>
 
-              <PasswordInput
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                disabled={isLoading || !token}
-                label="Confirm New Password"
-                autoComplete="new-password"
-                required={true}
-                error={validationErrors.confirmPassword}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading || !token}
+                    className="pr-10"
+                    placeholder="••••••••"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">{showConfirmPassword ? "Hide password" : "Show password"}</span>
+                  </Button>
+                </div>
+              </div>
 
-              <Button type="submit" disabled={isLoading || !token} className="w-full">
+              {validationError && <p className="text-sm font-medium text-destructive">{validationError}</p>}
+
+              <Button type="submit" disabled={isLoading || !token || !password || !confirmPassword} className="w-full">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
