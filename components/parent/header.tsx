@@ -1,7 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus } from "lucide-react"
+import { Plus, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -17,11 +17,14 @@ import Image from "next/image"
 import chatIcon from "@/public/navbar/chat.svg"
 import bellIcon from "@/public/navbar/bell.svg"
 import { useIsSize } from "@/hooks/use-viewport"
-import { BREAKPOINT_7XL } from "@/lib/utils/viewports"
+import { BREAKPOINT_4XL, BREAKPOINT_7XL } from "@/lib/utils/viewports"
+import ParentSidebar from "./sidebar"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export default function ParentHeader() {
   const { user, logout } = useAuth()
   const isMobile = useIsSize(BREAKPOINT_7XL)
+  const isMobileMenu = useIsSize(BREAKPOINT_4XL)
 
   // Determine the settings path based on user role
   const getSettingsPath = () => {
@@ -34,7 +37,26 @@ export default function ParentHeader() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-[#E6E6E6] bg-[#F4F4F4]/80 backdrop-blur-[10px] px-6 sticky top-0 z-30 w-full">
-      <div>
+      <div className="flex items-center gap-4">
+        {isMobileMenu && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-2 text-[#545454]"
+              >
+                <Menu size={24} />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-[280px]">
+              <div className="h-full overflow-y-auto">
+                <ParentSidebar isMobile={true} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
         <h1 className="text-lg md:text-xl lg:text-2xl font-medium">
           Good Morning Leena!
         </h1>
