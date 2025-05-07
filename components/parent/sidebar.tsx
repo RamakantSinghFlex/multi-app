@@ -85,7 +85,7 @@ export default function ParentSidebar({
     },
     {
       title: "Child Profile",
-      href: "/parent/profile",
+      href: "/parent/students",
       icon: childProfileIcon,
     },
     {
@@ -95,7 +95,7 @@ export default function ParentSidebar({
     },
     {
       title: "Bookings",
-      href: "/parent/bookings",
+      href: "/parent/appointments",
       icon: bookingsIcon,
     },
     {
