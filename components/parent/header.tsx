@@ -19,7 +19,12 @@ import bellIcon from "@/public/navbar/bell.svg"
 import { useIsSize } from "@/hooks/use-viewport"
 import { BREAKPOINT_4XL, BREAKPOINT_7XL } from "@/lib/utils/viewports"
 import ParentSidebar from "./sidebar"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function ParentHeader() {
   const { user, logout } = useAuth()
@@ -51,6 +56,7 @@ export default function ParentHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-[280px]">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="h-full overflow-y-auto">
                 <ParentSidebar isMobile={true} />
               </div>
