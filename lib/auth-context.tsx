@@ -28,6 +28,7 @@ interface AuthContextType extends AuthState {
   clearSuccessMessage: () => void
   checkAuth: () => Promise<boolean>
   setError: (error: string) => void
+  setSuccessMessage: (message: string) => void
   refreshUser: () => Promise<void>
   setUser: (user: User | null) => void
 }
@@ -53,6 +54,7 @@ type AuthAction =
   | { type: "CLEAR_SUCCESS_MESSAGE" }
   | { type: "REFRESH_USER_SUCCESS"; payload: { user: User } }
   | { type: "SET_USER"; payload: User | null }
+  | { type: "SET_SUCCESS_MESSAGE"; payload: string }
   | { type: "SIGNUP_SUCCESS"; payload: { message: string } }
 
 // Auth reducer with improved error handling
@@ -116,6 +118,11 @@ function authReducer(state: AuthStateType, action: AuthAction): AuthStateType {
         ...state,
         user: action.payload,
       }
+    case "SET_SUCCESS_MESSAGE":
+      return {
+        ...state,
+        successMessage: action.payload,
+      }
     case "SIGNUP_SUCCESS":
       return {
         ...state,
@@ -138,6 +145,7 @@ const AuthContext = createContext<AuthContextType>({
   clearSuccessMessage: () => {},
   checkAuth: async () => false,
   setError: () => {},
+  setSuccessMessage: () => {},
   refreshUser: async () => {},
   setUser: () => {},
 })
@@ -511,6 +519,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth,
     refreshUser,
     setError: (error: string) => dispatch({ type: "AUTH_FAILURE", payload: error }),
+    setSuccessMessage: (message: string) => dispatch({ type: "SET_SUCCESS_MESSAGE", payload: message }),
     setUser: (user: User | null) => dispatch({ type: "SET_USER", payload: user }),
   }
 

@@ -140,10 +140,10 @@ export function PasswordDisplayModal({
         <DialogHeader>
           <DialogTitle className="text-xl">Generated Passwords</DialogTitle>
           <DialogDescription className="text-base mt-2">
-            <div className="mb-2 font-medium text-green-600">User created successfully!</div>
             These passwords have been generated for the new users. Please save them securely as they will not be shown
             again.
           </DialogDescription>
+          <div className="mb-2 font-medium text-green-600">User created successfully!</div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
