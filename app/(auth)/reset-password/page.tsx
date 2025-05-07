@@ -6,11 +6,25 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Loader2, AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff } from "lucide-react"
+import {
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { API_URL, FEATURES, DEV_CONFIG } from "@/lib/config"
@@ -33,7 +47,9 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (!token) {
-      setError("Reset token is missing. Please request a new password reset link.")
+      setError(
+        "Reset token is missing. Please request a new password reset link."
+      )
     }
   }, [token])
 
@@ -63,7 +79,9 @@ export default function ResetPasswordPage() {
     e.preventDefault()
 
     if (!token) {
-      setError("Reset token is missing. Please request a new password reset link.")
+      setError(
+        "Reset token is missing. Please request a new password reset link."
+      )
       return
     }
 
@@ -82,7 +100,9 @@ export default function ResetPasswordPage() {
         logger.info("DEV MODE: Simulating successful password reset")
 
         if (DEV_CONFIG.SIMULATE_SLOW_API) {
-          await new Promise((resolve) => setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY))
+          await new Promise((resolve) =>
+            setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY)
+          )
         }
 
         setSuccess(true)
@@ -97,7 +117,7 @@ export default function ResetPasswordPage() {
       }
 
       // Make the API request directly to match the format
-      const response = await fetch(`${API_URL}/api/${collection}/reset-password`, {
+      const response = await fetch(`${API_URL}/${collection}/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +130,8 @@ export default function ResetPasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        const errorMessage = errorData.message || "Failed to reset password. Please try again."
+        const errorMessage =
+          errorData.message || "Failed to reset password. Please try again."
         logger.error("Password reset failed:", errorMessage)
         setError(errorMessage)
         setIsLoading(false)
@@ -168,7 +189,10 @@ export default function ResetPasswordPage() {
           {success ? (
             <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>Your password has been successfully reset. Redirecting to login...</AlertDescription>
+              <AlertDescription>
+                Your password has been successfully reset. Redirecting to
+                login...
+              </AlertDescription>
             </Alert>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -192,8 +216,14 @@ export default function ResetPasswordPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -218,15 +248,29 @@ export default function ResetPasswordPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     tabIndex={-1}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showConfirmPassword ? "Hide password" : "Show password"}</span>
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showConfirmPassword ? "Hide password" : "Show password"}
+                    </span>
                   </Button>
                 </div>
               </div>
 
-              {validationError && <p className="text-sm font-medium text-destructive">{validationError}</p>}
+              {validationError && (
+                <p className="text-sm font-medium text-destructive">
+                  {validationError}
+                </p>
+              )}
 
-              <Button type="submit" disabled={isLoading || !token || !password || !confirmPassword} className="w-full">
+              <Button
+                type="submit"
+                disabled={isLoading || !token || !password || !confirmPassword}
+                className="w-full"
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -243,7 +287,10 @@ export default function ResetPasswordPage() {
         <CardFooter className="flex justify-center border-t p-6">
           <p className="text-center text-sm text-muted-foreground">
             Remember your password?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:underline"
+            >
               Back to login
             </Link>
           </p>
