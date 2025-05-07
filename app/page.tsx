@@ -1,7 +1,73 @@
-import Link from "next/link"
-import { ChevronDown, ChevronUp, Phone, ArrowRight, Check, Mail } from "lucide-react"
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/monitoring";
+import {
+  ChevronDown,
+  ChevronUp,
+  Phone,
+  ArrowRight,
+  Check,
+  Mail,
+} from "lucide-react";
 
 export default function Home() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  // Additional check for valid authentication with proper optional chaining
+  const isReallyAuthenticated =
+    isAuthenticated &&
+    user &&
+    user.roles &&
+    Array.isArray(user.roles) &&
+    user.roles?.length > 0;
+
+  useEffect(() => {
+    if (!isLoading) {
+      logger.info("Home page: Auth check complete", {
+        isAuthenticated: isAuthenticated,
+        user: user,
+        hasRoles:
+          user?.roles && Array.isArray(user?.roles)
+            ? user.roles?.length > 0
+            : false,
+      });
+      setPageLoading(false);
+    }
+  }, [isLoading, isAuthenticated, user]);
+
+  // If there's an error during navigation
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4 p-4 text-center">
+        <div className="text-destructive">
+          <p className="text-lg font-semibold">Navigation Error</p>
+          <p>{error}</p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+        >
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
+  // Show a loading state while checking authentication
+  if (pageLoading) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-4 text-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen">
       {/* Header/Navigation */}
@@ -51,7 +117,8 @@ export default function Home() {
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold text-[#004D40] leading-tight">
-              Empowering every Student with personalized learning for lasting success
+              Empowering every Student with personalized learning for lasting
+              success
             </h1>
             <div className="space-y-3">
               <div className="flex items-start">
@@ -83,7 +150,7 @@ export default function Home() {
         </div>
       </section>
 
-      
+     
 
       {/* Support for Every Stage Section */}
       <section className="py-16 bg-gray-50">
@@ -92,7 +159,8 @@ export default function Home() {
             Support for every stage of learning
           </h2>
           <p className="text-center text-gray-700 max-w-3xl mx-auto mb-12">
-            From foundational skills to advanced academics, we're with you every step of the way.
+            From foundational skills to advanced academics, we're with you every
+            step of the way.
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -104,7 +172,9 @@ export default function Home() {
               </div>
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">Test Prep</h3>
-                <p className="text-gray-700 text-sm">Expert coaching for SSAT, SAT, ACT, AP exams, and more.</p>
+                <p className="text-gray-700 text-sm">
+                  Expert coaching for SSAT, SAT, ACT, AP exams, and more.
+                </p>
               </div>
             </div>
 
@@ -117,7 +187,8 @@ export default function Home() {
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">College/University</h3>
                 <p className="text-gray-700 text-sm">
-                  Tutoring for advanced coursework, writing, and academic strategy.
+                  Tutoring for advanced coursework, writing, and academic
+                  strategy.
                 </p>
               </div>
             </div>
@@ -131,7 +202,8 @@ export default function Home() {
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">Graduate School</h3>
                 <p className="text-gray-700 text-sm">
-                  Language prep, writing mentorship, and exam support for advanced learners.
+                  Language prep, writing mentorship, and exam support for
+                  advanced learners.
                 </p>
               </div>
             </div>
@@ -145,7 +217,8 @@ export default function Home() {
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">Elementary School</h3>
                 <p className="text-gray-700 text-sm">
-                  Foundational support in reading, writing, math, and study habits.
+                  Foundational support in reading, writing, math, and study
+                  habits.
                 </p>
               </div>
             </div>
@@ -159,7 +232,8 @@ export default function Home() {
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">Middle School</h3>
                 <p className="text-gray-700 text-sm">
-                  Skill-building across core subjects to support academic transitions.
+                  Skill-building across core subjects to support academic
+                  transitions.
                 </p>
               </div>
             </div>
@@ -172,7 +246,9 @@ export default function Home() {
               </div>
               <div className="w-2/3 p-6">
                 <h3 className="font-bold text-lg mb-2">High School</h3>
-                <p className="text-gray-700 text-sm">Rigorous subject support, test prep, and college readiness.</p>
+                <p className="text-gray-700 text-sm">
+                  Rigorous subject support, test prep, and college readiness.
+                </p>
               </div>
             </div>
           </div>
@@ -186,7 +262,8 @@ export default function Home() {
             Success we've achieved together
           </h2>
           <p className="text-center text-gray-700 max-w-3xl mx-auto mb-12">
-            Together, we celebrate every milestone—turning challenges into achievements and goals into reality.
+            Together, we celebrate every milestone—turning challenges into
+            achievements and goals into reality.
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -194,8 +271,9 @@ export default function Home() {
             <div className="bg-white p-8 rounded-lg shadow-sm">
               <div className="text-[#004D40] text-5xl font-serif mb-4">"</div>
               <p className="text-gray-800 mb-6">
-                My son went from struggling in science to earning his best grades ever. His tutor made the material
-                click in a way his classes never did.
+                My son went from struggling in science to earning his best
+                grades ever. His tutor made the material click in a way his
+                classes never did.
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
@@ -210,8 +288,9 @@ export default function Home() {
             <div className="bg-white p-8 rounded-lg shadow-sm">
               <div className="text-[#004D40] text-5xl font-serif mb-4">"</div>
               <p className="text-gray-800 mb-6">
-                My son went from struggling in science to earning his best grades ever. His tutor made the material
-                click in a way his classes never did.
+                My son went from struggling in science to earning his best
+                grades ever. His tutor made the material click in a way his
+                classes never did.
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
@@ -226,8 +305,9 @@ export default function Home() {
             <div className="bg-white p-8 rounded-lg shadow-sm">
               <div className="text-[#004D40] text-5xl font-serif mb-4">"</div>
               <p className="text-gray-800 mb-6">
-                My son went from struggling in science to earning his best grades ever. His tutor made the material
-                click in a way his classes never did.
+                My son went from struggling in science to earning his best
+                grades ever. His tutor made the material click in a way his
+                classes never did.
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
@@ -242,8 +322,9 @@ export default function Home() {
             <div className="bg-white p-8 rounded-lg shadow-sm">
               <div className="text-[#004D40] text-5xl font-serif mb-4">"</div>
               <p className="text-gray-800 mb-6">
-                My son went from struggling in science to earning his best grades ever. His tutor made the material
-                click in a way his classes never did.
+                My son went from struggling in science to earning his best
+                grades ever. His tutor made the material click in a way his
+                classes never did.
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full bg-gray-200 mr-4"></div>
@@ -270,16 +351,23 @@ export default function Home() {
       <section className="py-16">
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
-            <h2 className="text-3xl font-bold text-[#004D40] mb-4">How we increase academic performance</h2>
+            <h2 className="text-3xl font-bold text-[#004D40] mb-4">
+              How we increase academic performance
+            </h2>
             <p className="text-gray-700 mb-4">
-              The most successful learning is <span className="font-bold">one-on-one</span>.
+              The most successful learning is{" "}
+              <span className="font-bold">one-on-one</span>.
             </p>
             <p className="text-gray-700 mb-6">
-              At <span className="font-bold">Milestone Learning</span>, we recognize that every student learns
-              differently—success comes from tailored support, personalized strategies, and a learning approach that
-              works for them.
+              At <span className="font-bold">Milestone Learning</span>, we
+              recognize that every student learns differently—success comes from
+              tailored support, personalized strategies, and a learning approach
+              that works for them.
             </p>
-            <Link href="#" className="flex items-center text-[#004D40] font-medium">
+            <Link
+              href="#"
+              className="flex items-center text-[#004D40] font-medium"
+            >
               Learn More <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </div>
@@ -321,11 +409,12 @@ export default function Home() {
         </div>
       </section>
 
-
- {/* Why Milestone Learning Section */}
- <section className="py-16 bg-[#004D40] text-white">
+      {/* Why Milestone Learning Section */}
+      <section className="py-16 bg-[#004D40] text-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Why Milestone Learning?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Why Milestone Learning?
+          </h2>
           <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
             {/* Card 1 */}
             <div className="bg-white rounded-lg p-8 text-center">
@@ -333,8 +422,12 @@ export default function Home() {
                 {/* Icon placeholder */}
                 <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
               </div>
-              <h3 className="text-[#004D40] font-bold text-xl mb-2">Personalized, efficient learning</h3>
-              <p className="text-gray-700 text-sm">Tailored instruction that maximizes understanding and progress.</p>
+              <h3 className="text-[#004D40] font-bold text-xl mb-2">
+                Personalized, efficient learning
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Tailored instruction that maximizes understanding and progress.
+              </p>
             </div>
 
             {/* Card 2 */}
@@ -343,8 +436,12 @@ export default function Home() {
                 {/* Icon placeholder */}
                 <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
               </div>
-              <h3 className="text-[#004D40] font-bold text-xl mb-2">Collaboration with parents & students</h3>
-              <p className="text-gray-700 text-sm">Clear communication and ongoing feedback to align on goals.</p>
+              <h3 className="text-[#004D40] font-bold text-xl mb-2">
+                Collaboration with parents & students
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Clear communication and ongoing feedback to align on goals.
+              </p>
             </div>
 
             {/* Card 3 */}
@@ -353,8 +450,12 @@ export default function Home() {
                 {/* Icon placeholder */}
                 <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
               </div>
-              <h3 className="text-[#004D40] font-bold text-xl mb-2">Long-term skill development</h3>
-              <p className="text-gray-700 text-sm">Focused on growth, mastery, and real results.</p>
+              <h3 className="text-[#004D40] font-bold text-xl mb-2">
+                Long-term skill development
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Focused on growth, mastery, and real results.
+              </p>
             </div>
 
             {/* Card 4 */}
@@ -363,8 +464,12 @@ export default function Home() {
                 {/* Icon placeholder */}
                 <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
               </div>
-              <h3 className="text-[#004D40] font-bold text-xl mb-2">A nurturing, supportive environment</h3>
-              <p className="text-gray-700 text-sm">Meeting students where they are and helping them thrive.</p>
+              <h3 className="text-[#004D40] font-bold text-xl mb-2">
+                A nurturing, supportive environment
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Meeting students where they are and helping them thrive.
+              </p>
             </div>
 
             {/* Card 5 */}
@@ -373,8 +478,12 @@ export default function Home() {
                 {/* Icon placeholder */}
                 <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
               </div>
-              <h3 className="text-[#004D40] font-bold text-xl mb-2">Confidence-building for success</h3>
-              <p className="text-gray-700 text-sm">Strategies to reduce anxiety and improve academic performance.</p>
+              <h3 className="text-[#004D40] font-bold text-xl mb-2">
+                Confidence-building for success
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Strategies to reduce anxiety and improve academic performance.
+              </p>
             </div>
           </div>
           <div className="flex justify-center mt-12 space-x-4">
@@ -394,11 +503,12 @@ export default function Home() {
         </div>
       </section>
 
-
       {/* Trusted Tutors Section */}
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-green-900 text-center mb-12">Tutors you can trust from</h2>
+          <h2 className="text-3xl font-bold text-green-900 text-center mb-12">
+            Tutors you can trust from
+          </h2>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-8">
             {/* University Logo Placeholders */}
             <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-center">
@@ -436,8 +546,9 @@ export default function Home() {
             Insights & inspiration from the world of one-on-one learning
           </h2>
           <p className="text-center text-gray-700 max-w-4xl mx-auto mb-12">
-            Explore expert perspectives, success stories, and timely topics in education—designed for parents, students,
-            and families navigating academic excellence in today's competitive world.
+            Explore expert perspectives, success stories, and timely topics in
+            education—designed for parents, students, and families navigating
+            academic excellence in today's competitive world.
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -446,11 +557,13 @@ export default function Home() {
               <div className="aspect-video bg-gray-200"></div>
               <div className="p-6">
                 <h3 className="font-bold text-green-900 mb-2">
-                  Learning Styles in Tutoring: Tailoring Approaches for Effective Student Engagement
+                  Learning Styles in Tutoring: Tailoring Approaches for
+                  Effective Student Engagement
                 </h3>
                 <p className="text-gray-700 text-sm mb-4">
-                  Understanding different learning styles is essential for effective tutoring and can significantly
-                  enhance your teaching approach
+                  Understanding different learning styles is essential for
+                  effective tutoring and can significantly enhance your teaching
+                  approach
                 </p>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Guidance</span>
@@ -464,11 +577,13 @@ export default function Home() {
               <div className="aspect-video bg-gray-200"></div>
               <div className="p-6">
                 <h3 className="font-bold text-green-900 mb-2">
-                  Learning Styles in Tutoring: Tailoring Approaches for Effective Student Engagement
+                  Learning Styles in Tutoring: Tailoring Approaches for
+                  Effective Student Engagement
                 </h3>
                 <p className="text-gray-700 text-sm mb-4">
-                  Understanding different learning styles is essential for effective tutoring and can significantly
-                  enhance your teaching approach
+                  Understanding different learning styles is essential for
+                  effective tutoring and can significantly enhance your teaching
+                  approach
                 </p>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Guidance</span>
@@ -482,11 +597,13 @@ export default function Home() {
               <div className="aspect-video bg-gray-200"></div>
               <div className="p-6">
                 <h3 className="font-bold text-green-900 mb-2">
-                  Learning Styles in Tutoring: Tailoring Approaches for Effective Student Engagement
+                  Learning Styles in Tutoring: Tailoring Approaches for
+                  Effective Student Engagement
                 </h3>
                 <p className="text-gray-700 text-sm mb-4">
-                  Understanding different learning styles is essential for effective tutoring and can significantly
-                  enhance your teaching approach
+                  Understanding different learning styles is essential for
+                  effective tutoring and can significantly enhance your teaching
+                  approach
                 </p>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Guidance</span>
@@ -500,11 +617,13 @@ export default function Home() {
               <div className="aspect-video bg-gray-200"></div>
               <div className="p-6">
                 <h3 className="font-bold text-green-900 mb-2">
-                  Learning Styles in Tutoring: Tailoring Approaches for Effective Student Engagement
+                  Learning Styles in Tutoring: Tailoring Approaches for
+                  Effective Student Engagement
                 </h3>
                 <p className="text-gray-700 text-sm mb-4">
-                  Understanding different learning styles is essential for effective tutoring and can significantly
-                  enhance your teaching approach
+                  Understanding different learning styles is essential for
+                  effective tutoring and can significantly enhance your teaching
+                  approach
                 </p>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Guidance</span>
@@ -529,8 +648,12 @@ export default function Home() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 grid md:grid-cols-3 gap-12">
           <div className="md:col-span-1">
-            <h2 className="text-3xl font-bold text-[#004D40] mb-4">Frequently asked questions</h2>
-            <p className="text-gray-700">Find answers to common questions and get the information you need!</p>
+            <h2 className="text-3xl font-bold text-[#004D40] mb-4">
+              Frequently asked questions
+            </h2>
+            <p className="text-gray-700">
+              Find answers to common questions and get the information you need!
+            </p>
           </div>
 
           <div className="md:col-span-2 space-y-4">
@@ -538,15 +661,18 @@ export default function Home() {
             <div className="border rounded-lg overflow-hidden">
               <div className="flex justify-between items-center p-6 cursor-pointer bg-white">
                 <h3 className="font-medium text-[#004D40]">
-                  What makes Milestone Learning different from other tutoring services?
+                  What makes Milestone Learning different from other tutoring
+                  services?
                 </h3>
                 <ChevronUp className="w-5 h-5 text-[#004D40]" />
               </div>
               <div className="p-6 bg-white border-t">
                 <p className="text-gray-700">
-                  We specialize in one-on-one, highly personalized tutoring that goes beyond just helping students with
-                  homework. Our expert tutors focus on mastery, confidence-building, and academic strategy, ensuring
-                  that students not only improve their grades but also develop lifelong learning skills.
+                  We specialize in one-on-one, highly personalized tutoring that
+                  goes beyond just helping students with homework. Our expert
+                  tutors focus on mastery, confidence-building, and academic
+                  strategy, ensuring that students not only improve their grades
+                  but also develop lifelong learning skills.
                 </p>
               </div>
             </div>
@@ -554,7 +680,9 @@ export default function Home() {
             {/* FAQ Item 2 - Collapsed */}
             <div className="border rounded-lg overflow-hidden">
               <div className="flex justify-between items-center p-6 cursor-pointer bg-white">
-                <h3 className="font-medium text-[#004D40]">Who are your tutors?</h3>
+                <h3 className="font-medium text-[#004D40]">
+                  Who are your tutors?
+                </h3>
                 <ChevronDown className="w-5 h-5 text-[#004D40]" />
               </div>
             </div>
@@ -562,7 +690,9 @@ export default function Home() {
             {/* FAQ Item 3 - Collapsed */}
             <div className="border rounded-lg overflow-hidden">
               <div className="flex justify-between items-center p-6 cursor-pointer bg-white">
-                <h3 className="font-medium text-[#004D40]">How do you match students with tutors?</h3>
+                <h3 className="font-medium text-[#004D40]">
+                  How do you match students with tutors?
+                </h3>
                 <ChevronDown className="w-5 h-5 text-[#004D40]" />
               </div>
             </div>
@@ -570,7 +700,9 @@ export default function Home() {
             {/* FAQ Item 4 - Collapsed */}
             <div className="border rounded-lg overflow-hidden">
               <div className="flex justify-between items-center p-6 cursor-pointer bg-white">
-                <h3 className="font-medium text-[#004D40]">Do you offer in-person tutoring?</h3>
+                <h3 className="font-medium text-[#004D40]">
+                  Do you offer in-person tutoring?
+                </h3>
                 <ChevronDown className="w-5 h-5 text-[#004D40]" />
               </div>
             </div>
@@ -587,16 +719,15 @@ export default function Home() {
         </div>
       </section>
 
-
-{/* Tutor Recruitment Banner */}
+      {/* Tutor Recruitment Banner */}
       <section className="py-12 bg-gray-100">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-green-900 mb-4">
             Interested in becoming a tutor with Milestone Learning?
           </h2>
           <p className="text-gray-700 max-w-3xl mx-auto mb-8">
-            Make a lasting impact—join a team where your expertise empowers students and your growth is supported every
-            step of the way.
+            Make a lasting impact—join a team where your expertise empowers
+            students and your growth is supported every step of the way.
           </p>
           <Link
             href="#"
@@ -607,8 +738,6 @@ export default function Home() {
         </div>
       </section>
 
-
-
       {/* Footer */}
       <footer className="py-12 bg-[#004D40] text-white">
         <div className="container mx-auto px-4">
@@ -618,7 +747,8 @@ export default function Home() {
                 Milestone <span className="text-gray-300">| Learning</span>
               </div>
               <p className="text-gray-300 mb-4">
-                Personalized tutoring that empowers students to achieve academic excellence and build confidence.
+                Personalized tutoring that empowers students to achieve academic
+                excellence and build confidence.
               </p>
               <div className="flex space-x-4">
                 {/* Social media icons */}
@@ -703,7 +833,9 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-300 text-sm">© 2025 Milestone Learning. All rights reserved.</p>
+            <p className="text-gray-300 text-sm">
+              © 2025 Milestone Learning. All rights reserved.
+            </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link href="#" className="text-gray-300 text-sm hover:text-white">
                 Privacy Policy
@@ -716,7 +848,5 @@ export default function Home() {
         </div>
       </footer>
     </main>
-  )
+  );
 }
-
-
