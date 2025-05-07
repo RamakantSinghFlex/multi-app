@@ -1,0 +1,10 @@
+export const BREAKPOINT_XS = 320
+export const BREAKPOINT_SM = 384
+export const BREAKPOINT_MD = 448
+export const BREAKPOINT_LG = 512
+export const BREAKPOINT_XL = 576
+export const BREAKPOINT_2XL = 672
+export const BREAKPOINT_3XL = 768
+export const BREAKPOINT_4XL = 896
+export const BREAKPOINT_5XL = 1024
+export const BREAKPOINT_7XL = 1280

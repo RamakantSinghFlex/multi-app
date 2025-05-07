@@ -8,6 +8,8 @@ import { ChevronRight, ChevronLeft, X, ArrowUpRight } from "lucide-react"
 import Image from "next/image"
 import scheduleIcon from "@/public/card/schedule.svg"
 import chatIcon from "@/public/card/chat.svg"
+import { useIsSize } from "@/hooks/use-viewport"
+import { BREAKPOINT_7XL } from "@/lib/utils/viewports"
 
 export default function ParentDashboardPage() {
   const [currentMonth] = useState("March")
@@ -15,13 +17,14 @@ export default function ParentDashboardPage() {
   const days = Array.from({ length: 31 }, (_, i) => i + 1)
   const weekDays = ["S", "M", "T", "W", "T", "F", "S"]
   const [showPaymentBanner, setShowPaymentBanner] = useState(true)
+  const isMobile = useIsSize(BREAKPOINT_7XL)
 
   // Current date is day 17
   const today = 17
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left and center content */}
         <div className="col-span-2 space-y-6">
           {/* Payment Due */}
@@ -38,7 +41,7 @@ export default function ParentDashboardPage() {
                 </div>
                 <Button
                   size="lg"
-                  className="bg-[#0B4A3F] text-white hover:bg-[#0B4A3F]/90 rounded-full px-8 mr-16"
+                  className="bg-[#0B4A3F] text-white hover:bg-[#0B4A3F]/90 rounded-full px-8 mr-4 sm:mr-8 lg:mr-16"
                 >
                   Pay Now
                 </Button>
@@ -211,7 +214,7 @@ export default function ParentDashboardPage() {
         </div>
 
         {/* Right sidebar content */}
-        <div className="space-y-6">
+        <div className={isMobile ? "col-span-2 space-y-6" : "space-y-6"}>
           {/* Calendar */}
           <Card className="border border-[#efefef]">
             <CardContent className="p-4">
@@ -318,7 +321,7 @@ export default function ParentDashboardPage() {
           {/* Upcoming Tests */}
           <Card className="border border-[#efefef]">
             <CardHeader className="pb-2 flex flex-row justify-between items-center">
-              <CardTitle className="text-lg font-medium">
+              <CardTitle className="text-lg font-medium truncate">
                 Upcoming Test
               </CardTitle>
               <Button

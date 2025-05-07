@@ -16,9 +16,12 @@ import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
 import chatIcon from "@/public/navbar/chat.svg"
 import bellIcon from "@/public/navbar/bell.svg"
+import { useIsSize } from "@/hooks/use-viewport"
+import { BREAKPOINT_7XL } from "@/lib/utils/viewports"
 
 export default function ParentHeader() {
   const { user, logout } = useAuth()
+  const isMobile = useIsSize(BREAKPOINT_7XL)
 
   // Determine the settings path based on user role
   const getSettingsPath = () => {
@@ -32,47 +35,53 @@ export default function ParentHeader() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-[#E6E6E6] bg-[#F4F4F4]/80 backdrop-blur-[10px] px-6 sticky top-0 z-30 w-full">
       <div>
-        <h1 className="text-2xl font-medium">Good Morning Leena!</h1>
+        <h1 className="text-lg md:text-xl lg:text-2xl font-medium">
+          Good Morning Leena!
+        </h1>
       </div>
       <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          className="bg-white border-primary text-primary hover:bg-white hover:text-primary rounded-full gap-2 px-6"
-        >
-          Add Subject <Plus size={16} />
-        </Button>
-        <Button
-          variant="outline"
-          className="bg-white border-primary text-primary hover:bg-white hover:text-primary rounded-full gap-2 px-6"
-        >
-          Upload File <Plus size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground rounded-full"
-        >
-          <Image
-            src={chatIcon}
-            alt="Chat"
-            className="h-5 w-5"
-            width={20}
-            height={20}
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground rounded-full"
-        >
-          <Image
-            src={bellIcon}
-            alt="Chat"
-            className="h-5 w-5"
-            width={20}
-            height={20}
-          />
-        </Button>
+        {!isMobile && (
+          <>
+            <Button
+              variant="outline"
+              className="bg-white border-primary text-primary hover:bg-white hover:text-primary rounded-full gap-2 px-6"
+            >
+              Add Subject <Plus size={16} />
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-white border-primary text-primary hover:bg-white hover:text-primary rounded-full gap-2 px-6"
+            >
+              Upload File <Plus size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground rounded-full"
+            >
+              <Image
+                src={chatIcon || "/placeholder.svg"}
+                alt="Chat"
+                className="h-5 w-5"
+                width={20}
+                height={20}
+              />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground rounded-full"
+            >
+              <Image
+                src={bellIcon || "/placeholder.svg"}
+                alt="Chat"
+                className="h-5 w-5"
+                width={20}
+                height={20}
+              />
+            </Button>
+          </>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
