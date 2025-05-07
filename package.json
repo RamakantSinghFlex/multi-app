@@ -7,8 +7,7 @@
     "debug": "cross-env NODE_OPTIONS='--inspect=5222 --no-deprecation' next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "prepare": "husky"
+    "lint": "next lint"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
