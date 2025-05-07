@@ -6,29 +6,14 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import {
-  Loader2,
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle,
-  Eye,
-  EyeOff,
-} from "lucide-react"
+import { Loader2, AlertCircle, ArrowLeft, CheckCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Label } from "@/components/ui/label"
 import { API_URL, FEATURES, DEV_CONFIG } from "@/lib/config"
 import { logger } from "@/lib/monitoring"
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -38,8 +23,6 @@ export default function ResetPasswordPage() {
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -47,9 +30,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (!token) {
-      setError(
-        "Reset token is missing. Please request a new password reset link."
-      )
+      setError("Reset token is missing. Please request a new password reset link.")
     }
   }, [token])
 
@@ -79,9 +60,7 @@ export default function ResetPasswordPage() {
     e.preventDefault()
 
     if (!token) {
-      setError(
-        "Reset token is missing. Please request a new password reset link."
-      )
+      setError("Reset token is missing. Please request a new password reset link.")
       return
     }
 
@@ -100,9 +79,7 @@ export default function ResetPasswordPage() {
         logger.info("DEV MODE: Simulating successful password reset")
 
         if (DEV_CONFIG.SIMULATE_SLOW_API) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY)
-          )
+          await new Promise((resolve) => setTimeout(resolve, DEV_CONFIG.SLOW_API_DELAY))
         }
 
         setSuccess(true)
@@ -130,8 +107,7 @@ export default function ResetPasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        const errorMessage =
-          errorData.message || "Failed to reset password. Please try again."
+        const errorMessage = errorData.message || "Failed to reset password. Please try again."
         logger.error("Password reset failed:", errorMessage)
         setError(errorMessage)
         setIsLoading(false)
@@ -189,88 +165,34 @@ export default function ResetPasswordPage() {
           {success ? (
             <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                Your password has been successfully reset. Redirecting to
-                login...
-              </AlertDescription>
+              <AlertDescription>Your password has been successfully reset. Redirecting to login...</AlertDescription>
             </Alert>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading || !token}
-                    className="pr-10"
-                    placeholder="••••••••"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                    <span className="sr-only">
-                      {showPassword ? "Hide password" : "Show password"}
-                    </span>
-                  </Button>
-                </div>
-              </div>
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={setPassword}
+                onGeneratePassword={(newPassword) => setConfirmPassword(newPassword)}
+                disabled={isLoading || !token}
+                label="New Password"
+                placeholder="••••••••"
+                showStrengthIndicator={true}
+                error={validationError && validationError.includes("Password") ? validationError : undefined}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading || !token}
-                    className="pr-10"
-                    placeholder="••••••••"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    tabIndex={-1}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                    <span className="sr-only">
-                      {showConfirmPassword ? "Hide password" : "Show password"}
-                    </span>
-                  </Button>
-                </div>
-              </div>
+              <PasswordInput
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                disabled={isLoading || !token}
+                label="Confirm Password"
+                placeholder="••••••••"
+                showGenerateButton={false}
+                error={validationError && validationError.includes("match") ? validationError : undefined}
+              />
 
-              {validationError && (
-                <p className="text-sm font-medium text-destructive">
-                  {validationError}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isLoading || !token || !password || !confirmPassword}
-                className="w-full"
-              >
+              <Button type="submit" disabled={isLoading || !token || !password || !confirmPassword} className="w-full">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -287,10 +209,7 @@ export default function ResetPasswordPage() {
         <CardFooter className="flex justify-center border-t p-6">
           <p className="text-center text-sm text-muted-foreground">
             Remember your password?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-primary hover:underline"
-            >
+            <Link href="/login" className="font-medium text-primary hover:underline">
               Back to login
             </Link>
           </p>

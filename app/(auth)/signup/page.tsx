@@ -326,6 +326,7 @@ export default function SignupPage() {
               disabled={isLoading || isSubmitting}
               label="Confirm password"
               autoComplete="new-password"
+              showGenerateButton={false}
               required={true}
               error={validationErrors.confirmPassword}
             />
