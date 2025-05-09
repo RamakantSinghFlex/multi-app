@@ -129,7 +129,7 @@ export function AppointmentPaymentStatus() {
     }
 
     const userRole = user.roles[0]
-    router.push(`/${userRole}`)
+    router.push(`/${userRole}/dashboard`)
   }
 
   return (
