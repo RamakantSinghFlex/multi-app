@@ -10,7 +10,7 @@ export default function AcademicPerformance({ data }: { data: any }) {
         {/* Right column with three cards */}
         <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-6 justify-center">
           {/* Card 1 */}
-          <div className="bg-white">
+          <div className="bg-white lg:col-span-1">
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl font-bold text-green-900 leading-tight">
                 {data.title}
@@ -29,26 +29,27 @@ export default function AcademicPerformance({ data }: { data: any }) {
             </div>
           </div>
           {/* Card 2 */}
-          {data.images.map((image: any) => (
-            <div
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
-              key={image.id}
-            >
-              <div className="relative h-full">
+          <div className="w-full flex items-center gap-6 overflow-x-auto lg:col-span-3">
+            {data.images.map((image: any) => (
+              <div
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 ml-auto"
+                key={image.id}
+              >
                 <Image
                   src={image.image.url}
                   alt={image.altText}
-                  fill
-                  className="object-cover"
+                  width={288}
+                  height={320}
+                  className="min-w-72 min-h-80 object-cover rounded-t-2xl"
                 />
+                <div className="p-6">
+                  <Button className="w-full bg-primary text-white rounded-full py-6 cursor-pointer">
+                    {image.altText}
+                  </Button>
+                </div>
               </div>
-              <div className="p-6 flex-grow flex flex-col justify-end">
-                <Button className="w-full bg-primary text-white rounded-full py-6 cursor-pointer">
-                  {image.altText}
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

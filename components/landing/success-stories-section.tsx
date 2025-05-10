@@ -16,9 +16,12 @@ export default function SuccessStoriesSection({ data }: { data: any }) {
           <p className="text-gray-600 max-w-3xl mx-auto">{data.subtitle}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="w-full flex items-center overflow-x-auto gap-6">
           {data.successStories.map((story: any) => (
-            <div key={story.id} className="bg-white p-6 rounded-lg shadow-sm">
+            <div
+              key={story.id}
+              className="min-w-72 min-h-80 bg-white p-6 rounded-lg shadow-sm"
+            >
               <div className="mb-4 text-green-700">
                 <Image
                   src={data.quoteImage.url}
