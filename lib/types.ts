@@ -197,3 +197,26 @@ export interface StripePaymentStatus {
   status: "complete" | "incomplete" | "expired"
   appointmentId?: string
 }
+
+// Twilio Types
+export interface TwilioMessage {
+  sid: string
+  author: string
+  body: string
+  dateCreated: string
+  media?: TwilioMedia[]
+}
+
+export interface TwilioMedia {
+  sid: string
+  contentType: string
+  filename: string
+  size: number
+  url: string
+}
+
+export interface TwilioConversation {
+  sid: string
+  friendlyName: string
+  lastMessage?: string
+}

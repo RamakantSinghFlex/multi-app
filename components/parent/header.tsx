@@ -16,12 +16,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useIsSize } from "@/hooks/use-viewport"
 import { BREAKPOINT_4XL, BREAKPOINT_7XL } from "@/lib/utils/viewports"
 import ParentSidebar from "./sidebar"
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 export default function ParentHeader() {
   const { user, logout } = useAuth()
@@ -43,11 +38,7 @@ export default function ParentHeader() {
         {isMobileMenu && (
           <Sheet>
             <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mr-2 text-[#545454]"
-              >
+              <Button variant="ghost" size="icon" className="mr-2 text-[#545454]">
                 <Menu size={24} />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -60,9 +51,7 @@ export default function ParentHeader() {
             </SheetContent>
           </Sheet>
         )}
-        <h1 className="text-lg md:text-xl lg:text-2xl font-medium">
-          Good Morning Leena!
-        </h1>
+        <h1 className="text-lg md:text-xl lg:text-2xl font-medium">Good Morning Leena!</h1>
       </div>
       <div className="flex items-center gap-4">
         {!isMobile && (
@@ -79,34 +68,19 @@ export default function ParentHeader() {
             >
               Upload File <Plus size={16} />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground rounded-full"
-            >
+            <Button variant="ghost" size="icon" className="text-muted-foreground rounded-full">
               <MessageCircleMore className="h-5 w-5" size={20} />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground rounded-full"
-            >
+            <Button variant="ghost" size="icon" className="text-muted-foreground rounded-full">
               <BellDot className="h-5 w-5" size={20} />
             </Button>
           </>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-[#545454] hover:bg-[#efefef]"
-            >
+            <Button variant="ghost" size="icon" className="rounded-full text-[#545454] hover:bg-[#efefef]">
               <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src="https://avatar.iran.liara.run/public/37"
-                  alt="User"
-                />
+                <AvatarImage src="https://avatar.iran.liara.run/public/37" alt="User" />
                 <AvatarFallback>L</AvatarFallback>
               </Avatar>
               <span className="sr-only">User menu</span>
@@ -118,9 +92,7 @@ export default function ParentHeader() {
             {user && (
               <DropdownMenuItem className="flex flex-col items-start">
                 <span className="font-medium">
-                  {user.firstName
-                    ? `${user.firstName} ${user.lastName || ""}`
-                    : user.email}
+                  {user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.email}
                 </span>
                 <span className="text-xs text-[#858585]">{user.email}</span>
               </DropdownMenuItem>
@@ -133,9 +105,7 @@ export default function ParentHeader() {
               <Link href={getSettingsPath()}>Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
-              Sign out
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

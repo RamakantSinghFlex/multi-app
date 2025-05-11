@@ -1,90 +1,227 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Send, PlusCircle } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { toast } from "@/components/ui/use-toast"
+import { ChatConversationList } from "@/components/chat/chat-conversation-list"
+import { ChatMessage } from "@/components/chat/chat-message"
+import { ChatInput } from "@/components/chat/chat-input"
+import { NewConversationDialog } from "@/components/chat/new-conversation-dialog"
+import { getTwilioToken, getTwilioConversations } from "@/lib/api/twilio"
+import type { TwilioMessage, TwilioConversation } from "@/lib/types"
+import { Client as TwilioClient } from "twilio-chat"
 
 export default function StudentMessagesPage() {
   const { user } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null)
-  const [newMessage, setNewMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [conversations, setConversations] = useState<
+    Array<
+      TwilioConversation & {
+        displayName: string
+        avatar?: string
+        unread?: boolean
+        timestamp?: string
+      }
+    >
+  >([])
+  const [selectedConversationSid, setSelectedConversationSid] = useState<string | null>(null)
+  const [messages, setMessages] = useState<TwilioMessage[]>([])
+  const [twilioClient, setTwilioClient] = useState<any>(null)
+  const [currentConversation, setCurrentConversation] = useState<any>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Mock data for demonstration
-  const conversations = [
-    {
-      id: 1,
-      name: "John Smith",
-      role: "Tutor",
-      avatar: "/placeholder.svg?height=40&width=40&text=JS",
-      lastMessage: "When would you like to schedule our next session?",
-      timestamp: "10:30 AM",
-      unread: true,
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      role: "Tutor",
-      avatar: "/placeholder.svg?height=40&width=40&text=SJ",
-      lastMessage: "I've shared some practice problems for you to work on.",
-      timestamp: "Yesterday",
-      unread: false,
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      role: "Tutor",
-      avatar: "/placeholder.svg?height=40&width=40&text=MB",
-      lastMessage: "Great progress today! Keep up the good work.",
-      timestamp: "Monday",
-      unread: false,
-    },
-  ]
+  // Initialize Twilio client
+  useEffect(() => {
+    const initTwilio = async () => {
+      try {
+        setIsLoading(true)
 
-  const messages = [
-    {
-      id: 1,
-      conversationId: 1,
-      sender: "John Smith",
-      content: "Hi there! How are you doing with the homework I assigned?",
-      timestamp: "10:15 AM",
-      isSelf: false,
-    },
-    {
-      id: 2,
-      conversationId: 1,
-      sender: "You",
-      content: "I've completed most of it, but I'm stuck on problem #5.",
-      timestamp: "10:20 AM",
-      isSelf: true,
-    },
-    {
-      id: 3,
-      conversationId: 1,
-      sender: "John Smith",
-      content: "No problem, we can go over it in our next session. When would you like to schedule our next session?",
-      timestamp: "10:30 AM",
-      isSelf: false,
-    },
-  ]
+        // Get Twilio token
+        const tokenResponse = await getTwilioToken()
+        if (tokenResponse.error || !tokenResponse.data?.token) {
+          toast({
+            title: "Error",
+            description: tokenResponse.error || "Failed to get Twilio token",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
 
-  const filteredConversations = conversations.filter((conversation) =>
-    conversation.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+        // Initialize Twilio Chat client
+        const client = await TwilioClient.create(tokenResponse.data.token)
+        setTwilioClient(client)
 
-  const conversationMessages = messages.filter((message) => message.conversationId === selectedConversation)
+        // Get user's conversations
+        await loadConversations()
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return
-    // In a real app, you would send the message to the API
-    console.log("Sending message:", newMessage)
-    setNewMessage("")
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Error initializing Twilio:", error)
+        toast({
+          title: "Error",
+          description: "Failed to initialize chat. Please try again later.",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+      }
+    }
+
+    if (user) {
+      initTwilio()
+    }
+
+    return () => {
+      // Clean up Twilio client on unmount
+      if (twilioClient) {
+        twilioClient.shutdown()
+      }
+    }
+  }, [user])
+
+  // Load conversations
+  const loadConversations = async () => {
+    try {
+      const response = await getTwilioConversations()
+
+      if (response.error || !response.data?.conversations) {
+        toast({
+          title: "Error",
+          description: response.error || "Failed to load conversations",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Format conversations for display
+      const formattedConversations = response.data.conversations.map((conv) => ({
+        ...conv,
+        displayName: conv.friendlyName || "Unnamed Conversation",
+        timestamp: "Recently",
+        unread: false, // In a real app, you would determine this from the API
+      }))
+
+      setConversations(formattedConversations)
+
+      // Select the first conversation if none is selected
+      if (formattedConversations.length > 0 && !selectedConversationSid) {
+        handleSelectConversation(formattedConversations[0].sid)
+      }
+    } catch (error) {
+      console.error("Error loading conversations:", error)
+    }
   }
+
+  // Handle conversation selection
+  const handleSelectConversation = async (sid: string) => {
+    if (sid === selectedConversationSid) return
+
+    setSelectedConversationSid(sid)
+    setMessages([])
+    setIsLoadingMessages(true)
+
+    try {
+      // Get the conversation object from Twilio
+      if (twilioClient) {
+        const conversation = await twilioClient.getConversationBySid(sid)
+        setCurrentConversation(conversation)
+
+        // Load messages
+        const twilioMessages = await conversation.getMessages()
+        setMessages(
+          twilioMessages.items.map((item: any) => ({
+            sid: item.sid,
+            author: item.author,
+            body: item.body,
+            dateCreated: item.dateCreated.toISOString(),
+            media: item.media?.map((m: any) => ({
+              sid: m.sid,
+              contentType: m.contentType,
+              filename: m.filename,
+              size: m.size,
+              url: m.url,
+            })),
+          })),
+        )
+
+        // Subscribe to new messages
+        conversation.on("messageAdded", (message: any) => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              sid: message.sid,
+              author: message.author,
+              body: message.body,
+              dateCreated: message.dateCreated.toISOString(),
+              media: message.media?.map((m: any) => ({
+                sid: m.sid,
+                contentType: m.contentType,
+                filename: m.filename,
+                size: m.size,
+                url: m.url,
+              })),
+            },
+          ])
+          scrollToBottom()
+        })
+      }
+    } catch (error) {
+      console.error("Error selecting conversation:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load conversation messages",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingMessages(false)
+    }
+  }
+
+  // Send a message
+  const handleSendMessage = async (content: string, mediaSid?: string) => {
+    if (!currentConversation) return
+
+    try {
+      const messageOptions: any = {}
+
+      if (content.trim()) {
+        messageOptions.body = content
+      }
+
+      if (mediaSid) {
+        messageOptions.mediaSid = mediaSid
+      }
+
+      await currentConversation.sendMessage(messageOptions)
+    } catch (error) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Handle new conversation creation
+  const handleConversationCreated = (conversationSid: string) => {
+    loadConversations()
+    handleSelectConversation(conversationSid)
+  }
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   return (
     <div className="space-y-6 p-6">
@@ -95,124 +232,34 @@ export default function StudentMessagesPage() {
 
       <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">Conversations</CardTitle>
-              <Button variant="ghost" size="icon">
-                <PlusCircle className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="relative mt-2">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#858585]" />
-              <Input
-                type="search"
-                placeholder="Search conversations..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+          <CardHeader className="p-0">
+            {isLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#095d40]" />
+              </div>
+            ) : (
+              <ChatConversationList
+                conversations={conversations}
+                selectedConversationSid={selectedConversationSid}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={() => setIsNewConversationOpen(true)}
               />
-            </div>
+            )}
           </CardHeader>
-          <CardContent className="p-0">
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="unread">Unread</TabsTrigger>
-              </TabsList>
-              <TabsContent value="all" className="mt-0">
-                <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
-                  {filteredConversations.length > 0 ? (
-                    filteredConversations.map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-[#f4f4f4] ${
-                          selectedConversation === conversation.id ? "bg-[#f4f4f4]" : ""
-                        }`}
-                        onClick={() => setSelectedConversation(conversation.id)}
-                      >
-                        <Avatar>
-                          <AvatarImage src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
-                          <AvatarFallback>
-                            {conversation.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 overflow-hidden">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-medium">{conversation.name}</h3>
-                            <span className="text-xs text-[#858585]">{conversation.timestamp}</span>
-                          </div>
-                          <p className="truncate text-xs text-[#858585]">{conversation.lastMessage}</p>
-                        </div>
-                        {conversation.unread && (
-                          <div className="h-2 w-2 rounded-full bg-[#095d40]" aria-label="Unread message"></div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex h-32 items-center justify-center">
-                      <p className="text-[#858585]">No conversations found</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              <TabsContent value="unread" className="mt-0">
-                <div className="max-h-[calc(100vh-20rem)] overflow-y-auto">
-                  {filteredConversations.filter((c) => c.unread).length > 0 ? (
-                    filteredConversations
-                      .filter((c) => c.unread)
-                      .map((conversation) => (
-                        <div
-                          key={conversation.id}
-                          className={`flex cursor-pointer items-center gap-3 border-b p-3 transition-colors hover:bg-[#f4f4f4] ${
-                            selectedConversation === conversation.id ? "bg-[#f4f4f4]" : ""
-                          }`}
-                          onClick={() => setSelectedConversation(conversation.id)}
-                        >
-                          <Avatar>
-                            <AvatarImage src={conversation.avatar || "/placeholder.svg"} alt={conversation.name} />
-                            <AvatarFallback>
-                              {conversation.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-medium">{conversation.name}</h3>
-                              <span className="text-xs text-[#858585]">{conversation.timestamp}</span>
-                            </div>
-                            <p className="truncate text-xs text-[#858585]">{conversation.lastMessage}</p>
-                          </div>
-                          <div className="h-2 w-2 rounded-full bg-[#095d40]" aria-label="Unread message"></div>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="flex h-32 items-center justify-center">
-                      <p className="text-[#858585]">No unread messages</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
         </Card>
 
         <Card className="md:col-span-2">
-          {selectedConversation ? (
+          {selectedConversationSid ? (
             <>
               <CardHeader className="border-b pb-3">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage
-                      src={conversations.find((c) => c.id === selectedConversation)?.avatar || "/placeholder.svg"}
-                      alt={conversations.find((c) => c.id === selectedConversation)?.name || ""}
+                      src={conversations.find((c) => c.sid === selectedConversationSid)?.avatar || "/placeholder.svg"}
+                      alt={conversations.find((c) => c.sid === selectedConversationSid)?.displayName || ""}
                     />
                     <AvatarFallback>
-                      {(conversations.find((c) => c.id === selectedConversation)?.name || "")
+                      {(conversations.find((c) => c.sid === selectedConversationSid)?.displayName || "")
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -220,44 +267,47 @@ export default function StudentMessagesPage() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-sm font-medium">
-                      {conversations.find((c) => c.id === selectedConversation)?.name}
+                      {conversations.find((c) => c.sid === selectedConversationSid)?.displayName}
                     </CardTitle>
-                    <p className="text-xs text-[#858585]">
-                      {conversations.find((c) => c.id === selectedConversation)?.role}
-                    </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="flex h-[calc(100vh-25rem)] flex-col justify-between p-0">
                 <div className="flex-1 overflow-y-auto p-4">
-                  {conversationMessages.map((message) => (
-                    <div key={message.id} className={`mb-4 flex ${message.isSelf ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          message.isSelf ? "bg-[#095d40] text-white" : "bg-[#f4f4f4] text-[#000000]"
-                        }`}
-                      >
-                        <p>{message.content}</p>
-                        <p className={`mt-1 text-right text-xs ${message.isSelf ? "text-white/70" : "text-[#858585]"}`}>
-                          {message.timestamp}
-                        </p>
-                      </div>
+                  {isLoadingMessages ? (
+                    <div className="flex h-full items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#095d40]" />
                     </div>
-                  ))}
+                  ) : messages.length > 0 ? (
+                    messages.map((message) => (
+                      <ChatMessage
+                        key={message.sid}
+                        message={message}
+                        isCurrentUser={message.author === user?.id.toString()}
+                        userName={
+                          message.author === user?.id.toString()
+                            ? `${user.firstName} ${user.lastName}`
+                            : conversations.find((c) => c.sid === selectedConversationSid)?.displayName
+                        }
+                        userAvatar={
+                          message.author === user?.id.toString()
+                            ? "/placeholder.svg"
+                            : conversations.find((c) => c.sid === selectedConversationSid)?.avatar
+                        }
+                      />
+                    ))
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-[#858585]">No messages yet. Start the conversation!</p>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-                <div className="border-t p-3">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    />
-                    <Button size="icon" onClick={handleSendMessage} className="bg-[#095d40] hover:bg-[#02342e]">
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  conversationSid={selectedConversationSid}
+                  disabled={!currentConversation}
+                />
               </CardContent>
             </>
           ) : (
@@ -270,6 +320,12 @@ export default function StudentMessagesPage() {
           )}
         </Card>
       </div>
+
+      <NewConversationDialog
+        open={isNewConversationOpen}
+        onOpenChange={setIsNewConversationOpen}
+        onConversationCreated={handleConversationCreated}
+      />
     </div>
   )
 }

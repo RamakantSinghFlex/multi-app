@@ -2,15 +2,15 @@
 
 import { AppointmentPaymentStatus } from "@/components/appointment/appointment-payment"
 import { useRouter } from "next/navigation"
-import { useUser } from "@clerk/nextjs"
+import { useAuth } from "@/lib/auth-context"
 import { useEffect } from "react"
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
-  const { user, isLoaded } = useUser()
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
-    if (isLoaded) {
+    if (!isLoading) {
       if (!user || !user.roles || user.roles.length === 0) {
         // Fallback if no user or roles
         router.push("/")
@@ -18,9 +18,8 @@ export default function PaymentSuccessPage() {
       }
 
       const userRole = user.roles[0]
-      router.push(`/${userRole}`)
     }
-  }, [user, isLoaded, router])
+  }, [user, isLoading, router])
 
   return (
     <div className="container max-w-md mx-auto py-12">
