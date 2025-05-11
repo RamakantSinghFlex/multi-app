@@ -52,11 +52,6 @@ export default function ModernSidebar({ role }: SidebarProps) {
         icon: Home,
       },
       {
-        title: "Students",
-        href: `/${role}/students`,
-        icon: Users,
-      },
-      {
         title: "Appointments",
         href: `/${role}/appointments`,
         icon: Calendar,
@@ -66,26 +61,73 @@ export default function ModernSidebar({ role }: SidebarProps) {
         href: `/${role}/messages`,
         icon: MessageSquare,
       },
-      {
-        title: "Materials",
-        href: `/${role}/materials`,
-        icon: BookOpen,
-      },
-      {
-        title: "Documents",
-        href: `/${role}/documents`,
-        icon: FileText,
-      },
     ]
 
     // Add role-specific items
-    if (role === "parent") {
+    if (role === "student") {
       return [
         ...commonItems,
+        {
+          title: "Materials",
+          href: `/${role}/materials`,
+          icon: BookOpen,
+        },
+        {
+          title: "Documents",
+          href: `/${role}/documents`,
+          icon: FileText,
+        },
+        {
+          title: "Progress",
+          href: `/${role}/progress`,
+          icon: CreditCard,
+        },
+      ]
+    } else if (role === "parent") {
+      return [
+        ...commonItems,
+        {
+          title: "Students",
+          href: `/${role}/students`,
+          icon: Users,
+        },
         {
           title: "Billing",
           href: `/${role}/billing`,
           icon: CreditCard,
+        },
+      ]
+    } else if (role === "tutor") {
+      return [
+        ...commonItems,
+        {
+          title: "Students",
+          href: `/${role}/students`,
+          icon: Users,
+        },
+        {
+          title: "Materials",
+          href: `/${role}/materials`,
+          icon: BookOpen,
+        },
+        {
+          title: "Documents",
+          href: `/${role}/documents`,
+          icon: FileText,
+        },
+      ]
+    } else if (role === "admin") {
+      return [
+        ...commonItems,
+        {
+          title: "Users",
+          href: `/${role}/users`,
+          icon: Users,
+        },
+        {
+          title: "Reports",
+          href: `/${role}/reports`,
+          icon: FileText,
         },
       ]
     }

@@ -1,21 +1,47 @@
 import { NextResponse } from "next/server"
 import twilio from "twilio"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { cookies } from "next/headers"
+import jwt from "jsonwebtoken"
 
 // Initialize Twilio client
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
 
-// GET handler to retrieve all conversations for the current user
-export async function GET() {
+// Helper function to get the authenticated user from the token
+async function getAuthenticatedUser(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    // Get the token from cookies
+    const cookieStore = cookies()
+    const token = cookieStore.get("milestone-token")?.value
 
-    if (!session?.user) {
+    if (!token) {
+      return null
+    }
+
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as { id: string; email: string }
+
+    if (!decoded || !decoded.id) {
+      return null
+    }
+
+    return { id: decoded.id, email: decoded.email }
+  } catch (error) {
+    console.error("Authentication error:", error)
+    return null
+  }
+}
+
+// GET handler to retrieve all conversations for the current user
+export async function GET(request: Request) {
+  try {
+    // Get the authenticated user
+    const user = await getAuthenticatedUser(request)
+
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = session.user.id
+    const userId = user.id
     const identity = userId.toString()
 
     // Get all conversations the user participates in
@@ -57,9 +83,10 @@ export async function GET() {
 // POST handler to create a new conversation
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    // Get the authenticated user
+    const user = await getAuthenticatedUser(request)
 
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -73,7 +100,7 @@ export async function POST(request: Request) {
     // Add the current user as a participant
     await twilioClient.conversations.v1
       .conversations(conversation.sid)
-      .participants.create({ identity: session.user.id.toString() })
+      .participants.create({ identity: user.id.toString() })
 
     // Add other participants
     for (const participant of participants) {

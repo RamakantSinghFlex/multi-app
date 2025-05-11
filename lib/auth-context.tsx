@@ -265,6 +265,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ensure token is stored in localStorage
       if (response.data.token && typeof window !== "undefined") {
         localStorage.setItem("milestone-token", response.data.token)
+
+        // Add this code to store the user ID directly
+        if (response.data.user && response.data.user.id) {
+          localStorage.setItem("milestone-user-id", response.data.user.id.toString())
+          // Also set the global variable
+          if (typeof window !== "undefined") {
+            // @ts-ignore - Adding a global variable for fallback authentication
+            window.__MILESTONE_USER_ID = response.data.user.id.toString()
+          }
+        }
       }
 
       // Normalize user data to ensure roles is an array
@@ -278,6 +288,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           message: response.data.message || "Login successful!",
         },
       })
+
+      // Add this code to make the user ID globally available for fallbacks
+      if (typeof window !== "undefined" && userData && userData.id) {
+        // @ts-ignore - Adding a global variable for fallback authentication
+        window.__MILESTONE_USER_ID = userData.id
+      }
+
+      // Add this code after the user is successfully authenticated
+      // This could be in a login function or useEffect that runs after authentication
+      const storeUserRelationships = (userData: any) => {
+        if (!userData) return
+
+        try {
+          // Extract relationships based on user role
+          const relationships: Record<string, any[]> = {
+            tutors: [],
+            students: [],
+            parents: [],
+          }
+
+          // Store relationships based on user data
+          if (userData.tutors) relationships.tutors = userData.tutors
+          if (userData.students) relationships.students = userData.students
+          if (userData.parents) relationships.parents = userData.parents
+          if (userData.children) relationships.students = [...relationships.students, ...userData.children]
+
+          // Store in localStorage for easy access
+          localStorage.setItem("userRelationships", JSON.stringify(relationships))
+          console.log("User relationships stored in local storage")
+        } catch (error) {
+          console.error("Error storing user relationships:", error)
+        }
+      }
+
+      storeUserRelationships(userData)
 
       // Redirect based on user roles
       if (userData.roles && userData.roles.length > 0) {
@@ -360,6 +405,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // First, clear all user data from browser storage
       // Do this before API call to ensure data is cleared even if API fails
       clearAllUserData()
+      if (typeof window !== "undefined") {
+        // @ts-ignore - Clear the global user ID
+        window.__MILESTONE_USER_ID = null
+      }
 
       // Then attempt to notify the server
       const token = typeof window !== "undefined" ? localStorage.getItem("milestone-token") : null
@@ -396,6 +445,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           type: "LOGOUT_SUCCESS",
           payload: "Logged out successfully.",
         })
+      }
+
+      // Add this code to remove the user ID
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("milestone-user-id")
+        // @ts-ignore - Clear the global user ID
+        window.__MILESTONE_USER_ID = null
       }
 
       // Use setTimeout to ensure state updates before navigation

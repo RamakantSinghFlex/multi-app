@@ -57,8 +57,30 @@ export interface BaseUser {
 }
 
 // User Types
-export interface User extends BaseUser {
-  // Additional user properties can be added here
+export interface RelatedUser {
+  id: string
+  firstName?: string
+  lastName?: string
+  email: string
+  roles: string[]
+  tutors?: User[]
+  parents?: User[]
+  students?: User[]
+  children?: User[]
+}
+
+// Update the User interface to include relationship fields
+export interface User {
+  id: string
+  firstName?: string
+  lastName?: string
+  email: string
+  role?: string
+  roles?: string[]
+  tutors?: User[]
+  parents?: User[]
+  students?: User[]
+  children?: User[]
   _verified?: boolean
 }
 

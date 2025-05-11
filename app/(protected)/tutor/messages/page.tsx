@@ -47,7 +47,7 @@ interface User {
   role?: string
 }
 
-export default function StudentMessagesPage() {
+export default function TutorMessagesPage() {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -349,14 +349,14 @@ export default function StudentMessagesPage() {
 
       if (storedRelationships) {
         const relationships = JSON.parse(storedRelationships)
-        // Filter for tutors and parents only for student view
-        relatedUsers = [...(relationships.tutors || []), ...(relationships.parents || [])]
+        // Filter for students and parents only for tutor view
+        relatedUsers = [...(relationships.students || []), ...(relationships.parents || [])]
       } else {
         // Fallback mock data if no relationships found
         relatedUsers = [
-          { id: "user1", firstName: "John", lastName: "Smith", email: "john@example.com", role: "Tutor" },
-          { id: "user2", firstName: "Sarah", lastName: "Johnson", email: "sarah@example.com", role: "Parent" },
-          { id: "user3", firstName: "Michael", lastName: "Brown", email: "michael@example.com", role: "Tutor" },
+          { id: "user1", firstName: "Alex", lastName: "Johnson", email: "alex@example.com", role: "Student" },
+          { id: "user2", firstName: "Maria", lastName: "Garcia", email: "maria@example.com", role: "Parent" },
+          { id: "user3", firstName: "David", lastName: "Wilson", email: "david@example.com", role: "Student" },
         ]
       }
 
@@ -449,7 +449,7 @@ export default function StudentMessagesPage() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Messages</h1>
-        <p className="text-[#858585]">Communicate with your tutors and parents</p>
+        <p className="text-[#858585]">Communicate with students and parents</p>
       </div>
 
       <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
