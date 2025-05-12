@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import twilio from "twilio"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { getToken } from "@/lib/api-utils"
 
 // Initialize Twilio client
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
@@ -9,9 +8,9 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 // GET handler to retrieve messages for a specific conversation
 export async function GET(request: Request, { params }: { params: { sid: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const token = getToken()
 
-    if (!session?.user) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -52,10 +51,19 @@ export async function GET(request: Request, { params }: { params: { sid: string 
 // POST handler to send a message to a conversation
 export async function POST(request: Request, { params }: { params: { sid: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const token = getToken()
 
-    if (!session?.user) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Extract user ID from the request or token
+    // This assumes the token contains or can derive a user ID
+    // You may need to adjust this based on your token structure
+    const userId = typeof window !== "undefined" ? localStorage.getItem("milestone-user-id") : null
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID not found" }, { status: 401 })
     }
 
     const conversationSid = params.sid
@@ -63,7 +71,7 @@ export async function POST(request: Request, { params }: { params: { sid: string
 
     // Create message options
     const messageOptions: any = {
-      author: session.user.id.toString(),
+      author: userId.toString(),
       body: body || "",
     }
 
