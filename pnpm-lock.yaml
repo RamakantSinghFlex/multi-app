@@ -103,7 +103,7 @@ importers:
         version: 2.20.7(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.28.1)(vite@6.3.2(@types/node@22.13.17)(jiti@1.21.7)(yaml@2.7.1)))(svelte@5.28.1)(vite@6.3.2(@types/node@22.13.17)(jiti@1.21.7)(yaml@2.7.1))
       '@twilio/conversations':
         specifier: ^2.6.2
-        version: 2.6.2
+        version: 2.6.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.5.0(@remix-run/react@2.16.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@sveltejs/kit@2.20.7(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.28.1)(vite@6.3.2(@types/node@22.13.17)(jiti@1.21.7)(yaml@2.7.1)))(svelte@5.28.1)(vite@6.3.2(@types/node@22.13.17)(jiti@1.21.7)(yaml@2.7.1)))(next@15.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(svelte@5.28.1)(vue-router@4.5.0(vue@3.5.13(typescript@5.8.2)))(vue@3.5.13(typescript@5.8.2))
@@ -113,6 +113,9 @@ importers:
       bson:
         specifier: latest
         version: 6.10.3
+      bufferutil:
+        specifier: ^4.0.9
+        version: 4.0.9
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -139,7 +142,7 @@ importers:
         version: 1.4.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       isomorphic-dompurify:
         specifier: latest
-        version: 2.23.0
+        version: 2.23.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@19.1.0)
@@ -185,6 +188,12 @@ importers:
       twilio:
         specifier: ^5.6.0
         version: 5.6.0
+      twilsock:
+        specifier: ^0.13.9
+        version: 0.13.9(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      utf-8-validate:
+        specifier: ^6.0.5
+        version: 6.0.5
       vaul:
         specifier: ^0.9.6
         version: 0.9.9(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1989,6 +1998,10 @@ packages:
   buffer-equal-constant-time@1.0.1:
     resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
 
+  bufferutil@4.0.9:
+    resolution: {integrity: sha512-WDtdLmJvAuNNPzByAYpRo2rF1Mmradw6gvWsQKf63476DDXmomT9zUiGypLcG4ibIM67vhAj8jJRdbmEws2Aqw==}
+    engines: {node: '>=6.14.2'}
+
   busboy@1.6.0:
     resolution: {integrity: sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==}
     engines: {node: '>=10.16.0'}
@@ -3204,6 +3217,10 @@ packages:
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
+
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
@@ -3922,6 +3939,10 @@ packages:
     resolution: {integrity: sha512-7G59f2TCEnxcY2ZBCzaZOPmMDoxDrK9lMTiA7UvuiKca37Dljbdlu2EHI3+d7gU1JHkH5GNCmyxqJzSbZodwXA==}
     engines: {node: '>=14'}
 
+  twilsock@0.13.9:
+    resolution: {integrity: sha512-6RXoFojAZrbjQngeh4pTeUN98JfdQAKfx634FdqIRY02kTidkarZvQiQ3OPt9a+FNR0U1DSzcsMDV1+gaFZogw==}
+    engines: {node: '>=14'}
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -3998,6 +4019,10 @@ packages:
     resolution: {integrity: sha512-Rb46I4cGGVBmjamjphe8L/UnvJD+uPPtTkNvX5mZgqdbavhI4EbgIWJiIHXJ8bc/i9EQGPRh4DwEURJ552Do0A==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  utf-8-validate@6.0.5:
+    resolution: {integrity: sha512-EYZR+OpIXp9Y1eG1iueg8KRsY8TuT8VNgnanZ0uA3STqhHQTLwbl+WX76/9X5OY12yQubymBpaBSmMPkSTQcKA==}
+    engines: {node: '>=6.14.2'}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -5407,13 +5432,13 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@twilio/conversations@2.6.2':
+  '@twilio/conversations@2.6.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
       '@babel/runtime': 7.27.0
       '@twilio/declarative-type-validator': 0.2.10
       '@twilio/deprecation-decorator': 0.2.8
       '@twilio/mcs-client': 0.6.10
-      '@twilio/notifications': 2.0.9
+      '@twilio/notifications': 2.0.9(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       '@twilio/operation-retrier': 4.0.18
       '@twilio/replay-event-emitter': 0.3.10
       core-js: 3.42.0
@@ -5423,8 +5448,8 @@ snapshots:
       loglevel: 1.9.2
       platform: 1.3.6
       quick-lru: 5.1.1
-      twilio-sync: 3.1.0
-      twilsock: 0.12.2
+      twilio-sync: 3.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      twilsock: 0.12.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       uuid: 3.4.0
       xmlhttprequest: 1.8.0
     transitivePeerDependencies:
@@ -5456,14 +5481,14 @@ snapshots:
       loglevel: 1.9.2
       xmlhttprequest: 1.8.0
 
-  '@twilio/notifications@2.0.9':
+  '@twilio/notifications@2.0.9(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
       '@babel/runtime': 7.27.0
       '@twilio/declarative-type-validator': 0.2.10
       '@twilio/operation-retrier': 4.0.18
       core-js: 3.42.0
       loglevel: 1.9.2
-      twilsock: 0.12.2
+      twilsock: 0.12.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       uuid: 3.4.0
     transitivePeerDependencies:
       - bufferutil
@@ -5908,6 +5933,10 @@ snapshots:
 
   buffer-equal-constant-time@1.0.1: {}
 
+  bufferutil@4.0.9:
+    dependencies:
+      node-gyp-build: 4.8.4
+
   busboy@1.6.0:
     dependencies:
       streamsearch: 1.1.0
@@ -6350,8 +6379,8 @@ snapshots:
       '@typescript-eslint/parser': 8.31.1(eslint@8.57.1)(typescript@5.8.2)
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0)(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.2.0(eslint@8.57.1)
@@ -6374,7 +6403,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0)(eslint@8.57.1):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.0
@@ -6385,22 +6414,22 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.2
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.31.1(eslint@8.57.1)(typescript@5.8.2)
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0)(eslint@8.57.1)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -6411,7 +6440,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.31.1(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -6979,10 +7008,10 @@ snapshots:
 
   iso8601-duration@1.2.0: {}
 
-  isomorphic-dompurify@2.23.0:
+  isomorphic-dompurify@2.23.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       dompurify: 3.2.5
-      jsdom: 26.1.0
+      jsdom: 26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - canvas
@@ -7022,7 +7051,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@26.1.0:
+  jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       cssstyle: 4.3.1
       data-urls: 5.0.0
@@ -7042,7 +7071,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
-      ws: 8.18.1
+      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -7284,6 +7313,8 @@ snapshots:
     dependencies:
       lower-case: 2.0.2
       tslib: 2.8.1
+
+  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.19: {}
 
@@ -8083,7 +8114,7 @@ snapshots:
 
   turbo-stream@2.4.0: {}
 
-  twilio-sync@3.1.0:
+  twilio-sync@3.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       '@babel/runtime': 7.27.0
       '@twilio/declarative-type-validator': 0.1.11
@@ -8092,7 +8123,7 @@ snapshots:
       iso8601-duration: 1.2.0
       loglevel: 1.9.2
       platform: 1.3.6
-      twilsock: 0.12.2
+      twilsock: 0.12.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       uuid: 3.4.0
     transitivePeerDependencies:
       - bufferutil
@@ -8111,7 +8142,7 @@ snapshots:
       - debug
       - supports-color
 
-  twilsock@0.12.2:
+  twilsock@0.12.2(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       '@babel/runtime': 7.27.0
       '@twilio/declarative-type-validator': 0.1.11
@@ -8122,7 +8153,23 @@ snapshots:
       loglevel: 1.9.2
       platform: 1.3.6
       uuid: 3.4.0
-      ws: 5.2.4
+      ws: 5.2.4(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  twilsock@0.13.9(bufferutil@4.0.9)(utf-8-validate@6.0.5):
+    dependencies:
+      '@babel/runtime': 7.27.0
+      '@twilio/declarative-type-validator': 0.2.10
+      '@twilio/operation-retrier': 4.0.18
+      core-js: 3.42.0
+      iso8601-duration: 1.2.0
+      javascript-state-machine: 3.1.0
+      loglevel: 1.9.2
+      platform: 1.3.6
+      uuid: 3.4.0
+      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -8229,6 +8276,10 @@ snapshots:
   use-sync-external-store@1.5.0(react@19.1.0):
     dependencies:
       react: 19.1.0
+
+  utf-8-validate@6.0.5:
+    dependencies:
+      node-gyp-build: 4.8.4
 
   util-deprecate@1.0.2: {}
 
@@ -8377,11 +8428,17 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@5.2.4:
+  ws@5.2.4(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       async-limiter: 1.0.1
+    optionalDependencies:
+      bufferutil: 4.0.9
+      utf-8-validate: 6.0.5
 
-  ws@8.18.1: {}
+  ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@6.0.5):
+    optionalDependencies:
+      bufferutil: 4.0.9
+      utf-8-validate: 6.0.5
 
   xml-name-validator@5.0.0: {}
 
