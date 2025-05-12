@@ -3,22 +3,32 @@ import type { ApiResponse, Message, Conversation } from "../types"
 import { API_URL } from "../config"
 
 // Get messages for a conversation
-export async function getMessages(conversationId: string, page = 1, limit = 50): Promise<ApiResponse<Message[]>> {
+export async function getMessages(
+  conversationId: string,
+  page = 1,
+  limit = 50
+): Promise<ApiResponse<Message[]>> {
   try {
     const queryString = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     }).toString()
 
-    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages?${queryString}`, {
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
+    const response = await fetch(
+      `${API_URL}/conversations/${conversationId}/messages?${queryString}`,
+      {
+        headers: createAuthHeaders(false),
+        credentials: "include",
+      }
+    )
 
     return await handleResponse<Message[]>(response)
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching messages",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while fetching messages",
     }
   }
 }
@@ -27,20 +37,26 @@ export async function getMessages(conversationId: string, page = 1, limit = 50):
 export async function sendMessage(
   conversationId: string,
   content: string,
-  isSensitive = false,
+  isSensitive = false
 ): Promise<ApiResponse<Message>> {
   try {
-    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
-      method: "POST",
-      headers: createAuthHeaders(),
-      body: JSON.stringify({ content, isSensitive }),
-      credentials: "include",
-    })
+    const response = await fetch(
+      `${API_URL}/conversations/${conversationId}/messages`,
+      {
+        method: "POST",
+        headers: createAuthHeaders(),
+        body: JSON.stringify({ content, isSensitive }),
+        credentials: "include",
+      }
+    )
 
     return await handleResponse<Message>(response)
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while sending message",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while sending message",
     }
   }
 }
@@ -48,14 +64,17 @@ export async function sendMessage(
 // Delete a message
 export async function deleteMessage(
   conversationId: string,
-  messageId: string,
+  messageId: string
 ): Promise<ApiResponse<{ success: boolean }>> {
   try {
-    const response = await fetch(`${API_URL}/conversations/${conversationId}/messages/${messageId}`, {
-      method: "DELETE",
-      headers: createAuthHeaders(false),
-      credentials: "include",
-    })
+    const response = await fetch(
+      `${API_URL}/conversations/${conversationId}/messages/${messageId}`,
+      {
+        method: "DELETE",
+        headers: createAuthHeaders(false),
+        credentials: "include",
+      }
+    )
 
     return await handleResponse<{ success: boolean }>(response)
   } catch (error) {
@@ -69,7 +88,10 @@ export async function deleteMessage(
 }
 
 // Get conversations
-export async function getConversations(page = 1, limit = 10): Promise<ApiResponse<Conversation[]>> {
+export async function getConversations(
+  page = 1,
+  limit = 10
+): Promise<ApiResponse<Conversation[]>> {
   try {
     const queryString = new URLSearchParams({
       page: page.toString(),
@@ -84,13 +106,18 @@ export async function getConversations(page = 1, limit = 10): Promise<ApiRespons
     return await handleResponse<Conversation[]>(response)
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while fetching conversations",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while fetching conversations",
     }
   }
 }
 
 // Get conversation by ID
-export async function getConversation(id: string): Promise<ApiResponse<Conversation>> {
+export async function getConversation(
+  id: string
+): Promise<ApiResponse<Conversation>> {
   try {
     const response = await fetch(`${API_URL}/conversations/${id}`, {
       headers: createAuthHeaders(false),
@@ -101,13 +128,18 @@ export async function getConversation(id: string): Promise<ApiResponse<Conversat
   } catch (error) {
     return {
       error:
-        error instanceof Error ? error.message : `An unknown error occurred while fetching conversation with ID ${id}`,
+        error instanceof Error
+          ? error.message
+          : `An unknown error occurred while fetching conversation with ID ${id}`,
     }
   }
 }
 
 // Create a new conversation
-export async function createConversation(participants: string[], title?: string): Promise<ApiResponse<Conversation>> {
+export async function createConversation(
+  participants: string[],
+  title?: string
+): Promise<ApiResponse<Conversation>> {
   try {
     const response = await fetch(`${API_URL}/conversations`, {
       method: "POST",
@@ -119,7 +151,10 @@ export async function createConversation(participants: string[], title?: string)
     return await handleResponse<Conversation>(response)
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "An unknown error occurred while creating conversation",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while creating conversation",
     }
   }
 }
@@ -142,8 +177,9 @@ function getUserId(): string | null {
     }
 
     // If not found, try to get from auth context global variable
-    if (window.__MILESTONE_USER_ID) {
-      return window.__MILESTONE_USER_ID
+         //@ts-ignore
+    if (window.MILESTONE_USER_ID) {
+      return window.MILESTONE_USER_ID ?? null
     }
 
     // Try to get from userRelationships
@@ -153,7 +189,10 @@ function getUserId(): string | null {
       const relationships = JSON.parse(relationshipsStr)
       // Look for an ID in any of the arrays
       for (const key in relationships) {
-        if (Array.isArray(relationships[key]) && relationships[key].length > 0) {
+        if (
+          Array.isArray(relationships[key]) &&
+          relationships[key].length > 0
+        ) {
           const firstItem = relationships[key][0]
           if (firstItem && firstItem.id) return firstItem.id
         }
@@ -181,13 +220,47 @@ function getUserId(): string | null {
   return null
 }
 
-export async function getTwilioToken() {
+declare global {
+  interface Window {
+    MILESTONE_USER_ID?: string;
+  }
+}
+
+export async function getTwilioToken(retryCount = 0) {
   try {
     // Get the auth token from localStorage
     const token = localStorage.getItem("milestone-token")
 
     // Get user ID using our helper function
     const userId = getUserId()
+
+    if (!userId) {
+      console.error("No user ID available for Twilio token request")
+      throw new Error("User authentication required to use chat features")
+    }
+
+    // Maximum retries to avoid infinite loop
+    const MAX_RETRIES = 3
+    if (retryCount > MAX_RETRIES) {
+      console.error(
+        `Max retry count (${MAX_RETRIES}) reached for Twilio token request`
+      )
+      throw new Error(
+        "Failed to get a valid Twilio token after multiple attempts"
+      )
+    }
+
+    // Clear any cached tokens to ensure we get a fresh one
+    if (retryCount > 0) {
+      console.log(
+        `Retry attempt ${retryCount} for Twilio token, clearing any cached data`
+      )
+      // Add a timestamp to prevent browser caching
+      localStorage.setItem("twilio-token-timestamp", Date.now().toString())
+
+      // Add a small delay between retries with exponential backoff
+      await new Promise((resolve) => setTimeout(resolve, retryCount * 1000))
+    }
 
     // Build the URL with fallback userId
     let url = "/api/twilio-token"
@@ -202,24 +275,75 @@ export async function getTwilioToken() {
 
     console.log("Requesting Twilio token with:", {
       hasToken: !!token,
-      hasUserId: !!userId,
+      userId: userId, // Log the actual userId for debugging
       url,
+      retryCount,
     })
+
+    // Include cache control headers to prevent caching
+    headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    headers["Pragma"] = "no-cache"
 
     const response = await fetch(url, {
       method: "GET",
       headers,
+      cache: "no-store", // Ensures fresh request
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(`Failed to get Twilio token: ${response.statusText}. ${errorData.error || ""}`)
+
+      // If we got a 403 or 401, retry with a fresh request
+      if (
+        (response.status === 403 || response.status === 401) &&
+        retryCount < MAX_RETRIES
+      ) {
+        console.log(
+          `Got ${response.status} error, attempting retry #${retryCount + 1}`
+        )
+        return getTwilioToken(retryCount + 1)
+      }
+
+      throw new Error(
+        `Failed to get Twilio token: ${response.statusText}. ${errorData.error || ""}`
+      )
     }
 
     const data = await response.json()
+
+    // Validate token
+    if (!data.token) {
+      // If no token returned, try again
+      if (retryCount < MAX_RETRIES) {
+        console.log("Empty token response, retrying...")
+        return getTwilioToken(retryCount + 1)
+      }
+      throw new Error("Twilio token response is empty")
+    }
+
+    // Store identity from response if available
+    if (data.identity) {
+      localStorage.setItem("twilio-chat-identity", data.identity)
+    }
+
     return data.token
   } catch (error) {
     console.error("Error getting Twilio token:", error)
+
+    // If we encounter a specific error that might benefit from retry
+    if (
+      error instanceof Error &&
+      (error.message.includes("403") ||
+        error.message.includes("401") ||
+        error.message.includes("SyncError")) &&
+      retryCount < 3
+    ) {
+      console.log(
+        `Error suggests auth issue, will retry. Error: ${error.message}`
+      )
+      return getTwilioToken(retryCount + 1)
+    }
+
     throw error
   }
 }

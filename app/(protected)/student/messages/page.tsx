@@ -10,9 +10,20 @@ import { useAuth } from "@/lib/auth-context"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Client } from "@twilio/conversations"
 import { getTwilioToken } from "@/lib/api/messages"
 
@@ -65,19 +76,86 @@ export default function StudentMessagesPage() {
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
-
   // Initialize Twilio client
   const initializeTwilioClient = async () => {
     try {
       setIsLoading(true)
 
-      // Get the token using our helper function
-      const token = await getTwilioToken()
-      console.log("Got Twilio token successfully")
+      // Shutdown existing client if it exists
+      if (twilioClient) {
+        try {
+          console.log("Shutting down existing Twilio client")
+          await twilioClient.shutdown()
+        } catch (shutdownError) {
+          console.warn("Error shutting down Twilio client:", shutdownError)
+        }
+      }
 
-      // Initialize the client with the token - using the exact pattern from the docs
+      // Get a fresh token using our helper function
+      const token = await getTwilioToken()
+      console.log("Got Twilio token successfully") // Initialize the client with the token - using the exact pattern from the docs
       if (typeof window !== "undefined") {
-        const client = new Client(token)
+        // Add configuration options to help with Sync errors
+        const clientOptions = {
+          logLevel: "info" as const, // Type assertion for TypeScript
+          connectionRetryOptions: {
+            maxAttempts: 5,
+            initialDelay: 1000,
+            maxDelay: 8000,
+          },
+        }
+
+        // Create client with options
+        const client = new Client(token, clientOptions)
+
+        // Set up global error handlers
+        client.on("tokenAboutToExpire", async () => {
+          console.log("Token about to expire, refreshing...")
+          try {
+            const newToken = await getTwilioToken()
+            client.updateToken(newToken)
+          } catch (err) {
+            console.error("Error refreshing token:", err)
+          }
+        })
+
+        client.on("tokenExpired", async () => {
+          console.log("Token expired, refreshing...")
+          try {
+            const newToken = await getTwilioToken()
+            client.updateToken(newToken)
+          } catch (err) {
+            console.error("Error refreshing token:", err)
+            // If token refresh fails, we may need to reinitialize the client
+            initializeTwilioClient()
+          }
+        }) // Add explicit error handlers for Sync errors
+        client.on("error", (error) => {
+          console.error("Twilio client encountered an error:", error)
+
+          // Check if this is a sync error (most common for 403 forbidden errors)
+          if (
+            error.name === "SyncError" ||
+            (error.message && error.message.includes("403"))
+          ) {
+            console.log(
+              "Detected Twilio SyncError (403 forbidden). Attempting recovery..."
+            )
+
+            // Show user friendly message
+            toast({
+              title: "Connection Issue",
+              description: "Reconnecting to chat service...",
+              variant: "default",
+            })
+
+            // Try to recover by reinitializing
+            setTimeout(() => {
+              initializeTwilioClient()
+            }, 3000)
+          }
+        })
+
         console.log("Created Twilio client instance")
         setTwilioClient(client)
         setIsLoading(false)
@@ -91,7 +169,6 @@ export default function StudentMessagesPage() {
       return null
     }
   }
-
   useEffect(() => {
     const initTwilio = async () => {
       try {
@@ -102,11 +179,34 @@ export default function StudentMessagesPage() {
         const client = await initializeTwilioClient()
 
         if (client) {
-          console.log("Twilio client initialized successfully")
-
-          // Set up event listeners
+          console.log("Twilio client initialized successfully") // Set up event listeners with enhanced error handling
           client.on("connectionStateChanged", (state: string) => {
-            console.log("Twilio connection state:", state)
+            console.log("Twilio connection state changed:", state)
+            if (state === "connecting") {
+              // Connection is being established
+              console.log("Attempting to establish connection...")
+            } else if (state === "connected") {
+              // Successfully connected
+              console.log("Successfully connected to Twilio")
+            } else if (state === "disconnected") {
+              // Disconnected from the service
+              console.log("Disconnected from Twilio service")
+            } else if (state === "denied") {
+              // Connection was denied
+              console.error("Connection to Twilio was denied")
+              toast({
+                title: "Connection Error",
+                description: "Chat connection was denied. Please try again.",
+                variant: "destructive",
+              })
+            } else if (state === "error") {
+              // Connection encountered an error
+              console.error("Twilio connection error occurred")
+              // Attempt to recover with a fresh token
+              setTimeout(() => {
+                initializeTwilioClient()
+              }, 2000)
+            }
           })
 
           client.on("conversationAdded", (conversation: any) => {
@@ -142,6 +242,9 @@ export default function StudentMessagesPage() {
         twilioClient.shutdown()
       }
     }
+    // We're intentionally not including initializeTwilioClient, loadConversations, and twilioClient
+    // in the dependency array to avoid re-initializing when these functions change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   // Load conversations
@@ -150,16 +253,19 @@ export default function StudentMessagesPage() {
       console.log("Loading conversations")
       const subscribedConversations = await client.getSubscribedConversations()
 
-      const formattedConversations = subscribedConversations.items.map((conv: any) => ({
-        sid: conv.sid,
-        friendlyName: conv.friendlyName || "Unnamed Conversation",
-        dateUpdated: conv.dateUpdated,
-        unreadMessagesCount: conv.unreadMessagesCount,
-      }))
+      const formattedConversations = subscribedConversations.items.map(
+        (conv: any) => ({
+          sid: conv.sid,
+          friendlyName: conv.friendlyName || "Unnamed Conversation",
+          dateUpdated: conv.dateUpdated,
+          unreadMessagesCount: conv.unreadMessagesCount,
+        })
+      )
 
       // Sort by most recent
       formattedConversations.sort(
-        (a: any, b: any) => new Date(b.dateUpdated).getTime() - new Date(a.dateUpdated).getTime(),
+        (a: any, b: any) =>
+          new Date(b.dateUpdated).getTime() - new Date(a.dateUpdated).getTime()
       )
 
       setConversations(formattedConversations)
@@ -167,7 +273,9 @@ export default function StudentMessagesPage() {
 
       // Select the first conversation if none is selected
       if (formattedConversations.length > 0 && !selectedConversation) {
-        const firstConversation = await client.getConversationBySid(formattedConversations[0].sid)
+        const firstConversation = await client.getConversationBySid(
+          formattedConversations[0].sid
+        )
         setSelectedConversation(firstConversation)
         loadMessages(firstConversation)
       }
@@ -180,7 +288,6 @@ export default function StudentMessagesPage() {
       })
     }
   }
-
   // Handle conversation selection
   const handleSelectConversation = async (sid: string) => {
     if (selectedConversation?.sid === sid) return
@@ -189,6 +296,19 @@ export default function StudentMessagesPage() {
     setMessages([])
 
     try {
+      // Unsubscribe from the previous conversation's events if one is selected
+      if (selectedConversation) {
+        try {
+          selectedConversation.removeAllListeners()
+        } catch (unsubError) {
+          console.warn(
+            "Error removing listeners from previous conversation:",
+            unsubError
+          )
+        }
+      }
+
+      // Get the new conversation
       const conversation = await twilioClient.getConversationBySid(sid)
       setSelectedConversation(conversation)
       await loadMessages(conversation)
@@ -203,10 +323,21 @@ export default function StudentMessagesPage() {
       setIsLoadingMessages(false)
     }
   }
-
   // Load messages for a conversation
   const loadMessages = async (conversation: any) => {
     try {
+      // First, make sure we're properly subscribed to the conversation
+      await conversation.getParticipants().catch((err: Error) => {
+        console.warn(
+          "Error checking participants, attempting to join conversation:",
+          err
+        )
+        return conversation.join().catch((joinErr: Error) => {
+          console.error("Failed to join conversation:", joinErr)
+        })
+      })
+
+      // Get messages after ensuring we're properly subscribed
       const messagesPaginator = await conversation.getMessages()
 
       const formattedMessages = messagesPaginator.items.map((message: any) => ({
@@ -225,24 +356,33 @@ export default function StudentMessagesPage() {
 
       setMessages(formattedMessages)
 
-      // Set up message listener
+      // Clean up any existing listeners before setting up a new one
+      conversation.removeAllListeners("messageAdded") // Set up message listener
       const messageListener = (message: any) => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            sid: message.sid,
-            author: message.author,
-            body: message.body,
-            dateCreated: message.dateCreated,
-            media: message.media?.map((m: any) => ({
-              sid: m.sid,
-              filename: m.filename,
-              contentType: m.contentType,
-              size: m.size,
-              url: m.url,
-            })),
-          },
-        ])
+        setMessages((prevMessages) => {
+          // Check if message with this sid already exists to avoid duplicates
+          const messageExists = prevMessages.some((m) => m.sid === message.sid)
+          if (messageExists) {
+            return prevMessages
+          }
+
+          return [
+            ...prevMessages,
+            {
+              sid: message.sid,
+              author: message.author,
+              body: message.body,
+              dateCreated: message.dateCreated,
+              media: message.media?.map((m: any) => ({
+                sid: m.sid,
+                filename: m.filename,
+                contentType: m.contentType,
+                size: m.size,
+                url: m.url,
+              })),
+            },
+          ]
+        })
         scrollToBottom()
       }
 
@@ -255,6 +395,11 @@ export default function StudentMessagesPage() {
       }
     } catch (error) {
       console.error("Error loading messages:", error)
+      toast({
+        title: "Error",
+        description: "Could not load messages. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -350,13 +495,34 @@ export default function StudentMessagesPage() {
       if (storedRelationships) {
         const relationships = JSON.parse(storedRelationships)
         // Filter for tutors and parents only for student view
-        relatedUsers = [...(relationships.tutors || []), ...(relationships.parents || [])]
+        relatedUsers = [
+          ...(relationships.tutors || []),
+          ...(relationships.parents || []),
+        ]
       } else {
         // Fallback mock data if no relationships found
         relatedUsers = [
-          { id: "user1", firstName: "John", lastName: "Smith", email: "john@example.com", role: "Tutor" },
-          { id: "user2", firstName: "Sarah", lastName: "Johnson", email: "sarah@example.com", role: "Parent" },
-          { id: "user3", firstName: "Michael", lastName: "Brown", email: "michael@example.com", role: "Tutor" },
+          {
+            id: "user1",
+            firstName: "John",
+            lastName: "Smith",
+            email: "john@example.com",
+            role: "Tutor",
+          },
+          {
+            id: "user2",
+            firstName: "Sarah",
+            lastName: "Johnson",
+            email: "sarah@example.com",
+            role: "Parent",
+          },
+          {
+            id: "user3",
+            firstName: "Michael",
+            lastName: "Brown",
+            email: "michael@example.com",
+            role: "Tutor",
+          },
         ]
       }
 
@@ -388,7 +554,9 @@ export default function StudentMessagesPage() {
     try {
       // Find selected user
       const selectedUser = availableUsers.find((u) => u.id === selectedUserId)
-      const name = conversationName || `Chat with ${selectedUser?.firstName} ${selectedUser?.lastName}`
+      const name =
+        conversationName ||
+        `Chat with ${selectedUser?.firstName} ${selectedUser?.lastName}`
 
       console.log("Creating conversation with name:", name)
 
@@ -449,14 +617,20 @@ export default function StudentMessagesPage() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Messages</h1>
-        <p className="text-[#858585]">Communicate with your tutors and parents</p>
+        <p className="text-[#858585]">
+          Communicate with your tutors and parents
+        </p>
       </div>
 
       <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between p-4">
             <h3 className="font-semibold">Conversations</h3>
-            <Button variant="outline" size="sm" onClick={openNewConversationDialog}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openNewConversationDialog}
+            >
               <PlusCircle className="mr-2 h-4 w-4" />
               New Chat
             </Button>
@@ -472,12 +646,17 @@ export default function StudentMessagesPage() {
                   <div
                     key={conversation.sid}
                     className={`flex cursor-pointer items-center rounded-md p-2 hover:bg-gray-100 ${
-                      selectedConversation?.sid === conversation.sid ? "bg-gray-100" : ""
+                      selectedConversation?.sid === conversation.sid
+                        ? "bg-gray-100"
+                        : ""
                     }`}
                     onClick={() => handleSelectConversation(conversation.sid)}
                   >
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg" alt={conversation.friendlyName} />
+                      <AvatarImage
+                        src="/placeholder.svg"
+                        alt={conversation.friendlyName}
+                      />
                       <AvatarFallback>
                         {conversation.friendlyName
                           .split(" ")
@@ -488,7 +667,9 @@ export default function StudentMessagesPage() {
                     </Avatar>
                     <div className="ml-3">
                       <p className="font-medium">{conversation.friendlyName}</p>
-                      <p className="text-sm text-gray-500 truncate">{conversation.lastMessage || "No messages yet"}</p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {conversation.lastMessage || "No messages yet"}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -511,7 +692,10 @@ export default function StudentMessagesPage() {
               <CardHeader className="border-b pb-3">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarImage src="/placeholder.svg" alt={selectedConversation.friendlyName} />
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedConversation.friendlyName}
+                    />
                     <AvatarFallback>
                       {selectedConversation.friendlyName
                         .split(" ")
@@ -521,7 +705,9 @@ export default function StudentMessagesPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm font-medium">{selectedConversation.friendlyName}</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      {selectedConversation.friendlyName}
+                    </CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -551,7 +737,11 @@ export default function StudentMessagesPage() {
                                 {message.media.map((media) => (
                                   <div key={media.sid} className="mt-1">
                                     {media.contentType.startsWith("image/") ? (
-                                      <a href={media.url} target="_blank" rel="noopener noreferrer">
+                                      <a
+                                        href={media.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
                                         <img
                                           src={media.url || "/placeholder.svg"}
                                           alt={media.filename}
@@ -565,7 +755,8 @@ export default function StudentMessagesPage() {
                                         rel="noopener noreferrer"
                                         className="flex items-center text-blue-500 hover:underline"
                                       >
-                                        {media.filename} ({Math.round(media.size / 1024)} KB)
+                                        {media.filename} (
+                                        {Math.round(media.size / 1024)} KB)
                                       </a>
                                     )}
                                   </div>
@@ -573,10 +764,13 @@ export default function StudentMessagesPage() {
                               </div>
                             )}
                             <p className="mt-1 text-right text-xs opacity-70">
-                              {new Date(message.dateCreated).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(message.dateCreated).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
                             </p>
                           </div>
                         </div>
@@ -585,7 +779,9 @@ export default function StudentMessagesPage() {
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <p className="text-[#858585]">No messages yet. Start the conversation!</p>
+                      <p className="text-[#858585]">
+                        No messages yet. Start the conversation!
+                      </p>
                     </div>
                   )}
                 </div>
@@ -606,7 +802,11 @@ export default function StudentMessagesPage() {
                       disabled={!selectedConversation || isUploading}
                       className="h-9 w-9"
                     >
-                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Paperclip className="h-4 w-4" />
+                      )}
                     </Button>
                     <Input
                       placeholder="Type a message..."
@@ -629,8 +829,12 @@ export default function StudentMessagesPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h3 className="mb-2 text-sm font-medium">Select a conversation</h3>
-                <p className="text-[#858585]">Choose a conversation from the list or start a new one</p>
+                <h3 className="mb-2 text-sm font-medium">
+                  Select a conversation
+                </h3>
+                <p className="text-[#858585]">
+                  Choose a conversation from the list or start a new one
+                </p>
               </div>
             </div>
           )}
@@ -638,7 +842,10 @@ export default function StudentMessagesPage() {
       </div>
 
       {/* New Conversation Dialog */}
-      <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
+      <Dialog
+        open={isNewConversationOpen}
+        onOpenChange={setIsNewConversationOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
@@ -670,11 +877,19 @@ export default function StudentMessagesPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsNewConversationOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsNewConversationOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={createNewConversation} disabled={isCreatingConversation || !selectedUserId}>
-              {isCreatingConversation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button
+              onClick={createNewConversation}
+              disabled={isCreatingConversation || !selectedUserId}
+            >
+              {isCreatingConversation ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Create
             </Button>
           </div>
