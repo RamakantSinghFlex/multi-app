@@ -8,6 +8,14 @@ import { Download, FileText, ImageIcon } from "lucide-react"
 import type { TwilioMessage } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 
+interface MediaItem {
+  sid: string
+  filename: string
+  contentType: string
+  size: number
+  url: string
+}
+
 interface ChatMessageProps {
   message: TwilioMessage
   isCurrentUser: boolean
@@ -15,13 +23,22 @@ interface ChatMessageProps {
   userAvatar?: string
 }
 
-export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  isCurrentUser,
+  userName,
+  userAvatar,
+}: ChatMessageProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
   const hasMedia = message.media && message.media.length > 0
-  const media = hasMedia ? message.media[0] : null
-  const isImage = media?.contentType.startsWith("image/")
+  const media =
+    hasMedia && message.media && message.media.length > 0
+      ? message.media[0]
+      : null
+
+  const isImage = media && media.contentType?.startsWith("image/")
 
   const formattedTime = message.dateCreated
     ? formatDistanceToNow(new Date(message.dateCreated), { addSuffix: true })
@@ -35,17 +52,24 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
     : "U"
 
   return (
-    <div className={`mb-4 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`mb-4 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+    >
       {!isCurrentUser && (
         <Avatar className="mr-2 h-8 w-8">
-          <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName || "User"} />
+          <AvatarImage
+            src={userAvatar || "/placeholder.svg"}
+            alt={userName || "User"}
+          />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
       )}
 
       <div
         className={`max-w-[80%] space-y-1 rounded-lg p-3 ${
-          isCurrentUser ? "bg-[#095d40] text-white" : "bg-[#f4f4f4] text-[#000000]"
+          isCurrentUser
+            ? "bg-[#095d40] text-white"
+            : "bg-[#f4f4f4] text-[#000000]"
         }`}
       >
         {message.body && <p className="break-words">{message.body}</p>}
@@ -60,8 +84,8 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
                   </div>
                 )}
                 <img
-                  src={media.url || "/placeholder.svg"}
-                  alt={media.filename || "Attachment"}
+                  src={media?.url || "/placeholder.svg"}
+                  alt={media?.filename || "Attachment"}
                   className={`max-h-64 w-auto rounded ${imageLoaded ? "block" : "hidden"}`}
                   onLoad={() => setImageLoaded(true)}
                   onError={() => setImageError(true)}
@@ -71,13 +95,15 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
               <Card className="flex items-center justify-between p-2">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">{media.filename || "Attachment"}</span>
+                  <span className="text-sm font-medium">
+                    {media?.filename || "Attachment"}
+                  </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"
-                  onClick={() => window.open(media.url, "_blank")}
+                  onClick={() => media?.url && window.open(media.url, "_blank")}
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -86,7 +112,11 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
           </div>
         )}
 
-        <p className={`text-right text-xs ${isCurrentUser ? "text-white/70" : "text-[#858585]"}`}>{formattedTime}</p>
+        <p
+          className={`text-right text-xs ${isCurrentUser ? "text-white/70" : "text-[#858585]"}`}
+        >
+          {formattedTime}
+        </p>
       </div>
     </div>
   )

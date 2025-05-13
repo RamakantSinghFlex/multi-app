@@ -26,7 +26,7 @@ export default function PaymentCancelPage() {
         <CardContent className="flex flex-col items-center justify-center py-6">
           <XCircle className="h-16 w-16 text-amber-500" />
           <p className="mt-4 text-center">
-            You've cancelled the payment process. Your appointment has not been booked and no charges have been made to
+            You&apos;ve cancelled the payment process. Your appointment has not been booked and no charges have been made to
             your account.
           </p>
         </CardContent>
