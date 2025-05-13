@@ -57,7 +57,7 @@ export default function ParentAppointmentsPage() {
       <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Appointments</h1>
-          <p className="text-muted-foreground">View and manage your children's tutoring appointments</p>
+          <p className="text-muted-foreground">View and manage your children&apos;s tutoring appointments</p>
         </div>
         <div className="flex space-x-2">
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

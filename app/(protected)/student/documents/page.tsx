@@ -204,7 +204,7 @@ export default function StudentDocumentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>My Uploads</CardTitle>
-              <CardDescription>Documents you've uploaded</CardDescription>
+              <CardDescription>Documents you&apos;ve uploaded</CardDescription>
             </CardHeader>
             <CardContent>
               {filteredDocuments.filter((d) => d.uploadedBy === "You").length > 0 ? (
@@ -238,7 +238,7 @@ export default function StudentDocumentsPage() {
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center space-y-2">
                   <FileText className="h-10 w-10 text-muted-foreground" />
-                  <p>You haven't uploaded any documents yet.</p>
+                  <p>You haven&apos;t uploaded any documents yet.</p>
                   <Button>
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Document

@@ -12,10 +12,13 @@ import { ENABLE_LOGGING } from "./config"
 
 // Define log levels for better filtering
 export enum LogLevel {
+  // eslint-disable-next-line no-unused-vars
   DEBUG = "DEBUG",
+  // eslint-disable-next-line no-unused-vars
   INFO = "INFO",
+  // eslint-disable-next-line no-unused-vars
   WARN = "WARN",
-  ERROR = "ERROR",
+  ERROR = "ERROR"
 }
 
 // Interface for structured log entries
@@ -29,7 +32,7 @@ interface LogEntry {
 /**
  * Logger class for client-side logging with structured output
  */
-class Logger {
+export class Logger {
   private enabled: boolean
   private logBuffer: LogEntry[] = []
   private readonly MAX_BUFFER_SIZE = 100
