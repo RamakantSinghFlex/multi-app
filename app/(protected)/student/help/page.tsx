@@ -105,7 +105,7 @@ export default function StudentHelpPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">How do I schedule a session with a tutor?</h3>
                 <p className="text-sm text-muted-foreground">
-                  You can schedule a session by going to the Appointments page and clicking on "Book Appointment".
+                  You can schedule a session by going to the Appointments page and clicking on &quot;Book Appointment&quot;.
                   Select your preferred tutor, date, and time to schedule your session.
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function StudentHelpPage() {
                 <h3 className="font-medium">How do I cancel or reschedule a session?</h3>
                 <p className="text-sm text-muted-foreground">
                   You can cancel or reschedule a session from the Appointments page. Find your appointment and click
-                  "Cancel" or "Reschedule". Please note that cancellations made less than 24 hours before the session
+                  &quot;Cancel&quot; or &quot;Reschedule&quot;. Please note that cancellations made less than 24 hours before the session
                   may incur a fee.
                 </p>
               </div>
@@ -130,7 +130,7 @@ export default function StudentHelpPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">How do I track my progress?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Your progress is tracked automatically and can be viewed in the Progress section. You'll see
+                  Your progress is tracked automatically and can be viewed in the Progress section. You&apos;ll see
                   statistics on completed sessions, achievements, and improvement in different subjects.
                 </p>
               </div>
@@ -150,7 +150,7 @@ export default function StudentHelpPage() {
           <Card>
             <CardHeader>
               <CardTitle>Contact Support</CardTitle>
-              <CardDescription>Send us a message and we'll get back to you as soon as possible</CardDescription>
+              <CardDescription>Send us a message and we&apos;ll get back to you as soon as possible</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSendMessage} className="space-y-4">

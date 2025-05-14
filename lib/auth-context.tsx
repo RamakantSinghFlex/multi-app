@@ -253,6 +253,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.info("Login successful:", { email: response.data.user.email })
 
       // Check if user's email is verified
+      //@ts-ignore
+      // eslint-disable-next-line no-underscore-dangle
       if (response.data.user._verified === false) {
         logger.warn("User email not verified:", { email: response.data.user.email })
         dispatch({
@@ -272,6 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Also set the global variable
           if (typeof window !== "undefined") {
             // @ts-ignore - Adding a global variable for fallback authentication
+            // eslint-disable-next-line no-underscore-dangle
             window.__MILESTONE_USER_ID = response.data.user.id.toString()
           }
         }
@@ -292,6 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Add this code to make the user ID globally available for fallbacks
       if (typeof window !== "undefined" && userData && userData.id) {
         // @ts-ignore - Adding a global variable for fallback authentication
+        // eslint-disable-next-line no-underscore-dangle
         window.__MILESTONE_USER_ID = userData.id
       }
 
@@ -407,6 +411,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAllUserData()
       if (typeof window !== "undefined") {
         // @ts-ignore - Clear the global user ID
+        // eslint-disable-next-line no-underscore-dangle
         window.__MILESTONE_USER_ID = null
       }
 
@@ -451,6 +456,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("milestone-user-id")
         // @ts-ignore - Clear the global user ID
+        // eslint-disable-next-line no-underscore-dangle
         window.__MILESTONE_USER_ID = null
       }
 
