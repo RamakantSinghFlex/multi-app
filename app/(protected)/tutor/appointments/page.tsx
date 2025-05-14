@@ -20,37 +20,54 @@ export default function TutorAppointmentsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("list")
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user?.id) return
+  // Function to fetch appointments
+  const fetchAppointments = async () => {
+    if (!user?.id) return
 
-      setLoading(true)
-      try {
-        const response = await getAppointments({
-          tutors: user.id,
-        })
+    setLoading(true)
+    try {
+      const response = await getAppointments({
+        tutors: user.id,
+      })
 
-        if (response.error) {
-          throw new Error(response.error)
-        }
-
-        if (response.data) {
-          setAppointments(response.data)
-        }
-      } catch (error) {
-        console.error("Error fetching appointments:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load appointments. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
+      if (response.error) {
+        throw new Error(response.error)
       }
-    }
 
+      if (response.data) {
+        setAppointments(response.data)
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load appointments. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial fetch of appointments
+  useEffect(() => {
     fetchAppointments()
   }, [user?.id])
+
+  // Handle successful appointment creation
+  const handleAppointmentCreated = async (newAppointment: any) => {
+    // Close the dialog
+    setCreateDialogOpen(false)
+
+    // Refresh the appointments list
+    await fetchAppointments()
+
+    // Show success message
+    toast({
+      title: "Success",
+      description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -69,12 +86,7 @@ export default function TutorAppointmentsPage() {
             </DialogTrigger>
             <DialogContent className="max-w-4xl">
               <DialogTitle>Schedule an Appointment</DialogTitle>
-              <AppointmentCalendar
-                onSuccess={() => {
-                  setCreateDialogOpen(false)
-                }}
-                onCancel={() => setCreateDialogOpen(false)}
-              />
+              <AppointmentCalendar onSuccess={handleAppointmentCreated} onCancel={() => setCreateDialogOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>

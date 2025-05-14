@@ -23,7 +23,7 @@ import type { Student, Tutor, Parent, ApiResponse } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
 interface AppointmentCalendarProps {
-  onSuccess?: () => void
+  onSuccess?: (newAppointment?: any) => void
   onCancel?: () => void
 }
 
@@ -488,17 +488,19 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       }
 
       const appointmentId = appointmentResponse.data?.doc?.id
+      const newAppointment = appointmentResponse.data?.doc
 
       // If the user is a tutor, just create the appointment without payment
       if (isTutor) {
-        toast({
-          title: "Success",
-          description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
-        })
-
+        // Instead of showing toast here, we'll pass the new appointment to the onSuccess callback
         if (onSuccess) {
-          onSuccess()
+          onSuccess(newAppointment)
         } else {
+          // If no onSuccess callback, show toast and redirect
+          toast({
+            title: "Success",
+            description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
+          })
           router.push("/tutor/appointments")
         }
         return
