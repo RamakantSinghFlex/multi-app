@@ -91,6 +91,7 @@ export default function TutorMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Helper function to create a small delay for smoother loading UX
   // This delay function is used in the initTwilio function below
@@ -383,7 +384,9 @@ export default function TutorMessagesPage() {
         return conversation.join().catch((joinErr: Error) => {
           console.error("Failed to join conversation:", joinErr)
         })
-      }) // Get messages after ensuring we're properly subscribed
+      })
+
+      // Get messages after ensuring we're properly subscribed
       const messagesPaginator = await conversation.getMessages()
 
       const formattedMessages = messagesPaginator.items.map((message: any) => ({
@@ -394,13 +397,15 @@ export default function TutorMessagesPage() {
           message.dateCreated instanceof Date
             ? message.dateCreated.toISOString()
             : message.dateCreated,
-        media: message.media?.map((m: any) => ({
-          sid: m.sid,
-          filename: m.filename,
-          contentType: m.contentType,
-          size: m.size,
-          url: m.url,
-        })),
+        media: Array.isArray(message.media)
+          ? message.media.map((m: any) => ({
+              sid: m.sid,
+              filename: m.filename,
+              contentType: m.contentType,
+              size: m.size,
+              url: m.url,
+            }))
+          : [],
       }))
 
       setMessages(formattedMessages)
@@ -427,13 +432,15 @@ export default function TutorMessagesPage() {
                 message.dateCreated instanceof Date
                   ? message.dateCreated.toISOString()
                   : message.dateCreated,
-              media: message.media?.map((m: any) => ({
-                sid: m.sid,
-                filename: m.filename,
-                contentType: m.contentType,
-                size: m.size,
-                url: m.url,
-              })),
+              media: Array.isArray(message.media)
+                ? message.media.map((m: any) => ({
+                    sid: m.sid,
+                    filename: m.filename,
+                    contentType: m.contentType,
+                    size: m.size,
+                    url: m.url,
+                  }))
+                : [],
             },
           ]
         })
@@ -452,30 +459,11 @@ export default function TutorMessagesPage() {
     }
   }
 
-  // Send a message
-  const sendMessage = async () => {
-    if (!selectedConversation || !messageText.trim()) {
-      return
-    }
-
-    try {
-      await selectedConversation.sendMessage(messageText.trim())
-      setMessageText("")
-    } catch (error) {
-      console.error("Error sending message:", error)
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
   // Handle key press (Enter to send)
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      sendMessageWithAttachment()
     }
   }
 
@@ -590,8 +578,10 @@ export default function TutorMessagesPage() {
   // Handle file attachment
   const handleAttachmentClick = () => {
     fileInputRef.current?.click()
-  } // Handle file selection with improved feedback
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  }
+
+  // Handle file selection to show preview first
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0 || !selectedConversation) return
 
@@ -608,42 +598,173 @@ export default function TutorMessagesPage() {
       return
     }
 
+    // Store the file instead of sending it right away
+    setSelectedFile(file)
+    toast({
+      title: "File selected",
+      description: `${file.name} (${fileSize}KB) selected. Click send to upload.`,
+    })
+  }
+  // Enhanced method to send message with attached file if one exists
+  const sendMessageWithAttachment = async () => {
+    if (!selectedConversation) return
+
+    // If there's no file and no text, don't send anything
+    if (!selectedFile && !messageText.trim()) return
+
     try {
       setIsUploading(true)
+      // If we have a file, send it
+      if (selectedFile) {
+        console.log(
+          "Uploading file:",
+          selectedFile.name,
+          selectedFile.type,
+          `${Math.round(selectedFile.size / 1024)}KB`
+        )
 
-      console.log("Uploading file:", file.name, file.type, file.size)
-      toast({
-        title: "Uploading",
-        description: `Uploading ${file.name} (${fileSize}KB)...`,
-      })
+        try {
+          // Try sending through our enhanced hook function first
+          const formData = new FormData()
+          formData.append("file", selectedFile)
+          formData.append("conversationSid", selectedConversation.sid)
+          formData.append("identity", user?.id?.toString() || "unknown-user")
+          formData.append(
+            "body",
+            messageText.trim() || `Sent a file: ${selectedFile.name}`
+          )
 
-      // Use appropriate method based on Twilio's API
-      try {
-        // First try the newer API method
-        const mediaMessage = await selectedConversation
-          .prepareMessage()
-          .addMedia(file)
-          .build()
+          // Get the token from localStorage
+          const token =
+            localStorage.getItem("milestone-token") ||
+            localStorage.getItem("auth_token")
 
-        await mediaMessage.send()
-      } catch (err) {
-        console.log("Falling back to legacy media upload method", err)
-        // Fall back to direct message with media
-        await selectedConversation.sendMessage({
-          contentType: file.type,
-          media: file,
-        })
+          // Send to our new API endpoint
+          const uploadResponse = await fetch("/api/messages/send", {
+            method: "POST",
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {},
+            body: formData,
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error(
+              `Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`
+            )
+          }
+
+          // If successful, we don't need to do anything else
+          console.log("File upload successful via enhanced API")
+        } catch (apiError) {
+          console.log(
+            "API upload failed, falling back to direct SDK method",
+            apiError
+          )
+
+          // Fall back to direct SDK integration
+          try {
+            // First try the SDK method
+            let messageBuilder = selectedConversation.prepareMessage()
+
+            // Add text if we have it
+            if (messageText.trim()) {
+              messageBuilder = messageBuilder.setBody(messageText.trim())
+            }
+
+            // Add media
+            messageBuilder = messageBuilder.addMedia(selectedFile)
+
+            // Build and send
+            const mediaMessage = await messageBuilder.build()
+            await mediaMessage.send()
+          } catch (sdkError) {
+            console.log(
+              "SDK method failed, falling back to legacy upload",
+              sdkError
+            )
+
+            // Last resort - legacy upload method
+            const formData = new FormData()
+            formData.append("file", selectedFile)
+            formData.append("conversationSid", selectedConversation.sid)
+
+            // Get the token from localStorage
+            const token =
+              localStorage.getItem("milestone-token") ||
+              localStorage.getItem("auth_token")
+
+            if (!token) {
+              console.error("No authentication token available for file upload")
+              throw new Error("Authentication required to upload files")
+            }
+
+            // Upload the file to your server first
+            const uploadResponse = await fetch("/api/twilio/upload", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            })
+
+            if (!uploadResponse.ok) {
+              let errorMessage = "Failed to upload file"
+              try {
+                const errorData = await uploadResponse.json()
+                errorMessage = errorData.error || errorMessage
+              } catch (e) {
+                const errorText = await uploadResponse.text().catch(() => "")
+                console.error("Upload error response:", errorText)
+              }
+              throw new Error(errorMessage)
+            }
+
+            let responseData
+            try {
+              responseData = await uploadResponse.json()
+            } catch (e) {
+              console.error("Error parsing JSON response:", e)
+              throw new Error("Invalid server response format")
+            }
+            if (!responseData || !responseData.mediaUrl) {
+              console.error("Invalid response data:", responseData)
+              throw new Error("No media URL returned from server")
+            }
+
+            // Now send the message with the media
+            await selectedConversation.sendMessage({
+              body: messageText.trim() || `Sent a file: ${selectedFile.name}`,
+              media: responseData.mediaUrl,
+            })
+          }
+        }
+
+        // Clear the file after sending
+        setSelectedFile(null)
+      } else if (messageText.trim()) {
+        // If we only have text, just send the text
+        await selectedConversation.sendMessage(messageText.trim())
       }
+
+      // Clear the message text field
+      setMessageText("")
 
       toast({
         title: "Success",
-        description: `${file.name} uploaded successfully.`,
+        description: selectedFile
+          ? "File sent successfully."
+          : "Message sent successfully.",
       })
     } catch (error) {
-      console.error("Error uploading file:", error)
+      console.error("Error sending message:", error)
       toast({
         title: "Error",
-        description: `Failed to upload ${file.name}. Please try again.`,
+        description: selectedFile
+          ? `Failed to upload file. Please try again.`
+          : "Failed to send message. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -861,11 +982,14 @@ export default function TutorMessagesPage() {
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       onKeyDown={handleKeyPress}
-                    />
+                    />{" "}
                     <Button
                       type="button"
-                      onClick={sendMessage}
-                      disabled={!selectedConversation || !messageText.trim()}
+                      onClick={sendMessageWithAttachment}
+                      disabled={
+                        !selectedConversation ||
+                        (!messageText.trim() && !selectedFile)
+                      }
                       className="bg-[#095d40]"
                       size="icon"
                     >
