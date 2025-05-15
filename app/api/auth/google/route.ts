@@ -6,7 +6,6 @@
  */
 
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { logger } from "@/lib/monitoring"
 import { APP_URL } from "@/lib/config"
 import { createHash, randomBytes } from "crypto"
@@ -45,15 +44,6 @@ export async function GET() {
     // Generate a state token to prevent CSRF attacks
     const state = generateStateToken()
 
-    // Store the state token in a cookie
-    cookies().set("google_oauth_state", state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 10, // 10 minutes
-    })
-
     // Build the authorization URL
     const authUrl = new URL(GOOGLE_AUTH_URL)
     authUrl.searchParams.append("client_id", GOOGLE_CLIENT_ID)
@@ -65,7 +55,16 @@ export async function GET() {
     authUrl.searchParams.append("access_type", "offline")
 
     logger.info("Redirecting to Google authorization endpoint")
-    return NextResponse.redirect(authUrl.toString())
+    const response = NextResponse.redirect(authUrl.toString())
+    response.cookies.set("google_oauth_state", state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 10,
+    })
+
+    return response
   } catch (error) {
     logger.error("Error initiating Google OAuth flow", { error })
     return NextResponse.redirect(`${APP_URL}/login?error=oauth_init_failed`)
