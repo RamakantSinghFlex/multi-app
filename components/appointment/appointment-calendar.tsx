@@ -23,7 +23,7 @@ import type { Student, Tutor, Parent, ApiResponse } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
 interface AppointmentCalendarProps {
-  onSuccess?: () => void
+  onSuccess?: (newAppointment?: any) => void
   onCancel?: () => void
 }
 
@@ -62,8 +62,55 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const isStudent = userRoles.includes("student")
   const isParent = userRoles.includes("parent")
 
+  // Initialize the tutor cache with the current user if they are a tutor
+  useEffect(() => {
+    if (isTutor && userId && user) {
+      // Add the current user to the tutor cache to avoid API calls
+      setTutorCache((prev) => ({
+        ...prev,
+        [userId]: {
+          id: userId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          hourlyRate: user.hourlyRate || 50,
+          email: user.email,
+          roles: user.roles,
+        } as Tutor,
+      }))
+    }
+  }, [isTutor, userId, user])
+
+  // Add this after the existing state declarations, before the useEffect hooks
+  useEffect(() => {
+    // If the user is a tutor and no tutors are selected yet, automatically select themselves
+    if (isTutor && userId && selectedTutors.length === 0) {
+      setSelectedTutors([userId])
+      // Also calculate price based on the tutor's rate
+      calculatePrice([userId], startTime, endTime)
+    }
+  }, []) // Empty dependency array means this runs once on mount
+
   // Fetch tutor data if not available in the user context
   const fetchTutorData = async (tutorId: string): Promise<Tutor | null> => {
+    // If this is the current user and they're a tutor, use their data from auth context
+    if (isTutor && userId === tutorId && user) {
+      const currentUserAsTutor = {
+        id: userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        hourlyRate: user.hourlyRate || 50,
+        email: user.email,
+        roles: user.roles,
+      } as Tutor
+
+      // Add to cache if not already there
+      if (!tutorCache[tutorId]) {
+        setTutorCache((prev) => ({ ...prev, [tutorId]: currentUserAsTutor }))
+      }
+
+      return currentUserAsTutor
+    }
+
     // Check if we already have this tutor in the cache
     if (tutorCache[tutorId] !== undefined) {
       return tutorCache[tutorId]
@@ -79,6 +126,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
 
     try {
       setFetchingTutors(true)
+      console.log(`Fetching tutor data for ID: ${tutorId}`)
       const response: ApiResponse<Tutor> = await getUserById(tutorId)
 
       if (response.error || !response.data) {
@@ -106,17 +154,23 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
     const fetchMissingTutors = async () => {
       if (selectedTutors.length === 0) return
 
-      setFetchingTutors(true)
+      // Filter out tutors that need to be fetched
+      // Exclude the current user (if they're a tutor), tutors already in the cache, and tutors in the user context
       const tutorsToFetch = selectedTutors.filter(
-        (id) => !tutors.some((t) => t.id === id) && tutorCache[id] === undefined,
+        (id) =>
+          id !== userId && // Skip if this is the current user
+          tutorCache[id] === undefined && // Skip if already in cache
+          !tutors.some((t) => t.id === id), // Skip if in the user context
       )
 
       if (tutorsToFetch.length === 0) {
-        setFetchingTutors(false)
+        // No tutors need to be fetched
         return
       }
 
+      setFetchingTutors(true)
       try {
+        console.log("Fetching tutors:", tutorsToFetch)
         const fetchPromises = tutorsToFetch.map((id) => fetchTutorData(id))
         await Promise.all(fetchPromises)
 
@@ -180,7 +234,12 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   }
 
   const getTutorHourlyRate = (tutorId: string): number => {
-    // First check the cache
+    // First check if this is the current user (when they are a tutor)
+    if (isTutor && userId === tutorId && user && user.hourlyRate) {
+      return user.hourlyRate
+    }
+
+    // Then check the cache
     if (tutorCache[tutorId]) {
       return tutorCache[tutorId]?.hourlyRate || 50
     }
@@ -221,11 +280,18 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
     }
 
     // Check if we need to fetch any tutor data
-    const missingTutors = tutorIds.filter((id) => !tutors.some((t) => t.id === id) && tutorCache[id] === undefined)
+    // Exclude the current user (if they're a tutor), tutors already in the cache, and tutors in the user context
+    const missingTutors = tutorIds.filter(
+      (id) =>
+        id !== userId && // Skip if this is the current user
+        tutorCache[id] === undefined && // Skip if already in cache
+        !tutors.some((t) => t.id === id), // Skip if in the user context
+    )
 
     if (missingTutors.length > 0) {
       setFetchingTutors(true)
       try {
+        console.log("Fetching missing tutors for price calculation:", missingTutors)
         // Fetch missing tutor data
         await Promise.all(missingTutors.map((id) => fetchTutorData(id)))
       } catch (error) {
@@ -258,6 +324,11 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   }
 
   const getTutorName = (id: string) => {
+    // Check if this is the current user
+    if (isTutor && userId === id && user) {
+      return `${user.firstName} ${user.lastName} ($${user.hourlyRate || 50}/hr)`
+    }
+
     // First check the cache
     if (tutorCache[id]) {
       const tutor = tutorCache[id]
@@ -288,12 +359,22 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
     // Clear previous validation errors
     setValidationError(null)
 
+    // If the user is a tutor and no tutors are selected, automatically select themselves
+    let effectiveTutors = [...selectedTutors]
+    if (isTutor && userId && effectiveTutors.length === 0) {
+      effectiveTutors = [userId]
+      // Update the state for UI consistency
+      setSelectedTutors(effectiveTutors)
+      // Also recalculate price with the current user as tutor
+      calculatePrice(effectiveTutors, startTime, endTime)
+    }
+
     if (!title) {
       setValidationError("Please enter a title for the appointment")
       return false
     }
 
-    if (selectedTutors.length === 0) {
+    if (effectiveTutors.length === 0) {
       setValidationError("Please select at least one tutor")
       return false
     }
@@ -407,17 +488,19 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
       }
 
       const appointmentId = appointmentResponse.data?.doc?.id
+      const newAppointment = appointmentResponse.data?.doc
 
       // If the user is a tutor, just create the appointment without payment
       if (isTutor) {
-        toast({
-          title: "Success",
-          description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
-        })
-
+        // Instead of showing toast here, we'll pass the new appointment to the onSuccess callback
         if (onSuccess) {
-          onSuccess()
+          onSuccess(newAppointment)
         } else {
+          // If no onSuccess callback, show toast and redirect
+          toast({
+            title: "Success",
+            description: "Appointment created successfully. Awaiting payment confirmation from student/parent.",
+          })
           router.push("/tutor/appointments")
         }
         return
@@ -650,7 +733,7 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
               <Button type="button" variant="outline" onClick={onCancel} disabled={loading || fetchingTutors}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || fetchingTutors || price === null}>
+              <Button type="submit" disabled={loading || fetchingTutors || (!isTutor && price === null)}>
                 {loading ? "Processing..." : isTutor ? "Create Appointment" : "Proceed to Payment"}
               </Button>
             </div>
