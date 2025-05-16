@@ -166,7 +166,7 @@ export function StudentEdit({ studentId, students, backPath }: StudentEditProps)
       <Card>
         <CardHeader>
           <CardTitle>Student Information</CardTitle>
-          <CardDescription>Update the student's details</CardDescription>
+          <CardDescription>Update the students details</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>

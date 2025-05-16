@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "clean": "pnpm dlx rimraf node_modules .next",
+    "reinstall": "pnpm clean && pnpm install"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
