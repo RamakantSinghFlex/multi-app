@@ -7,12 +7,12 @@ export async function POST(request: NextRequest) {
     if (!slug) {
       return new Response("No slug provided", { status: 400 })
     }
-    // Revalidate the path
-    revalidatePath(`/${slug}`)
     // Revalidate home page if slug is "home"
     if (slug === "home") {
-      revalidatePath("/")
+      revalidatePath("/", "page")
     }
+    // Revalidate the path
+    revalidatePath(`/${slug}`, "page")
     return new Response("Revalidation successful: " + slug, { status: 200 })
   } catch (error) {
     console.error("Error during revalidation", error)
