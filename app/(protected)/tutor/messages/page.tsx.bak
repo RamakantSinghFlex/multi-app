@@ -1,0 +1,178 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Loader2, PlusCircle, Send, Paperclip } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { toast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Client } from "@twilio/conversations"
+import { getTwilioToken } from "@/lib/api/messages"
+import { ChatMessage } from "@/components/chat/chat-message"
+
+// Minimal type definitions
+interface Conversation {
+  sid: string
+  friendlyName: string
+  lastMessage?: string
+  dateUpdated?: Date
+  unreadMessagesCount?: number
+}
+
+interface Message {
+  sid: string
+  author: string
+  body: string
+  dateCreated: Date
+  media?: Array<{
+    sid: string
+    filename: string
+    contentType: string
+    size: number
+    url: string
+  }>
+}
+
+interface User {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  role?: string
+}
+
+function setError(message: string) {
+  toast({
+    title: "Error",
+    description: message,
+    variant: "destructive",
+  });
+}
+
+export default function TutorMessagesPage() {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [twilioClient, setTwilioClient] = useState<any>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [conversationName, setConversationName] = useState("");
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize Twilio client functionality
+  // ...existing code...
+
+  // Handle file attachment
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !selectedConversation) return
+
+    const file = files[0]
+    setIsUploading(true)
+
+    try {
+      // Create a form data object for the file
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("conversationSid", selectedConversation.sid)
+
+      // Upload the file to server endpoint
+      const uploadResponse = await fetch("/api/twilio/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file")
+      }
+      
+      // The upload API already sends the message with the file attached
+      // We don't need to send another message
+
+      toast({
+        title: "File uploaded",
+        description: `${file.name} has been uploaded successfully.`,
+      })
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading the file.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploading(false)
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  // Add this to your render function where messages are displayed
+  return (
+    <div className="space-y-6 p-6">
+      {/* ...existing code... */}
+      
+      {/* Add this where the file input should be */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      />
+      
+      {/* ...existing code... */}
+      
+      {/* Add this where the attachment button should be */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={handleAttachmentClick}
+        disabled={!selectedConversation || isUploading}
+        className="h-9 w-9"
+      >
+        {isUploading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Paperclip className="h-4 w-4" />
+        )}
+      </Button>
+      
+      {/* ...existing code... */}
+    </div>
+  )
+}

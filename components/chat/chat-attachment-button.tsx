@@ -1,76 +1,57 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef } from "react"
+import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Paperclip, Loader2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 
 interface ChatAttachmentButtonProps {
-  conversationSid: string
-  onAttachmentUploaded: (mediaSid: string, mediaUrl: string) => void
+  onFileSelect: (file: File) => void
   disabled?: boolean
-  twilioConversation: any // Add Twilio conversation object
+  isUploading?: boolean
 }
 
 export function ChatAttachmentButton({
-  conversationSid,
-  onAttachmentUploaded,
+  onFileSelect,
   disabled = false,
-  twilioConversation,
+  isUploading = false,
 }: ChatAttachmentButtonProps) {
-  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleClick = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
     const file = files[0]
-    setIsUploading(true)
+    const fileSize = Math.round(file.size / 1024) // Size in KB
 
-    try {
-      // Use Twilio SDK directly to upload the file
-      // This uses the conversation object passed as a prop
-      const formData = new FormData()
-      formData.append("file", file)
-
-      // Upload the file directly using the Twilio Conversations SDK
-      const message = await twilioConversation.prepareMessage().addMedia(file).build()
-
-      await message.send()
-
-      // Extract media information from the message
-      const media = message.media && message.media.length > 0 ? message.media[0] : null
-
-      if (media) {
-        onAttachmentUploaded(media.sid, media.url)
-        toast({
-          title: "File uploaded",
-          description: `${file.name} has been uploaded successfully.`,
-        })
-      }
-    } catch (error) {
-      console.error("Error uploading file:", error)
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: "Upload failed",
-        description: "An error occurred while uploading the file.",
+        title: "Error",
+        description: `File size (${fileSize}KB) exceeds 10MB limit.`,
         variant: "destructive",
       })
-    } finally {
-      setIsUploading(false)
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
+      return
+    }
+
+    // Pass the file to parent component instead of automatically uploading
+    onFileSelect(file)
+
+    toast({
+      title: "File selected",
+      description: `${file.name} (${fileSize}KB) selected. Click send to upload.`,
+    })
+
+    // Reset the file input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
     }
   }
-
   return (
     <>
       <input
@@ -88,7 +69,11 @@ export function ChatAttachmentButton({
         disabled={disabled || isUploading}
         className="h-9 w-9"
       >
-        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+        {isUploading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Paperclip className="h-4 w-4" />
+        )}
       </Button>
     </>
   )

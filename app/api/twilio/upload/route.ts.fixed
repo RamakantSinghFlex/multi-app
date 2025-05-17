@@ -5,79 +5,49 @@ import jwt from "jsonwebtoken"
 
 export async function POST(request: Request) {
   // Store token at function scope so it's available in catch block
-  let token: string | null = null
-
+  let token: string | null = null;
+  
   try {
     // Get the token from the Authorization header
-    const authHeader = request.headers.get("Authorization")
-
-    if (authHeader && authHeader.startsWith("Bearer ")) {
+    const authHeader = request.headers.get('Authorization')
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.slice(7)
-      console.log("Found token in Authorization header")
+      console.log("Found token in Authorization header");
     }
-
+    
     // Fallback to cookies if no Authorization header
     if (!token) {
       const cookieStore = cookies()
       token = cookieStore.get("milestone-token")?.value || null
-      console.log("Using token from cookies:", !!token)
+      console.log("Using token from cookies:", !!token);
     }
 
     if (!token) {
-      return NextResponse.json(
-        { error: "Unauthorized - No token provided" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 })
     }
-
+    
     // Log token info (but not the full token for security)
     console.log("Token info:", {
       length: token.length,
       firstChars: token.substring(0, 5) + "...",
       lastChars: "..." + token.substring(token.length - 5),
-    })
+    });
 
     // Verify the token to get the user ID
-    let decoded
+    let decoded;
     try {
-      // Check if JWT_SECRET is properly configured
-      const jwtSecret = process.env.JWT_SECRET
-      if (!jwtSecret || jwtSecret === "your_jwt_secret_key") {
-        console.error("JWT_SECRET is not properly configured:", jwtSecret)
-        return NextResponse.json(
-          { error: "Server authentication configuration error" },
-          { status: 500 }
-        )
-      }
-
-      decoded = jwt.verify(token, jwtSecret) as { id: string; email: string }
-
+      decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-secret-key"
+      ) as { id: string; email: string }
+      
       if (!decoded || !decoded.id) {
-        return NextResponse.json(
-          { error: "Invalid token payload - missing id" },
-          { status: 401 }
-        )
+        return NextResponse.json({ error: "Invalid token payload - missing id" }, { status: 401 })
       }
     } catch (jwtError) {
       console.error("JWT verification failed:", jwtError)
-
-      // Provide more specific error based on the JWT error type
-      if (jwtError instanceof jwt.JsonWebTokenError) {
-        return NextResponse.json(
-          { error: "Invalid token format: " + jwtError.message },
-          { status: 401 }
-        )
-      } else if (jwtError instanceof jwt.TokenExpiredError) {
-        return NextResponse.json(
-          { error: "Authentication token has expired" },
-          { status: 401 }
-        )
-      } else {
-        return NextResponse.json(
-          { error: "Invalid authentication token" },
-          { status: 401 }
-        )
-      }
+      return NextResponse.json({ error: "Invalid authentication token" }, { status: 401 })
     }
 
     // Parse the form data
@@ -101,26 +71,23 @@ export async function POST(request: Request) {
     // Generate a unique media URL - in a production app you'd use a real storage service
     // Here we're creating a dummy URL that the client can reference
     // For proper file storage, use a service like AWS S3, Cloudinary, or Twilio Media API
-
+    
     // First verify that the authenticated user has access to the conversation
     try {
       const conversation = await client.conversations.v1
         .conversations(conversationSid)
-        .fetch()
-
+        .fetch();
+        
       if (!conversation) {
-        return NextResponse.json(
-          {
-            error: "Conversation not found",
-          },
-          { status: 404 }
-        )
+        return NextResponse.json({ 
+          error: "Conversation not found" 
+        }, { status: 404 });
       }
-
+      
       // Generate a unique filename
       const fileName = encodeURIComponent(file.name)
       const timestamp = Date.now()
-
+      
       // In a real implementation, you would upload the file to a service
       // and get back a real URL. For now, we'll create a mock URL
       const mediaUrl = `https://twilio-media.example.com/${conversationSid}/${timestamp}/${fileName}`
@@ -139,19 +106,19 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error uploading file:", error)
-
+    
     // Log token details for debugging (but don't log the full token)
     if (token !== null) {
       console.log("Token debug info:", {
         length: token.length,
         firstChars: token.substring(0, 10) + "...",
         lastChars: "..." + token.substring(token.length - 10),
-      })
+      });
     }
-
+    
     // Provide more detailed error messages based on error type
     if (error instanceof jwt.JsonWebTokenError) {
-      console.error("JWT Error:", error.message)
+      console.error("JWT Error:", error.message);
       return NextResponse.json(
         { error: "Invalid authentication token: " + error.message },
         { status: 401 }
@@ -161,20 +128,16 @@ export async function POST(request: Request) {
         { error: "Authentication token expired" },
         { status: 401 }
       )
-    } else if (error instanceof Error && error.message.includes("TWILIO")) {
+    } else if (error instanceof Error && error.message.includes('TWILIO')) {
       // Handle Twilio API errors
       return NextResponse.json(
         { error: `Twilio API error: ${error.message}` },
         { status: 400 }
       )
     }
-
+    
     return NextResponse.json(
-      {
-        error:
-          "Failed to upload file: " +
-          (error instanceof Error ? error.message : "Unknown error"),
-      },
+      { error: "Failed to upload file: " + (error instanceof Error ? error.message : "Unknown error") },
       { status: 500 }
     )
   }

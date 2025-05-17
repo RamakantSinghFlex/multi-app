@@ -58,8 +58,7 @@ interface User {
   role?: string
 }
 
-export default function ParentMessagesPage() {
-  const { user } = useAuth()
+export default function ParentMessagesPage() {  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
@@ -75,6 +74,7 @@ export default function ParentMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Initialize Twilio client
   const initializeTwilioClient = async () => {
@@ -449,69 +449,201 @@ export default function ParentMessagesPage() {
       })
     }
   }
-
-  // Handle file attachment
-  const handleAttachmentClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0 || !selectedConversation) return
-
-    const file = files[0]
-    setIsUploading(true)
-
+  // Enhanced send message function to handle both text and files
+  const sendMessageWithAttachment = async () => {
+    if (!selectedConversation) return
+    
+    // If there's no file and no text, don't send anything
+    if (!selectedFile && !messageText.trim()) return
+    
     try {
-      // Create a form data object for the file
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("conversationSid", selectedConversation.sid)
+      setIsUploading(true)
+      
+      // If we have a file, send it with the message
+      if (selectedFile) {
+        const fileSize = Math.round(selectedFile.size / 1024) // Size in KB
+        console.log("Uploading file:", selectedFile.name, selectedFile.type, selectedFile.size)
+        
+        try {
+          // Try sending through our enhanced API endpoint first
+          const formData = new FormData()
+          formData.append("file", selectedFile)
+          formData.append("conversationSid", selectedConversation.sid)
+          formData.append("identity", user?.id?.toString() || "unknown-user")
+          formData.append("body", messageText.trim() || `Sent a file: ${selectedFile.name}`)
 
-      // Upload the file to your server first
-      const uploadResponse = await fetch("/api/twilio/upload", {
-        method: "POST",
-        body: formData,
-      })
+          // Get the token from localStorage
+          const token = localStorage.getItem("milestone-token") || localStorage.getItem("auth_token")
 
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload file")
+          // Send to our new API endpoint
+          const uploadResponse = await fetch("/api/messages/send", {
+            method: "POST",
+            headers: token ? {
+              Authorization: `Bearer ${token}`,
+            } : {},
+            body: formData,
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`)
+          }
+          
+          // If successful, we don't need to do anything else
+          console.log("File upload successful via enhanced API")
+        } catch (apiError) {
+          console.log("API upload failed, falling back to direct SDK method", apiError)
+          
+          // Fall back to direct SDK integration
+          try {
+            // First try the newer API method
+            let messageBuilder = selectedConversation.prepareMessage();
+            
+            // Add text if we have it
+            if (messageText.trim()) {
+              messageBuilder = messageBuilder.setBody(messageText.trim());
+            }
+            
+            // Add media
+            messageBuilder = messageBuilder.addMedia(selectedFile);
+            
+            // Build and send
+            const mediaMessage = await messageBuilder.build();
+            await mediaMessage.send();
+          } catch (err) {
+            console.log("Falling back to legacy media upload method", err)
+            
+            // Create a form data object for the file
+            const formData = new FormData()
+            formData.append("file", selectedFile)
+            formData.append("conversationSid", selectedConversation.sid)
+            
+            // Get the token from localStorage
+            const token = localStorage.getItem("milestone-token") || localStorage.getItem("auth_token")
+          
+          if (!token) {
+            console.error("No authentication token available for file upload")
+            throw new Error("Authentication required to upload files")
+          }
+          
+          // Upload the file to your server first
+          const uploadResponse = await fetch("/api/twilio/upload", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`
+            },            body: formData,
+          })
+          
+          if (!uploadResponse.ok) {
+            let errorMessage = "Failed to upload file"
+            try {
+              const errorData = await uploadResponse.json()
+              errorMessage = errorData.error || errorMessage
+              console.error("Upload error response:", errorData)
+            } catch (e) {
+              const errorText = await uploadResponse.text().catch(() => "")
+              console.error("Upload error response:", errorText)
+            }
+            throw new Error(errorMessage)
+          }
+
+          let responseData;
+          try {
+            responseData = await uploadResponse.json();
+          } catch (e) {
+            console.error("Error parsing JSON response:", e)
+            throw new Error("Invalid server response format")
+          }
+
+          if (!responseData || !responseData.mediaUrl) {
+            console.error("Invalid response data:", responseData);
+            throw new Error("No media URL returned from server")
+          }
+          
+          const { mediaUrl } = responseData
+
+          // Now send the message with the media
+          await selectedConversation.sendMessage({
+            contentType: selectedFile.type,
+            media: mediaUrl,
+            body: messageText.trim() || `Sent a file: ${selectedFile.name}`,
+          })
+        }
+        
+        // Clear the selected file after sending
+        setSelectedFile(null);
+      } else if (messageText.trim()) {
+        // If we only have text, just send the text
+        await selectedConversation.sendMessage(messageText.trim())
       }
-
-      const { mediaUrl } = await uploadResponse.json()
-
-      // Now send the message with the media
-      await selectedConversation.sendMessage({
-        contentType: file.type,
-        media: mediaUrl,
-        body: `Sent a file: ${file.name}`,
-      })
-
+      
+      // Clear the message text field
+      setMessageText("")
+      
       toast({
-        title: "File uploaded",
-        description: `${file.name} has been uploaded successfully.`,
+        title: "Success",
+        description: selectedFile ? "File sent successfully." : "Message sent successfully.",
       })
     } catch (error) {
-      console.error("Error uploading file:", error)
+      console.error("Error sending message:", error)
       toast({
-        title: "Upload failed",
-        description: "An error occurred while uploading the file.",
+        title: "Error",
+        description: "Failed to send message",
         variant: "destructive",
       })
     } finally {
       setIsUploading(false)
+      
       // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
     }
   }
+  
+  // State to store selected file before sending
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  
+  // Handle file attachment
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click()
+  }
+  // Handle file selection to store it without automatically sending
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !selectedConversation) return
 
+    const file = files[0]
+    const fileSize = Math.round(file.size / 1024) // Size in KB
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: `File size (${fileSize}KB) exceeds 10MB limit.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Store the file instead of sending it right away
+    setSelectedFile(file)
+    
+    toast({
+      title: "File selected",
+      description: `${file.name} (${fileSize}KB) selected. Click send to upload.`,
+    })
+    
+    // Reset the file input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+  }
   // Handle key press in message input
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSendMessage()
+      sendMessageWithAttachment()
     }
   }
 
@@ -842,12 +974,10 @@ export default function ParentMessagesPage() {
                       placeholder="Type a message..."
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                    />
-                    <Button
+                      onKeyDown={handleKeyPress}                    />                    <Button
                       size="icon"
-                      onClick={handleSendMessage}
-                      disabled={!messageText.trim()}
+                      onClick={sendMessageWithAttachment}
+                      disabled={!messageText.trim() && !selectedFile}
                       className="bg-[#095d40] hover:bg-[#02342e]"
                     >
                       <Send className="h-4 w-4" />
