@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { getMediaUrl } from "@/lib/api/media"
 
 type Props = {

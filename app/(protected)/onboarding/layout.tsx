@@ -1,4 +1,3 @@
-import type React from "react"
 import { getPageData } from "@/lib/api/pages"
 import { notFound } from "next/navigation"
 import AuthGuard from "@/components/auth-guard"
