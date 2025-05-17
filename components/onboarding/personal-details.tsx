@@ -1,5 +1,9 @@
-import { getMediaUrl } from "@/lib/api/media"
+"use client"
 import { useState } from "react"
+import OnboardingFormWrapper from "./OnboardingFormWrapper"
+import FormGroup from "./FormGroup"
+import Input from "./Input"
+import Select from "./Select"
 
 const PersonalDetails = ({
   onNext,
@@ -18,78 +22,64 @@ const PersonalDetails = ({
     onNext()
   }
 
-  const backgroundImageUrl = getMediaUrl("profile-setup-image.jpg")
-
   return (
-    <div className="min-h-screen flex">
-      {/* Left Image */}
-      <div
-        className="w-1/2 bg-cover bg-center hidden md:block"
-        style={{ backgroundImage: `url(${backgroundImageUrl})` }}
-      />
+    <OnboardingFormWrapper imageName="profile-setup-image.jpg" stepIndex={0}>
+      <h2 className="text-[24px] leading-[32px] font-normal text-[#1D1D1D] font-poppins">
+        Personal Details
+      </h2>
 
-      {/* Right Form */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 py-12">
-        {/* Progress bar */}
-        <div className="w-full max-w-lg mb-6">
-          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full w-1/3 bg-green-700" />
-          </div>
-        </div>
+      <FormGroup label="Salutation">
+        <Select
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-[90px]"
+        >
+          <option>Mr.</option>
+          <option>Ms.</option>
+          <option>Mrs.</option>
+          <option>Dr.</option>
+        </Select>
+      </FormGroup>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Personal Details
-        </h2>
+      <FormGroup label="First Name">
+        <Input
+          type="text"
+          placeholder="Type here"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+        />
+      </FormGroup>
 
-        <div className="space-y-4 max-w-lg w-full">
-          <select
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 w-full"
-          >
-            <option>Mr.</option>
-            <option>Ms.</option>
-            <option>Mrs.</option>
-            <option>Dr.</option>
-          </select>
+      <FormGroup label="Last Name">
+        <Input
+          type="text"
+          placeholder="Type here"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+        />
+      </FormGroup>
 
-          <input
-            type="text"
-            placeholder="First Name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 w-full"
-          />
+      <FormGroup label="Mobile Number">
+        <Input
+          type="text"
+          placeholder="E.g. +1 1234567890"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
+        />
+      </FormGroup>
 
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 w-full"
-          />
-
-          <input
-            type="text"
-            placeholder="Mobile Number"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 w-full"
-          />
-          <div className="flex justify-between">
-            <button onClick={onBack}>Back</button>
-            <div className="text-right">
-              <button
-                onClick={handleContinue}
-                className="bg-green-900 text-white px-6 py-2 rounded-md hover:bg-green-800"
-              >
-                Save & Continue
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex justify-between items-center mt-4">
+        <button onClick={onBack} className="text-sm font-medium text-black">
+          Back
+        </button>
+        <button
+          onClick={handleContinue}
+          className="bg-[#02342E] text-white px-6 py-2 rounded-full hover:bg-[#012c27]"
+        >
+          Save & Continue
+        </button>
       </div>
-    </div>
+    </OnboardingFormWrapper>
   )
 }
 

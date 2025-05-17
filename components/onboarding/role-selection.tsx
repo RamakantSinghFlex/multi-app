@@ -11,14 +11,13 @@ const RoleSelection = ({ onNext }: { onNext: () => void }) => {
 
   const handleSelect = (role: string) => {
     console.log("Selected role:", role)
-    onNext() // go to PersonalDetailsPage
+    onNext()
   }
 
-  const isDisabled = (role: string): boolean => {
-    return role !== "parent"
-  }
+  const isDisabled = (role: string) => role !== "parent"
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex font-sans">
       {/* Left Image */}
       <div
         className="w-1/2 bg-cover bg-center hidden md:block"
@@ -27,28 +26,37 @@ const RoleSelection = ({ onNext }: { onNext: () => void }) => {
 
       {/* Right Content */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 text-center">
-        <h1 className="text-2xl font-bold text-green-900 mb-2">
-          Welcome to Milestone Learning!
+        {/* Heading */}
+        <h1 className="mb-4 text-[40px] leading-[54px] font-semibold text-[#02342E] font-poppins text-center md:text-left">
+          Welcome to Milestone
+          <br />
+          Learning!
         </h1>
-        <p className="text-sm text-gray-600 mb-6">
+
+        {/* Paragraph */}
+        <p className="mb-10 text-[16px] leading-[32px] font-light text-black/70 font-lato">
           Tell us more about yourself:
         </p>
 
-        <div className="space-y-4 w-full max-w-xs">
-          {roles.map((role, index) => (
-            <button
-              key={index}
-              onClick={() => handleSelect(role.value)}
-              className={`w-full py-2 rounded-md transition ${
-                isDisabled(role.value)
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-green-900 text-white hover:bg-green-800"
-              }`}
-              disabled={isDisabled(role.value)}
-            >
-              {role.label}
-            </button>
-          ))}
+        {/* Buttons */}
+        <div className="space-y-4 w-full flex flex-col items-center">
+          {roles.map((role, index) => {
+            const disabled = isDisabled(role.value)
+            return (
+              <button
+                key={index}
+                onClick={() => handleSelect(role.value)}
+                disabled={disabled}
+                className={`w-[272px] h-[40px] px-[18px] py-[10px] rounded-full text-[16px] font-medium transition duration-200 ${
+                  disabled
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-[#02342E] text-white hover:opacity-90"
+                }`}
+              >
+                {role.label}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -1,5 +1,9 @@
-import { getMediaUrl } from "@/lib/api/media"
-import { useState } from "react"
+"use client"
+
+import { useEffect, useState } from "react"
+import Input from "./Input"
+import FormGroup from "./FormGroup"
+import OnboardingFormWrapper from "./OnboardingFormWrapper"
 
 const PreferredTime = ({
   onNext,
@@ -11,60 +15,58 @@ const PreferredTime = ({
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
 
+  useEffect(() => {
+    const now = new Date()
+
+    // Format date as YYYY-MM-DD
+    const formattedDate = now.toISOString().split("T")[0]
+
+    // Format time as HH:MM in 24-hour format
+    const formattedTime = now.toTimeString().slice(0, 5)
+
+    setDate(formattedDate)
+    setTime(formattedTime)
+  }, [])
+
   const handleConfirm = () => {
     console.log("Preferred Time:", { date, time })
     onNext()
   }
-  const backgroundImageUrl = getMediaUrl("preferred-time-image.jpg")
+
   return (
-    <div className="min-h-screen flex">
-      {/* Left Image */}
-      <div
-        className="w-1/2 bg-cover bg-center hidden md:block"
-        style={{ backgroundImage: `url(${backgroundImageUrl})` }}
-      />
+    <OnboardingFormWrapper imageName="preferred-time-image.jpg" stepIndex={2}>
+      <h2 className="text-[24px] leading-[32px] font-normal font-poppins text-[#1D1D1D]">
+        Preferred time to connect
+      </h2>
 
-      {/* Right Form */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 py-12">
-        {/* Progress bar */}
-        <div className="w-full max-w-lg mb-6">
-          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full w-[90%] bg-green-700" />
-          </div>
-        </div>
+      <FormGroup label="Date">
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+      </FormGroup>
 
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
-          Preferred time to connect
-        </h2>
+      <FormGroup label="Time">
+        <Input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
+      </FormGroup>
 
-        <div className="space-y-4 max-w-lg w-full">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-          />
-
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-          />
-          <div className="flex justify-between">
-            <button onClick={onBack}>Back</button>
-            <div className="text-right">
-              <button
-                onClick={handleConfirm}
-                className="bg-green-900 text-white px-6 py-2 rounded-md hover:bg-green-800"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex justify-between items-center w-full mt-6">
+        <button onClick={onBack} className="text-black font-medium">
+          Back
+        </button>
+        <button
+          onClick={handleConfirm}
+          className="bg-[#02342E] text-white px-6 py-2 rounded-full hover:bg-[#012c27]"
+        >
+          Confirm
+        </button>
       </div>
-    </div>
+    </OnboardingFormWrapper>
   )
 }
 
