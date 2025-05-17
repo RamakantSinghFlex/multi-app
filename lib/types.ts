@@ -75,6 +75,7 @@ export interface User {
   firstName?: string
   lastName?: string
   email: string
+  phone?: string
   role?: string
   roles?: string[]
   tutors?: User[]
@@ -125,7 +126,12 @@ export interface Appointment {
   title: string
   startTime: string
   endTime: string
-  status: "pending" | "confirmed" | "cancelled" | "completed" | "awaiting_payment"
+  status:
+    | "pending"
+    | "confirmed"
+    | "cancelled"
+    | "completed"
+    | "awaiting_payment"
   notes?: string
   tutors: Array<Tutor | string>
   students: Array<Student | string>

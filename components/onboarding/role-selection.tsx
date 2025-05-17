@@ -1,6 +1,9 @@
+"use client"
 import { getMediaUrl } from "@/lib/api/media"
 import { useAuth } from "@/lib/auth-context"
 import { patchUser } from "@/lib/api/users"
+import FormAlert from "./form-alert"
+import { useState } from "react"
 
 const roles = [
   { label: "I'm a Parent", value: "parent" },
@@ -10,17 +13,24 @@ const roles = [
 
 const RoleSelection = ({ onNext }: { onNext: () => void }) => {
   const backgroundImageUrl = getMediaUrl("profile-setup-image.jpg")
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const { user } = useAuth()
 
   const handleSelect = (role: string) => {
     console.log("Selected role:", role)
+    setSubmitting(true)
     if (user) {
       patchUser(user.id, { role })
         .then((response) => {
+          setSubmitting(false)
           if (response.error) {
             console.error("Error updating user role:", response.error)
+            setError(response.error)
           } else {
             console.log("User role updated successfully:", response.data)
+            setSuccessMessage("User role updated successfully.")
             setTimeout(() => {
               onNext()
             }, 2000)
@@ -28,6 +38,7 @@ const RoleSelection = ({ onNext }: { onNext: () => void }) => {
         })
         .catch((error) => {
           console.error("Error updating user role:", error)
+          setError("An error occurred while updating user role.")
         })
     }
   }
@@ -56,6 +67,9 @@ const RoleSelection = ({ onNext }: { onNext: () => void }) => {
           Tell us more about yourself:
         </p>
 
+        {/* Form Alert */}
+        <FormAlert error={error} successMessage={successMessage} />
+
         {/* Buttons */}
         <div className="space-y-4 w-full flex flex-col items-center">
           {roles.map((role, index) => {
@@ -64,7 +78,7 @@ const RoleSelection = ({ onNext }: { onNext: () => void }) => {
               <button
                 key={index}
                 onClick={() => handleSelect(role.value)}
-                disabled={disabled}
+                disabled={submitting || disabled}
                 className={`w-[272px] h-[40px] px-[18px] py-[10px] rounded-full text-[16px] font-medium transition duration-200 ${
                   disabled
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
