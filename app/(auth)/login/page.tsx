@@ -66,6 +66,7 @@ export default function LoginPage() {
       if (redirectPath) {
         router.push(redirectPath)
       }
+
       // If user is logging in for the first time (after email verification)
       // else if (user && user.needsOnboarding) {
       //   router.push("/onboarding")
@@ -199,6 +200,14 @@ export default function LoginPage() {
         // Remove the verified parameter from the URL to prevent showing it again on refresh
         const currentParams = new URLSearchParams(window.location.search)
         currentParams.delete("verified")
+        if (isAuthenticated && user) {
+          if (user.roles && user.roles.length > 0) {
+            const primaryRole = user.roles[0]
+            if (primaryRole !== "parent") {
+              currentParams.delete("redirect")
+            }
+          }
+        }
         const newUrl =
           window.location.pathname +
           (currentParams.toString() ? `?${currentParams.toString()}` : "")
@@ -240,7 +249,7 @@ export default function LoginPage() {
         window.history.replaceState({}, document.title, newUrl)
       }
     }
-  }, [setError, setSuccessMessage])
+  }, [setError, setSuccessMessage, isAuthenticated, user])
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
