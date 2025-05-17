@@ -6,7 +6,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { verifyEmail } from "@/lib/api" // Import the verifyEmail function
@@ -45,11 +52,15 @@ export default function VerifyEmailPage() {
 
         // Redirect to login page after 3 seconds
         setTimeout(() => {
-          router.push("/login?verified=true")
+          router.push("/login?verified=true&redirect=/onboarding")
         }, 3000)
       } catch (err) {
         logger.error("Email verification failed:", err)
-        setError(err instanceof Error ? err.message : "An unknown error occurred during verification")
+        setError(
+          err instanceof Error
+            ? err.message
+            : "An unknown error occurred during verification"
+        )
       } finally {
         setVerifying(false)
       }
@@ -73,7 +84,9 @@ export default function VerifyEmailPage() {
 
       <Card className="w-full max-w-md border-0 shadow-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Email Verification</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Email Verification
+          </CardTitle>
           <CardDescription>Verifying your email address</CardDescription>
         </CardHeader>
 
@@ -81,7 +94,9 @@ export default function VerifyEmailPage() {
           {verifying && (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
-              <p className="text-center text-muted-foreground">Verifying your email address...</p>
+              <p className="text-center text-muted-foreground">
+                Verifying your email address...
+              </p>
             </div>
           )}
 
@@ -89,7 +104,8 @@ export default function VerifyEmailPage() {
             <Alert className="mb-4 border-green-200 bg-green-50 text-green-800">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription>
-                Your email has been successfully verified! Redirecting you to the login page...
+                Your email has been successfully verified! Redirecting you to
+                the login page...
               </AlertDescription>
             </Alert>
           )}
@@ -108,7 +124,10 @@ export default function VerifyEmailPage() {
               {success ? (
                 <p className="text-center text-sm text-muted-foreground">
                   If you are not redirected automatically,{" "}
-                  <Link href="/login" className="font-medium text-primary hover:underline">
+                  <Link
+                    href="/login"
+                    className="font-medium text-primary hover:underline"
+                  >
                     click here to sign in
                   </Link>
                 </p>
@@ -119,7 +138,11 @@ export default function VerifyEmailPage() {
                       ? "Your verification link has expired. Please request a new one."
                       : "There was a problem verifying your email. Please try again or contact support."}
                   </p>
-                  <Button variant="outline" onClick={() => router.push("/login")} className="w-full">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/login")}
+                    className="w-full"
+                  >
                     Return to Login
                   </Button>
                 </>
