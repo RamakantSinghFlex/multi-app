@@ -1,6 +1,3 @@
-// components/onboarding/Select.tsx
-import React from "react"
-
 type Props = React.SelectHTMLAttributes<HTMLSelectElement>
 
 const Select = (props: Props) => {

@@ -1,4 +1,3 @@
-// components/onboarding/OnboardingFormWrapper.tsx
 "use client"
 
 import React from "react"

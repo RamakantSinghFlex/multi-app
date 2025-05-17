@@ -1,6 +1,3 @@
-// components/onboarding/FormGroup.tsx
-import React from "react"
-
 type Props = {
   label: string
   children: React.ReactNode
