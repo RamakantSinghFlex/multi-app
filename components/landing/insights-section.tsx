@@ -3,13 +3,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowUpRight } from "lucide-react"
 import { Marquee } from "../magicui/marquee"
-// Import from dynamic blog API
-import { getBlogPosts } from "@/lib/blog-api-dynamic"
 
-export default async function InsightsSection({ data }: { data: any }) {
-  // Fetch blog posts dynamically
-  const blogResponse = await getBlogPosts()
-  const blogPosts = blogResponse.data?.docs || []
+export default function InsightsSection({ data }: { data: any }) {
   return (
     <section className="py-16 bg-gray-50 px-4 md:px-16">
       <div className="w-full">
@@ -18,21 +13,11 @@ export default async function InsightsSection({ data }: { data: any }) {
             {data.title}
           </h2>
           <p className="text-gray-700 text-lg">{data.subtitle}</p>
-        </div>{" "}
+        </div>
         <div className="relative w-full mb-10">
           <Marquee>
             {data.articles.map((article: any) => {
-              // Match this article with a dynamic blog post if possible
-              const matchingBlog = blogPosts.find(
-                (post) =>
-                  post.title === article.title ||
-                  post.title.includes(article.title) ||
-                  article.title.includes(post.title)
-              )
-
-              // Create a slug for the article, preferring the matching blog's slug
               const slug =
-                matchingBlog?.slug ||
                 article.slug ||
                 article.title
                   .toLowerCase()
@@ -48,16 +33,8 @@ export default async function InsightsSection({ data }: { data: any }) {
                   <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex-shrink-0 w-[280px] md:w-[320px] snap-start transition-all duration-200 hover:shadow-md">
                     <div className="relative h-48">
                       <Image
-                        src={
-                          article.image?.url ||
-                          matchingBlog?.coverImage ||
-                          "/placeholder.jpg"
-                        }
-                        alt={
-                          article.image?.alt ||
-                          matchingBlog?.title ||
-                          "Blog image"
-                        }
+                        src={article.image?.url || "/placeholder.jpg"}
+                        alt={article.image?.alt || "Blog image"}
                         fill
                         className="object-cover"
                       />
@@ -67,9 +44,7 @@ export default async function InsightsSection({ data }: { data: any }) {
                         {article.title}
                       </h3>
                       <p className="text-gray-600 text-sm">
-                        {article.description ||
-                          matchingBlog?.excerpt ||
-                          data.excerpt}
+                        {article.description || data.excerpt}
                       </p>
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         <div className="flex items-center gap-3">
@@ -77,8 +52,7 @@ export default async function InsightsSection({ data }: { data: any }) {
                             {data.category}
                           </span>
                           <span className="text-gray-400 text-sm">
-                            {article.readTime || matchingBlog?.readTime || 5}{" "}
-                            mins read
+                            {article.readTime || 5} mins read
                           </span>
                         </div>
                         <div className="cursor-pointer">

@@ -1,24 +1,4 @@
-/**
- * DYNAMIC BLOG IMPLEMENTATION INSTRUCTIONS
- *
- * This file provides detailed documentation for the fully dynamic blog system
- * that fetches content from the Milestone Learning API endpoint:
- * https://ancient-yeti-453713-d0.uk.r.appspot.com/api/pages/681e095b767287dd8556100c?depth=1&draft=false&locale=undefined
- *
- * IMPLEMENTATION STATUS: COMPLETE
- *
- * The dynamic blog system has been fully implemented and is now active in:
- * - /lib/blog-api-dynamic.ts (API client)
- * - /app/blogs/page.tsx (Blog listing)
- * - /app/blogs/[slug]/page.tsx (Individual blog post)
- * - /components/landing/insights-section.tsx (Landing page blog preview)
- *
- * All blog content is now fetched dynamically from the API with no hardcoded fallbacks.
- */
 
-/**
- * DATA FLOW
- */
 
 export const BLOGS_API_URL =
   "https://ancient-yeti-453713-d0.uk.r.appspot.com/api/pages/681e095b767287dd8556100c?depth=1&draft=false&locale=undefined"

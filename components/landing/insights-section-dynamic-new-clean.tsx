@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button"
 import { ArrowUpRight } from "lucide-react"
 import { Marquee } from "../magicui/marquee"
 import { getBlogPosts } from "@/lib/blog-api-dynamic-new"
+
 function cleanBlogTitle(title: string): string {
   if (!title) return ""
   return title.replace(/^(\d+)\.\s*"?(.+?)"?$/, "$2").trim()
 }
+
 function extractBlogNumber(title: string): number | null {
   if (!title) return null
   const match = title.match(/^(\d+)\./)
@@ -32,7 +34,6 @@ export default async function InsightsSection({ data }: { data: any }) {
         ) {
           blogsByNumber[post.orderNumber] = {
             ...post,
-
             title: post.title || `Blog Post ${post.orderNumber}`,
             excerpt: post.excerpt || "",
             content: post.content || "",
@@ -53,7 +54,6 @@ export default async function InsightsSection({ data }: { data: any }) {
         ) {
           blogsByNumber[numberFromTitle] = {
             ...post,
-
             title: post.title || `Blog Post ${numberFromTitle}`,
             excerpt: post.excerpt || "",
             content: post.content || "",
@@ -152,7 +152,6 @@ export default async function InsightsSection({ data }: { data: any }) {
         blogNumber: number,
         orderNumber: number,
         content: fullContent,
-
         id: post.id || `blog-${number}`,
         title: post.title || `${number}. Blog Post ${number}`,
         slug: post.slug || `blog-${number}`,
@@ -233,7 +232,6 @@ export default async function InsightsSection({ data }: { data: any }) {
                       fill
                       className="object-cover"
                     />
-                    {/* Display blog order number */}
                     {article.orderNumber && (
                       <div className="absolute top-3 left-3 bg-green-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                         #{article.orderNumber}
@@ -242,11 +240,9 @@ export default async function InsightsSection({ data }: { data: any }) {
                   </div>
                   <div className="p-6 space-y-4">
                     <h3 className="font-bold text-green-900 line-clamp-3 h-[4.5rem]">
-                      {/* Display clean title without number prefix duplication */}
                       {cleanBlogTitle(article.title)}
                     </h3>
                     <p className="text-gray-600 text-sm line-clamp-2">
-                      {/* Use blog excerpt or first part of content if available */}
                       {article.excerpt ||
                         article.content?.substring(0, 120) + "..." ||
                         "Learn more about this topic..."}

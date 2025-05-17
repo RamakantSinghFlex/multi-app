@@ -78,7 +78,7 @@ export default async function InsightsSection({ data }: { data: any }) {
     return result
   }
 
-  // Get all 5 blog posts, ensuring we have one for each position
+
   const completeBlogPosts = getBlogPosts15()
 
   // Map these to display articles with proper structure
