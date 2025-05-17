@@ -1,7 +1,11 @@
+"use client"
 import Image from "next/image"
 import { Button } from "../ui/button"
+import { useRouter } from "next/navigation"
 
 export default function MilestoneSection({ data }: { data: any }) {
+  const router = useRouter()
+
   return (
     <section
       className="py-16 px-4 md:px-16 bg-green-900 text-white"
@@ -18,14 +22,24 @@ export default function MilestoneSection({ data }: { data: any }) {
 
         <div className="flex flex-wrap gap-6 justify-center mb-6">
           {data.features.map((feature: any) => (
-            <div className="bg-white p-8 rounded-lg text-center text-gray-800 w-72" key={feature.id}>
+            <div
+              className="bg-white p-8 rounded-lg text-center text-gray-800 w-72"
+              key={feature.id}
+            >
               <div className="flex justify-center mb-4">
                 <div className="h-16 w-16 rounded-full flex items-center justify-center">
-                  <Image src={feature.icon.url} width={56} height={56} alt={feature.icon.alt} />
+                  <Image
+                    src={feature.icon.url}
+                    width={56}
+                    height={56}
+                    alt={feature.icon.alt}
+                  />
                 </div>
               </div>
               <h3 className="font-bold text-lg mb-3">{feature.featureTitle}</h3>
-              <p className="text-gray-600 text-sm">{feature.featureDescription}</p>
+              <p className="text-gray-600 text-sm">
+                {feature.featureDescription}
+              </p>
             </div>
           ))}
         </div>
@@ -36,6 +50,9 @@ export default function MilestoneSection({ data }: { data: any }) {
               key={cta.id}
               variant="outline"
               className={`text-black cursor-pointer rounded-full ${cta.isPrimary ? "bg-white" : "bg-primary text-white"}`}
+              onClick={() => {
+                router.push(cta.url)
+              }}
             >
               {cta.label}
             </Button>
