@@ -570,6 +570,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Add a function to refresh user data
+  const refreshUserData = async () => {
+    try {
+      const response = await getMe()
+      if (response.data) {
+        dispatch({ type: "SET_USER", payload: response.data })
+      }
+    } catch (error) {
+      console.error("Error refreshing user data:", error)
+    }
+  }
+
   // Add setError to the contextValue in the AuthProvider component
   const contextValue = {
     ...state,
@@ -583,6 +595,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError: (error: string) => dispatch({ type: "AUTH_FAILURE", payload: error }),
     setSuccessMessage: (message: string) => dispatch({ type: "SET_SUCCESS_MESSAGE", payload: message }),
     setUser: (user: User | null) => dispatch({ type: "SET_USER", payload: user }),
+    refreshUserData,
   }
 
   // Provide a value to indicate if the initial auth check is complete

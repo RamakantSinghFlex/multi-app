@@ -28,6 +28,17 @@ interface PasswordDisplayModalProps {
   showCloseButton?: boolean
 }
 
+// Add a function to retrieve passwords from localStorage
+const getPasswordForUser = (email: string) => {
+  try {
+    const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+    return passwordsMap[email] || null
+  } catch (err) {
+    console.error("Error retrieving password from localStorage:", err)
+    return null
+  }
+}
+
 export function PasswordDisplayModal({
   open,
   onOpenChange,
@@ -147,9 +158,10 @@ export function PasswordDisplayModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {visibleUsers.length > 0 && Object.keys(passwords).length > 0 ? (
-            visibleUsers.map((user) =>
-              passwords[user.email] ? (
+          {visibleUsers.length > 0 ? (
+            visibleUsers.map((user) => {
+              const password = getPasswordForUser(user.email)
+              return password ? (
                 <div key={user.email} className="space-y-2">
                   <Label className="text-sm font-medium">
                     {user.name || user.email} ({user.userType})
@@ -157,7 +169,7 @@ export function PasswordDisplayModal({
                   <div className="flex items-center space-x-2">
                     <div className="relative flex-1">
                       <Input
-                        value={passwords[user.email]}
+                        value={password}
                         type={showPasswords[user.email] ? "text" : "password"}
                         readOnly
                         className="pr-10"
@@ -185,15 +197,25 @@ export function PasswordDisplayModal({
                     </Button>
                   </div>
                 </div>
-              ) : null,
-            )
+              ) : (
+                <div key={user.email} className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    {user.name || user.email} ({user.userType})
+                  </Label>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <AlertDescription>No password found for this user.</AlertDescription>
+                  </Alert>
+                </div>
+              )
+            })
           ) : (
             <Alert>
               <AlertCircle className="h-4 w-4 mr-2" />
               <AlertDescription>
                 {users.length > 0 && visibleUsers.length === 0
                   ? "You don't have permission to view these passwords."
-                  : "No passwords found for the selected users."}
+                  : "No passwords generated for the selected users."}
               </AlertDescription>
             </Alert>
           )}

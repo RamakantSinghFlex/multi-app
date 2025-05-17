@@ -39,14 +39,13 @@ export async function GET(request: Request) {
         hasTwilioAccountSid: !!process.env.TWILIO_ACCOUNT_SID,
         hasTwilioApiKey: !!process.env.TWILIO_API_KEY,
         hasTwilioApiSecret: !!process.env.TWILIO_API_SECRET,
-        hasTwilioConversationsServiceSid:
-          !!process.env.TWILIO_CONVERSATIONS_SERVICE_SID,
+        hasTwilioConversationsServiceSid: !!process.env.TWILIO_CONVERSATIONS_SERVICE_SID,
       })
       return NextResponse.json(
         {
           error: "Twilio configuration is incomplete",
         },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
@@ -57,10 +56,7 @@ export async function GET(request: Request) {
     if (token) {
       try {
         console.log("Attempting to verify JWT token")
-        const decoded = jwt.verify(
-          token,
-          process.env.JWT_SECRET || "your-secret-key"
-        ) as { id: string; email: string }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as { id: string; email: string }
 
         if (decoded && decoded.id) {
           identity = decoded.id.toString()
@@ -81,7 +77,7 @@ export async function GET(request: Request) {
             {
               error: "Invalid token and no userId fallback provided",
             },
-            { status: 401 }
+            { status: 401 },
           )
         }
       }
@@ -98,13 +94,11 @@ export async function GET(request: Request) {
         {
           error: "Unauthorized - No token or userId provided",
         },
-        { status: 401 }
+        { status: 401 },
       )
     } // Sanitize identity - Twilio has specific rules for identity strings
     // Remove any characters that might cause issues with Twilio
-    const sanitizedIdentity = identity
-      .toString()
-      .replace(/[^a-zA-Z0-9_.-]/g, "_")
+    const sanitizedIdentity = identity.toString().replace(/[^a-zA-Z0-9_.-]/g, "_")
 
     console.log("Sanitized identity:", sanitizedIdentity)
 
@@ -122,7 +116,7 @@ export async function GET(request: Request) {
         {
           identity: sanitizedIdentity,
           ttl: 3600 * 12, // 12 hour expiration
-        }
+        },
       )
 
       // Add the chat grant to the token
@@ -130,10 +124,7 @@ export async function GET(request: Request) {
 
       // Generate the token string
       const tokenString = twilioToken.toJwt()
-      console.log(
-        "Successfully generated Twilio token for identity:",
-        sanitizedIdentity
-      )
+      console.log("Successfully generated Twilio token for identity:", sanitizedIdentity)
 
       // Log token details for debugging (not the full token for security)
       console.log("Token info:", {
@@ -150,12 +141,9 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           error: "Failed to generate Twilio access token",
-          details:
-            tokenGenError instanceof Error
-              ? tokenGenError.message
-              : String(tokenGenError),
+          details: tokenGenError instanceof Error ? tokenGenError.message : String(tokenGenError),
         },
-        { status: 500 }
+        { status: 500 },
       )
     }
   } catch (error) {
@@ -165,7 +153,7 @@ export async function GET(request: Request) {
         error: "Failed to process token request",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

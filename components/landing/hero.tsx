@@ -21,9 +21,7 @@ export default function Hero({ data }: { data: any }) {
 
         {/* Content container - stacked below image on mobile */}
         <div className="space-y-6 py-8 px-6 bg-gray-50 md:bg-white md:py-16 md:px-16 md:order-1">
-          <h1 className="text-3xl font-bold text-green-900 leading-tight">
-            {data.heading}
-          </h1>
+          <h1 className="text-3xl font-bold text-green-900 leading-tight">{data.heading}</h1>
           <ul className="text-black space-y-4">
             {data.keypoints.map((point: { text: string; id: string }) => (
               <li className="flex items-center gap-3" key={point.id}>

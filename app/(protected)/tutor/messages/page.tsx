@@ -10,33 +10,13 @@ import { useAuth } from "@/lib/auth-context"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Client } from "@twilio/conversations"
 // Custom typing to handle Twilio client events
-type TwilioClientEvents =
-  | "connectionStateChanged"
-  | "conversationAdded"
-  | "conversationRemoved"
-  | "connectionError"
+type TwilioClientEvents = "connectionStateChanged" | "conversationAdded" | "conversationRemoved" | "connectionError"
 import { getTwilioToken } from "@/lib/api/messages"
 import { MessageSkeleton } from "@/components/chat/message-skeleton"
 import { AlertCircle } from "lucide-react"
@@ -156,13 +136,8 @@ export default function TutorMessagesPage() {
           console.error("Twilio client encountered an error:", error)
 
           // Check if this is a sync error (most common for 403 forbidden errors)
-          if (
-            error.name === "SyncError" ||
-            (error.message && error.message.includes("403"))
-          ) {
-            console.log(
-              "Detected Twilio SyncError (403 forbidden). Attempting recovery..."
-            )
+          if (error.name === "SyncError" || (error.message && error.message.includes("403"))) {
+            console.log("Detected Twilio SyncError (403 forbidden). Attempting recovery...")
 
             // Show user friendly message
             toast({
@@ -198,21 +173,16 @@ export default function TutorMessagesPage() {
       console.log("Loading conversations")
       const subscribedConversations = await client.getSubscribedConversations()
 
-      const formattedConversations = subscribedConversations.items.map(
-        (conv: any) => ({
-          sid: conv.sid,
-          friendlyName: conv.friendlyName || "Unnamed Conversation",
-          dateUpdated: conv.dateUpdated,
-          unreadMessagesCount: conv.unreadMessagesCount,
-        })
-      )
+      const formattedConversations = subscribedConversations.items.map((conv: any) => ({
+        sid: conv.sid,
+        friendlyName: conv.friendlyName || "Unnamed Conversation",
+        dateUpdated: conv.dateUpdated,
+        unreadMessagesCount: conv.unreadMessagesCount,
+      }))
 
       // Sort conversations by date updated, newest first
       formattedConversations.sort((a: Conversation, b: Conversation) => {
-        return (
-          new Date(b.dateUpdated as Date).getTime() -
-          new Date(a.dateUpdated as Date).getTime()
-        )
+        return new Date(b.dateUpdated as Date).getTime() - new Date(a.dateUpdated as Date).getTime()
       })
 
       setConversations(formattedConversations)
@@ -229,8 +199,7 @@ export default function TutorMessagesPage() {
   useEffect(() => {
     const initTwilio = async () => {
       // Helper function to create a small delay for smoother loading UX
-      const delay = (ms: number) =>
-        new Promise((resolve) => setTimeout(resolve, ms))
+      const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
       try {
         setIsLoading(true)
@@ -243,78 +212,66 @@ export default function TutorMessagesPage() {
 
         if (client) {
           console.log("Twilio client initialized successfully") // Set up event listeners with enhanced error handling
-          client.on(
-            "connectionStateChanged" as TwilioClientEvents,
-            (state: string) => {
-              console.log("Twilio connection state changed:", state)
-              if (state === "connecting") {
-                // Connection is being established
-                console.log("Attempting to establish connection...")
-                toast({
-                  title: "Connecting",
-                  description:
-                    "Establishing connection to messaging service...",
-                })
-              } else if (state === "connected") {
-                // Successfully connected
-                console.log("Successfully connected to Twilio")
-                toast({
-                  title: "Connected",
-                  description: "Successfully connected to messaging service",
-                })
-              } else if (state === "disconnected") {
-                // Disconnected from the service
-                console.log("Disconnected from Twilio service")
-                toast({
-                  title: "Disconnected",
-                  description:
-                    "Disconnected from messaging service. Reconnecting...",
-                })
-              } else if (state === "denied") {
-                // Connection was denied
-                console.error("Connection to Twilio was denied")
-                toast({
-                  title: "Connection Error",
-                  description: "Chat connection was denied. Please try again.",
-                  variant: "destructive",
-                })
-              } else if (state === "error") {
-                // Connection encountered an error
-                console.error("Twilio connection error occurred")
-                toast({
-                  title: "Connection Error",
-                  description:
-                    "Messaging service connection error. Reconnecting...",
-                  variant: "destructive",
-                })
-                // Attempt to recover with a fresh token
-                setTimeout(() => {
-                  initializeTwilioClient()
-                }, 2000)
-              }
+          client.on("connectionStateChanged" as TwilioClientEvents, (state: string) => {
+            console.log("Twilio connection state changed:", state)
+            if (state === "connecting") {
+              // Connection is being established
+              console.log("Attempting to establish connection...")
+              toast({
+                title: "Connecting",
+                description: "Establishing connection to messaging service...",
+              })
+            } else if (state === "connected") {
+              // Successfully connected
+              console.log("Successfully connected to Twilio")
+              toast({
+                title: "Connected",
+                description: "Successfully connected to messaging service",
+              })
+            } else if (state === "disconnected") {
+              // Disconnected from the service
+              console.log("Disconnected from Twilio service")
+              toast({
+                title: "Disconnected",
+                description: "Disconnected from messaging service. Reconnecting...",
+              })
+            } else if (state === "denied") {
+              // Connection was denied
+              console.error("Connection to Twilio was denied")
+              toast({
+                title: "Connection Error",
+                description: "Chat connection was denied. Please try again.",
+                variant: "destructive",
+              })
+            } else if (state === "error") {
+              // Connection encountered an error
+              console.error("Twilio connection error occurred")
+              toast({
+                title: "Connection Error",
+                description: "Messaging service connection error. Reconnecting...",
+                variant: "destructive",
+              })
+              // Attempt to recover with a fresh token
+              setTimeout(() => {
+                initializeTwilioClient()
+              }, 2000)
             }
-          )
+          })
 
-          client.on(
-            "conversationAdded" as TwilioClientEvents,
-            (conversation: any) => {
-              console.log("Conversation added:", conversation.sid)
-              loadConversations(client)
-            }
-          ) // Add conversationRemoved event handler
-          client.on(
-            "conversationRemoved" as TwilioClientEvents,
-            (conversation: any) => {
-              console.log("Conversation removed:", conversation.sid)
-              loadConversations(client)
+          client.on("conversationAdded" as TwilioClientEvents, (conversation: any) => {
+            console.log("Conversation added:", conversation.sid)
+            loadConversations(client)
+          }) // Add conversationRemoved event handler
+          client.on("conversationRemoved" as TwilioClientEvents, (conversation: any) => {
+            console.log("Conversation removed:", conversation.sid)
+            loadConversations(client)
 
-              // If the removed conversation is the currently selected one, clear it
-              if (selectedConversation?.sid === conversation.sid) {
-                setSelectedConversation(null)
-                setMessages([])
-              }
+            // If the removed conversation is the currently selected one, clear it
+            if (selectedConversation?.sid === conversation.sid) {
+              setSelectedConversation(null)
+              setMessages([])
             }
-          )
+          })
 
           // Load conversations
           await loadConversations(client)
@@ -353,8 +310,7 @@ export default function TutorMessagesPage() {
   const handleSelectConversation = async (conversationSid: string) => {
     try {
       setIsLoadingMessages(true)
-      const conversation =
-        await twilioClient.getConversationBySid(conversationSid)
+      const conversation = await twilioClient.getConversationBySid(conversationSid)
       setSelectedConversation(conversation)
 
       // Load messages for the selected conversation
@@ -376,10 +332,7 @@ export default function TutorMessagesPage() {
     try {
       // First, make sure we're properly subscribed to the conversation
       await conversation.getParticipants().catch((err: Error) => {
-        console.warn(
-          "Error checking participants, attempting to join conversation:",
-          err
-        )
+        console.warn("Error checking participants, attempting to join conversation:", err)
         return conversation.join().catch((joinErr: Error) => {
           console.error("Failed to join conversation:", joinErr)
         })
@@ -390,10 +343,7 @@ export default function TutorMessagesPage() {
         sid: message.sid,
         author: message.author,
         body: message.body,
-        dateCreated:
-          message.dateCreated instanceof Date
-            ? message.dateCreated.toISOString()
-            : message.dateCreated,
+        dateCreated: message.dateCreated instanceof Date ? message.dateCreated.toISOString() : message.dateCreated,
         media: message.media?.map((m: any) => ({
           sid: m.sid,
           filename: m.filename,
@@ -424,9 +374,7 @@ export default function TutorMessagesPage() {
               author: message.author,
               body: message.body,
               dateCreated:
-                message.dateCreated instanceof Date
-                  ? message.dateCreated.toISOString()
-                  : message.dateCreated,
+                message.dateCreated instanceof Date ? message.dateCreated.toISOString() : message.dateCreated,
               media: message.media?.map((m: any) => ({
                 sid: m.sid,
                 filename: m.filename,
@@ -492,10 +440,7 @@ export default function TutorMessagesPage() {
       if (storedRelationships) {
         const relationships = JSON.parse(storedRelationships)
         // Filter for students and parents only for tutor view
-        relatedUsers = [
-          ...(relationships.parents || []),
-          ...(relationships.students || []),
-        ]
+        relatedUsers = [...(relationships.parents || []), ...(relationships.students || [])]
       } else {
         // Fallback mock data if no relationships found
         relatedUsers = [
@@ -620,10 +565,7 @@ export default function TutorMessagesPage() {
       // Use appropriate method based on Twilio's API
       try {
         // First try the newer API method
-        const mediaMessage = await selectedConversation
-          .prepareMessage()
-          .addMedia(file)
-          .build()
+        const mediaMessage = await selectedConversation.prepareMessage().addMedia(file).build()
 
         await mediaMessage.send()
       } catch (err) {
@@ -684,11 +626,7 @@ export default function TutorMessagesPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={openNewConversationDialog}
-                  >
+                  <Button variant="outline" size="sm" onClick={openNewConversationDialog}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">New Chat</span>
                   </Button>
@@ -704,9 +642,7 @@ export default function TutorMessagesPage() {
             {isLoading ? (
               <div className="flex h-64 flex-col items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-[#095d40]" />
-                <p className="mt-4 text-sm text-[#858585]">
-                  Loading conversations...
-                </p>
+                <p className="mt-4 text-sm text-[#858585]">Loading conversations...</p>
               </div>
             ) : conversations.length > 0 ? (
               <div className="space-y-1 p-2">
@@ -714,17 +650,12 @@ export default function TutorMessagesPage() {
                   <div
                     key={conversation.sid}
                     className={`flex cursor-pointer items-center rounded-md p-2 hover:bg-gray-100 ${
-                      selectedConversation?.sid === conversation.sid
-                        ? "bg-gray-100"
-                        : ""
+                      selectedConversation?.sid === conversation.sid ? "bg-gray-100" : ""
                     }`}
                     onClick={() => handleSelectConversation(conversation.sid)}
                   >
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src="/placeholder.svg"
-                        alt={conversation.friendlyName}
-                      />
+                      <AvatarImage src="/placeholder.svg" alt={conversation.friendlyName} />
                       <AvatarFallback>
                         {conversation.friendlyName
                           .split(" ")
@@ -734,27 +665,20 @@ export default function TutorMessagesPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="ml-3 flex-1 overflow-hidden">
-                      <p className="truncate font-medium">
-                        {conversation.friendlyName}
-                      </p>
-                      <p className="truncate text-xs text-[#858585]">
-                        {conversation.lastMessage || "No messages yet"}
-                      </p>
+                      <p className="truncate font-medium">{conversation.friendlyName}</p>
+                      <p className="truncate text-xs text-[#858585]">{conversation.lastMessage || "No messages yet"}</p>
                     </div>{" "}
-                    {conversation.unreadMessagesCount &&
-                      conversation.unreadMessagesCount > 0 && (
-                        <div className="ml-2 rounded-full bg-[#095d40] px-2 py-0.5 text-xs text-white">
-                          {conversation.unreadMessagesCount}
-                        </div>
-                      )}
+                    {conversation.unreadMessagesCount && conversation.unreadMessagesCount > 0 && (
+                      <div className="ml-2 rounded-full bg-[#095d40] px-2 py-0.5 text-xs text-white">
+                        {conversation.unreadMessagesCount}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="flex h-64 items-center justify-center">
-                <p className="text-center text-[#858585]">
-                  No conversations yet
-                </p>
+                <p className="text-center text-[#858585]">No conversations yet</p>
               </div>
             )}
           </div>
@@ -766,10 +690,7 @@ export default function TutorMessagesPage() {
               <CardHeader className="border-b p-4">
                 <div className="flex items-center">
                   <Avatar>
-                    <AvatarImage
-                      src="/placeholder.svg"
-                      alt={selectedConversation.friendlyName}
-                    />
+                    <AvatarImage src="/placeholder.svg" alt={selectedConversation.friendlyName} />
                     <AvatarFallback>
                       {selectedConversation.friendlyName
                         .split(" ")
@@ -779,9 +700,7 @@ export default function TutorMessagesPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm font-medium">
-                      {selectedConversation.friendlyName}
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium">{selectedConversation.friendlyName}</CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -811,9 +730,7 @@ export default function TutorMessagesPage() {
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <p className="text-[#858585]">
-                        No messages yet. Start the conversation!
-                      </p>
+                      <p className="text-[#858585]">No messages yet. Start the conversation!</p>
                     </div>
                   )}
                 </div>
@@ -878,17 +795,9 @@ export default function TutorMessagesPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="max-w-md space-y-4 text-center">
-                <h3 className="text-lg font-medium">
-                  Select a conversation to start messaging
-                </h3>
-                <p className="text-[#858585]">
-                  Choose an existing conversation from the list or start a new
-                  one
-                </p>
-                <Button
-                  onClick={openNewConversationDialog}
-                  className="bg-[#095d40]"
-                >
+                <h3 className="text-lg font-medium">Select a conversation to start messaging</h3>
+                <p className="text-[#858585]">Choose an existing conversation from the list or start a new one</p>
+                <Button onClick={openNewConversationDialog} className="bg-[#095d40]">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   New Conversation
                 </Button>
@@ -898,10 +807,7 @@ export default function TutorMessagesPage() {
         </Card>
       </div>
       {/* New Conversation Dialog */}
-      <Dialog
-        open={isNewConversationOpen}
-        onOpenChange={setIsNewConversationOpen}
-      >
+      <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
@@ -934,11 +840,7 @@ export default function TutorMessagesPage() {
             <div className="flex justify-end">
               <Button
                 type="submit"
-                disabled={
-                  isCreatingConversation ||
-                  !selectedUserId ||
-                  !conversationName.trim()
-                }
+                disabled={isCreatingConversation || !selectedUserId || !conversationName.trim()}
                 className="bg-[#095d40]"
               >
                 {isCreatingConversation ? (

@@ -7,13 +7,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 
 export default function GlobalError({
@@ -44,26 +38,15 @@ export default function GlobalError({
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-10 w-10 text-red-600" />
               </div>
-              <CardTitle className="text-3xl font-bold">
-                Critical Error
-              </CardTitle>
+              <CardTitle className="text-3xl font-bold">Critical Error</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <p className="mb-4 text-muted-foreground">
-                We&apos;re sorry, but a critical error has occurred in the
-                application.
+                We&apos;re sorry, but a critical error has occurred in the application.
               </p>
-              {error.digest && (
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Error ID: {error.digest}
-                </p>
-              )}
+              {error.digest && <p className="mb-4 text-sm text-muted-foreground">Error ID: {error.digest}</p>}
               <div className="mt-6">
-                <Button
-                  className="w-full"
-                  variant="default"
-                  onClick={() => reset()}
-                >
+                <Button className="w-full" variant="default" onClick={() => reset()}>
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Reload Application
                 </Button>

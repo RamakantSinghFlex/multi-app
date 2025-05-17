@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/auth-context"
 import type { Student, Tutor, Parent, ApiResponse } from "@/lib/types"
 import { useRouter } from "next/navigation"
+import { getMe } from "@/lib/api/auth"
 
 interface AppointmentCalendarProps {
   onSuccess?: (newAppointment?: any) => void
@@ -62,6 +63,34 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
   const isStudent = userRoles.includes("student")
   const isParent = userRoles.includes("parent")
 
+  // Add this at the beginning of the component, after the state declarations
+  useEffect(() => {
+    // Force refresh user data when component mounts to ensure we have the latest students and tutors
+    const refreshUserData = async () => {
+      try {
+        // Fetch fresh user data to ensure we have the latest students and tutors
+        const { data } = await getMe()
+        if (data) {
+          // If we have students but none are selected, select the first one
+          if (data.students && data.students.length > 0 && selectedStudents.length === 0) {
+            setSelectedStudents([data.students[0].id])
+          }
+
+          // If we have tutors but none are selected, select the first one
+          if (data.tutors && data.tutors.length > 0 && selectedTutors.length === 0 && !isTutor) {
+            setSelectedTutors([data.tutors[0].id])
+            // Also calculate price based on the tutor's rate
+            calculatePrice([data.tutors[0].id], startTime, endTime)
+          }
+        }
+      } catch (error) {
+        console.error("Error refreshing user data:", error)
+      }
+    }
+
+    refreshUserData()
+  }, []) // Empty dependency array means this runs once on mount
+
   // Initialize the tutor cache with the current user if they are a tutor
   useEffect(() => {
     if (isTutor && userId && user) {
@@ -78,7 +107,19 @@ export default function AppointmentCalendar({ onSuccess, onCancel }: Appointment
         } as Tutor,
       }))
     }
-  }, [isTutor, userId, user])
+
+    // If we have students from the user context but none are selected, select the first one
+    if (students.length > 0 && selectedStudents.length === 0) {
+      setSelectedStudents([students[0].id])
+    }
+
+    // If we have tutors from the user context but none are selected, select the first one (for non-tutors)
+    if (tutors.length > 0 && selectedTutors.length === 0 && !isTutor) {
+      setSelectedTutors([tutors[0].id])
+      // Also calculate price based on the tutor's rate
+      calculatePrice([tutors[0].id], startTime, endTime)
+    }
+  }, [user, userId, isTutor, students, tutors])
 
   // Add this after the existing state declarations, before the useEffect hooks
   useEffect(() => {

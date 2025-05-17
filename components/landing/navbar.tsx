@@ -18,11 +18,7 @@ export default function Navbar({ data }: { data: any }) {
 
   // Additional check for valid authentication with proper optional chaining
   const isReallyAuthenticated =
-    isAuthenticated &&
-    user &&
-    user.roles &&
-    Array.isArray(user.roles) &&
-    user.roles?.length > 0
+    isAuthenticated && user && user.roles && Array.isArray(user.roles) && user.roles?.length > 0
 
   // Handle auth
   const handleAuth = () => {
@@ -38,10 +34,7 @@ export default function Navbar({ data }: { data: any }) {
       logger.info("Home page: Auth check complete", {
         isAuthenticated: isAuthenticated,
         user: user,
-        hasRoles:
-          user?.roles && Array.isArray(user?.roles)
-            ? user.roles?.length > 0
-            : false,
+        hasRoles: user?.roles && Array.isArray(user?.roles) ? user.roles?.length > 0 : false,
       })
       setPageLoading(false)
     }
@@ -65,11 +58,7 @@ export default function Navbar({ data }: { data: any }) {
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6 text-black">
           {data.navigationLinks.map((link: any) => (
-            <Link
-              key={link.id}
-              href={link.url}
-              className="text-sm font-medium hover:text-green-700"
-            >
+            <Link key={link.id} href={link.url} className="text-sm font-medium hover:text-green-700">
               {link.label}
             </Link>
           ))}
@@ -77,10 +66,7 @@ export default function Navbar({ data }: { data: any }) {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <Button
-            variant="outline"
-            className="!border-green-900 !text-green-900 rounded-full cursor-pointer"
-          >
+          <Button variant="outline" className="!border-green-900 !text-green-900 rounded-full cursor-pointer">
             <PhoneCall className="mr-2 h-4 w-4" />
             <span>{data.contactPhone}</span>
           </Button>
@@ -90,33 +76,19 @@ export default function Navbar({ data }: { data: any }) {
             disabled={isLoading || pageLoading}
           >
             <User className="mr-2 h-4 w-4" />
-            {isLoading || pageLoading
-              ? "Loading..."
-              : isReallyAuthenticated
-                ? "Logout"
-                : "Login"}
+            {isLoading || pageLoading ? "Loading..." : isReallyAuthenticated ? "Logout" : "Login"}
           </Button>
         </div>
 
         {/* Mobile Navigation */}
         <div className="flex md:hidden items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            aria-label="Call"
-          >
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Call">
             <PhoneCall className="h-5 w-5 text-green-900" />
           </Button>
 
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                aria-label="Menu"
-              >
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Menu">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
@@ -145,11 +117,7 @@ export default function Navbar({ data }: { data: any }) {
                     disabled={isLoading || pageLoading}
                   >
                     <User className="mr-2 h-4 w-4" />
-                    {isLoading || pageLoading
-                      ? "Loading..."
-                      : isReallyAuthenticated
-                        ? "Logout"
-                        : "Login"}
+                    {isLoading || pageLoading ? "Loading..." : isReallyAuthenticated ? "Logout" : "Login"}
                   </Button>
                 </div>
 

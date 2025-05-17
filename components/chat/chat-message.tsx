@@ -23,20 +23,12 @@ interface ChatMessageProps {
   userAvatar?: string
 }
 
-export function ChatMessage({
-  message,
-  isCurrentUser,
-  userName,
-  userAvatar,
-}: ChatMessageProps) {
+export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: ChatMessageProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
   const hasMedia = message.media && message.media.length > 0
-  const media =
-    hasMedia && message.media && message.media.length > 0
-      ? message.media[0]
-      : null
+  const media = hasMedia && message.media && message.media.length > 0 ? message.media[0] : null
 
   const isImage = media && media.contentType?.startsWith("image/")
 
@@ -52,24 +44,17 @@ export function ChatMessage({
     : "U"
 
   return (
-    <div
-      className={`mb-4 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
-    >
+    <div className={`mb-4 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
       {!isCurrentUser && (
         <Avatar className="mr-2 h-8 w-8">
-          <AvatarImage
-            src={userAvatar || "/placeholder.svg"}
-            alt={userName || "User"}
-          />
+          <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName || "User"} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
       )}
 
       <div
         className={`max-w-[80%] space-y-1 rounded-lg p-3 ${
-          isCurrentUser
-            ? "bg-[#095d40] text-white"
-            : "bg-[#f4f4f4] text-[#000000]"
+          isCurrentUser ? "bg-[#095d40] text-white" : "bg-[#f4f4f4] text-[#000000]"
         }`}
       >
         {message.body && <p className="break-words">{message.body}</p>}
@@ -95,9 +80,7 @@ export function ChatMessage({
               <Card className="flex items-center justify-between p-2">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">
-                    {media?.filename || "Attachment"}
-                  </span>
+                  <span className="text-sm font-medium">{media?.filename || "Attachment"}</span>
                 </div>
                 <Button
                   variant="ghost"
@@ -112,11 +95,7 @@ export function ChatMessage({
           </div>
         )}
 
-        <p
-          className={`text-right text-xs ${isCurrentUser ? "text-white/70" : "text-[#858585]"}`}
-        >
-          {formattedTime}
-        </p>
+        <p className={`text-right text-xs ${isCurrentUser ? "text-white/70" : "text-[#858585]"}`}>{formattedTime}</p>
       </div>
     </div>
   )

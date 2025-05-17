@@ -18,6 +18,9 @@ import { UserForm } from "@/components/shared/user-form"
 import { PasswordDisplayModal } from "@/components/shared/password-display-modal"
 import { generateSecurePassword } from "@/lib/utils/password-generator"
 
+// Import the auth context to use the refreshUserData function
+import { useAuth } from "@/lib/auth-context"
+
 // Creation mode types
 type CreationMode = "student" | "student-parent" | "student-tutor" | "student-parent-tutor"
 
@@ -120,6 +123,9 @@ export default function NewStudentPage() {
         return ["student"]
     }
   }
+
+  // Add this to the component
+  const { refreshUserData } = useAuth()
 
   // Update active tab when creation mode changes
   useEffect(() => {
@@ -256,8 +262,12 @@ export default function NewStudentPage() {
   }
 
   // Handle modal close and redirect
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
     setShowPasswordModal(false)
+
+    // Refresh user data before redirecting
+    await refreshUserData()
+
     // Redirect to students list when modal is closed
     router.push("/parent/students")
   }
@@ -307,6 +317,15 @@ export default function NewStudentPage() {
         console.error("Error storing student in localStorage:", err)
       }
 
+      // Explicitly store the student password in localStorage to ensure it's available
+      try {
+        const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+        passwordsMap[createdStudent.email] = currentStudentData.password
+        localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+      } catch (err) {
+        console.error("Error storing password in localStorage:", err)
+      }
+
       // Step 2: Create Parent if needed
       let createdParent: User | null = null
       if (creationMode === "student-parent" || creationMode === "student-parent-tutor") {
@@ -329,6 +348,17 @@ export default function NewStudentPage() {
         }
 
         createdParent = parentResponse.data
+
+        // Explicitly store the parent password
+        if (createdParent && createdParent.email) {
+          try {
+            const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+            passwordsMap[createdParent.email] = currentParentData.password
+            localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+          } catch (err) {
+            console.error("Error storing parent password in localStorage:", err)
+          }
+        }
       }
 
       // Step 3: Create Tutor if needed
@@ -357,6 +387,17 @@ export default function NewStudentPage() {
         }
 
         createdTutor = tutorResponse.data
+
+        // Explicitly store the tutor password
+        if (createdTutor && createdTutor.email) {
+          try {
+            const passwordsMap = JSON.parse(localStorage.getItem("generatedPasswords") || "{}")
+            passwordsMap[createdTutor.email] = currentTutorData.password
+            localStorage.setItem("generatedPasswords", JSON.stringify(passwordsMap))
+          } catch (err) {
+            console.error("Error storing tutor password in localStorage:", err)
+          }
+        }
       }
 
       // Prepare the list of created users for the password modal
@@ -366,6 +407,7 @@ export default function NewStudentPage() {
           email: createdStudent.email,
           userType: "student",
           name: `${createdStudent.firstName} ${createdStudent.lastName}`,
+          password: currentStudentData.password, // Include password directly in the object
         })
       }
       if (createdParent) {
@@ -373,6 +415,7 @@ export default function NewStudentPage() {
           email: createdParent.email,
           userType: "parent",
           name: `${createdParent.firstName} ${createdParent.lastName}`,
+          password: currentParentData.password, // Include password directly in the object
         })
       }
       if (createdTutor) {
@@ -380,6 +423,7 @@ export default function NewStudentPage() {
           email: createdTutor.email,
           userType: "tutor",
           name: `${createdTutor.firstName} ${createdTutor.lastName}`,
+          password: currentTutorData.password, // Include password directly in the object
         })
       }
 
@@ -407,6 +451,13 @@ export default function NewStudentPage() {
         ),
         duration: 5000,
       })
+
+      // Force refresh the user data to ensure new students and tutors are available
+      try {
+        await getMe() // Refresh user data
+      } catch (error) {
+        console.error("Error refreshing user data:", error)
+      }
 
       // Reset form states
       setStudentData({

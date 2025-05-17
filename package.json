@@ -8,7 +8,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky",
     "clean": "pnpm dlx rimraf node_modules .next",
     "reinstall": "pnpm clean && pnpm install"
   },

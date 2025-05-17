@@ -200,7 +200,9 @@ export default function StudentProgressPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium">Achievements</CardTitle>
-              <CardDescription className="text-xs text-[#858585]">Milestones and badges you&apos;ve earned</CardDescription>
+              <CardDescription className="text-xs text-[#858585]">
+                Milestones and badges you&apos;ve earned
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">

@@ -9,20 +9,10 @@ export default function Footer({ data }: { data: any }) {
       <div className="w-full" data-aos="fade-up" data-aos-duration="1200">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           <div className="w-fit flex flex-col items-center">
-            <Image
-              src={data.logo.url}
-              alt={data.logo.alt}
-              width={150}
-              height={32}
-              className="h-8"
-            />
+            <Image src={data.logo.url} alt={data.logo.alt} width={150} height={32} className="h-8" />
             <div className="flex gap-2 mt-4 justify-center">
               {data.socialLinks.map((link: any) => (
-                <Link
-                  key={link.id}
-                  href={link.url}
-                  className="text-white hover:text-green-200"
-                >
+                <Link key={link.id} href={link.url} className="text-white hover:text-green-200">
                   {link.platform === "linkedin" && <Linkedin size={20} />}
                   {link.platform === "instagram" && <Instagram size={20} />}
                   {link.platform === "facebook" && <Facebook size={20} />}
@@ -35,10 +25,7 @@ export default function Footer({ data }: { data: any }) {
             {data.navigationLinks.map((link: any) =>
               !link.isImportant ? (
                 <li key={link.id} className="list-none mb-2">
-                  <Link
-                    href={link.url}
-                    className="text-green-100 hover:text-white"
-                  >
+                  <Link href={link.url} className="text-green-100 hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -49,7 +36,7 @@ export default function Footer({ data }: { data: any }) {
                 >
                   {link.label}
                 </Button>
-              )
+              ),
             )}
           </div>
 

@@ -1,12 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Home, Search } from "lucide-react"
 
 export default function NotFound() {
@@ -39,9 +33,7 @@ export default function NotFound() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-center border-t pt-4">
-          <p className="text-sm text-muted-foreground">
-            Need help? Contact our support team.
-          </p>
+          <p className="text-sm text-muted-foreground">Need help? Contact our support team.</p>
         </CardFooter>
       </Card>
     </div>

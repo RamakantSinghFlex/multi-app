@@ -18,7 +18,7 @@ export enum LogLevel {
   INFO = "INFO",
   // eslint-disable-next-line no-unused-vars
   WARN = "WARN",
-  ERROR = "ERROR"
+  ERROR = "ERROR",
 }
 
 // Interface for structured log entries

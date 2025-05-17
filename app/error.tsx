@@ -8,13 +8,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, Home, RefreshCw } from "lucide-react"
 
 export default function Error({
@@ -43,25 +37,13 @@ export default function Error({
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
             <AlertTriangle className="h-10 w-10 text-red-600" />
           </div>
-          <CardTitle className="text-3xl font-bold">
-            Something Went Wrong
-          </CardTitle>
+          <CardTitle className="text-3xl font-bold">Something Went Wrong</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="mb-4 text-muted-foreground">
-            We&apos;re sorry, but we encountered an unexpected error.
-          </p>
-          {error.digest && (
-            <p className="mb-4 text-sm text-muted-foreground">
-              Error ID: {error.digest}
-            </p>
-          )}
+          <p className="mb-4 text-muted-foreground">We&apos;re sorry, but we encountered an unexpected error.</p>
+          {error.digest && <p className="mb-4 text-sm text-muted-foreground">Error ID: {error.digest}</p>}
           <div className="mt-6 flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-            <Button
-              className="w-full"
-              variant="default"
-              onClick={() => reset()}
-            >
+            <Button className="w-full" variant="default" onClick={() => reset()}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Try Again
             </Button>
@@ -74,9 +56,7 @@ export default function Error({
           </div>
         </CardContent>
         <CardFooter className="flex justify-center border-t pt-4">
-          <p className="text-sm text-muted-foreground">
-            If this problem persists, please contact our support team.
-          </p>
+          <p className="text-sm text-muted-foreground">If this problem persists, please contact our support team.</p>
         </CardFooter>
       </Card>
     </div>

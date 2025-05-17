@@ -10,20 +10,9 @@ import { useAuth } from "@/lib/auth-context"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Client } from "@twilio/conversations"
 import { getTwilioToken } from "@/lib/api/messages"
 
@@ -164,13 +153,8 @@ export default function ParentMessagesPage() {
           console.error("Twilio client encountered an error:", error)
 
           // Check if this is a sync error (most common for 403 forbidden errors)
-          if (
-            error.name === "SyncError" ||
-            (error.message && error.message.includes("403"))
-          ) {
-            console.log(
-              "Detected Twilio SyncError (403 forbidden). Attempting recovery..."
-            )
+          if (error.name === "SyncError" || (error.message && error.message.includes("403"))) {
+            console.log("Detected Twilio SyncError (403 forbidden). Attempting recovery...")
 
             // Show user friendly message
             toast({
@@ -283,19 +267,16 @@ export default function ParentMessagesPage() {
       console.log("Loading conversations")
       const subscribedConversations = await client.getSubscribedConversations()
 
-      const formattedConversations = subscribedConversations.items.map(
-        (conv: any) => ({
-          sid: conv.sid,
-          friendlyName: conv.friendlyName || "Unnamed Conversation",
-          dateUpdated: conv.dateUpdated,
-          unreadMessagesCount: conv.unreadMessagesCount,
-        })
-      )
+      const formattedConversations = subscribedConversations.items.map((conv: any) => ({
+        sid: conv.sid,
+        friendlyName: conv.friendlyName || "Unnamed Conversation",
+        dateUpdated: conv.dateUpdated,
+        unreadMessagesCount: conv.unreadMessagesCount,
+      }))
 
       // Sort by most recent
       formattedConversations.sort(
-        (a: any, b: any) =>
-          new Date(b.dateUpdated).getTime() - new Date(a.dateUpdated).getTime()
+        (a: any, b: any) => new Date(b.dateUpdated).getTime() - new Date(a.dateUpdated).getTime(),
       )
 
       setConversations(formattedConversations)
@@ -303,9 +284,7 @@ export default function ParentMessagesPage() {
 
       // Select the first conversation if none is selected
       if (formattedConversations.length > 0 && !selectedConversation) {
-        const firstConversation = await client.getConversationBySid(
-          formattedConversations[0].sid
-        )
+        const firstConversation = await client.getConversationBySid(formattedConversations[0].sid)
         setSelectedConversation(firstConversation)
         loadMessages(firstConversation)
       }
@@ -331,10 +310,7 @@ export default function ParentMessagesPage() {
         try {
           selectedConversation.removeAllListeners()
         } catch (unsubError) {
-          console.warn(
-            "Error removing listeners from previous conversation:",
-            unsubError
-          )
+          console.warn("Error removing listeners from previous conversation:", unsubError)
         }
       }
 
@@ -358,10 +334,7 @@ export default function ParentMessagesPage() {
     try {
       // First, make sure we're properly subscribed to the conversation
       await conversation.getParticipants().catch((err: Error) => {
-        console.warn(
-          "Error checking participants, attempting to join conversation:",
-          err
-        )
+        console.warn("Error checking participants, attempting to join conversation:", err)
         return conversation.join().catch((joinErr: Error) => {
           console.error("Failed to join conversation:", joinErr)
         })
@@ -525,10 +498,7 @@ export default function ParentMessagesPage() {
       if (storedRelationships) {
         const relationships = JSON.parse(storedRelationships)
         // Filter for tutors and students only for parent view
-        relatedUsers = [
-          ...(relationships.tutors || []),
-          ...(relationships.students || []),
-        ]
+        relatedUsers = [...(relationships.tutors || []), ...(relationships.students || [])]
       } else {
         // Fallback mock data if no relationships found
         relatedUsers = [
@@ -584,9 +554,7 @@ export default function ParentMessagesPage() {
     try {
       // Find selected user
       const selectedUser = availableUsers.find((u) => u.id === selectedUserId)
-      const name =
-        conversationName ||
-        `Chat with ${selectedUser?.firstName} ${selectedUser?.lastName}`
+      const name = conversationName || `Chat with ${selectedUser?.firstName} ${selectedUser?.lastName}`
 
       console.log("Creating conversation with name:", name)
 
@@ -647,20 +615,14 @@ export default function ParentMessagesPage() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Messages</h1>
-        <p className="text-[#858585]">
-          Communicate with tutors and your children
-        </p>
+        <p className="text-[#858585]">Communicate with tutors and your children</p>
       </div>
 
       <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between p-4">
             <h3 className="font-semibold">Conversations</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openNewConversationDialog}
-            >
+            <Button variant="outline" size="sm" onClick={openNewConversationDialog}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Chat
             </Button>
@@ -676,17 +638,12 @@ export default function ParentMessagesPage() {
                   <div
                     key={conversation.sid}
                     className={`flex cursor-pointer items-center rounded-md p-2 hover:bg-gray-100 ${
-                      selectedConversation?.sid === conversation.sid
-                        ? "bg-gray-100"
-                        : ""
+                      selectedConversation?.sid === conversation.sid ? "bg-gray-100" : ""
                     }`}
                     onClick={() => handleSelectConversation(conversation.sid)}
                   >
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src="/placeholder.svg"
-                        alt={conversation.friendlyName}
-                      />
+                      <AvatarImage src="/placeholder.svg" alt={conversation.friendlyName} />
                       <AvatarFallback>
                         {conversation.friendlyName
                           .split(" ")
@@ -697,9 +654,7 @@ export default function ParentMessagesPage() {
                     </Avatar>
                     <div className="ml-3">
                       <p className="font-medium">{conversation.friendlyName}</p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.lastMessage || "No messages yet"}
-                      </p>
+                      <p className="text-sm text-gray-500 truncate">{conversation.lastMessage || "No messages yet"}</p>
                     </div>
                   </div>
                 ))}
@@ -722,10 +677,7 @@ export default function ParentMessagesPage() {
               <CardHeader className="border-b pb-3">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarImage
-                      src="/placeholder.svg"
-                      alt={selectedConversation.friendlyName}
-                    />
+                    <AvatarImage src="/placeholder.svg" alt={selectedConversation.friendlyName} />
                     <AvatarFallback>
                       {selectedConversation.friendlyName
                         .split(" ")
@@ -735,9 +687,7 @@ export default function ParentMessagesPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm font-medium">
-                      {selectedConversation.friendlyName}
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium">{selectedConversation.friendlyName}</CardTitle>
                   </div>
                 </div>
               </CardHeader>
@@ -767,11 +717,7 @@ export default function ParentMessagesPage() {
                                 {message.media.map((media) => (
                                   <div key={media.sid} className="mt-1">
                                     {media.contentType.startsWith("image/") ? (
-                                      <a
-                                        href={media.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
+                                      <a href={media.url} target="_blank" rel="noopener noreferrer">
                                         <img
                                           src={media.url || "/placeholder.svg"}
                                           alt={media.filename}
@@ -785,8 +731,7 @@ export default function ParentMessagesPage() {
                                         rel="noopener noreferrer"
                                         className="flex items-center text-blue-500 hover:underline"
                                       >
-                                        {media.filename} (
-                                        {Math.round(media.size / 1024)} KB)
+                                        {media.filename} ({Math.round(media.size / 1024)} KB)
                                       </a>
                                     )}
                                   </div>
@@ -794,13 +739,10 @@ export default function ParentMessagesPage() {
                               </div>
                             )}
                             <p className="mt-1 text-right text-xs opacity-70">
-                              {new Date(message.dateCreated).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
+                              {new Date(message.dateCreated).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </p>
                           </div>
                         </div>
@@ -809,9 +751,7 @@ export default function ParentMessagesPage() {
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <p className="text-[#858585]">
-                        No messages yet. Start the conversation!
-                      </p>
+                      <p className="text-[#858585]">No messages yet. Start the conversation!</p>
                     </div>
                   )}
                 </div>
@@ -832,11 +772,7 @@ export default function ParentMessagesPage() {
                       disabled={!selectedConversation || isUploading}
                       className="h-9 w-9"
                     >
-                      {isUploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Paperclip className="h-4 w-4" />
-                      )}
+                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                     </Button>
                     <Input
                       placeholder="Type a message..."
@@ -859,12 +795,8 @@ export default function ParentMessagesPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h3 className="mb-2 text-sm font-medium">
-                  Select a conversation
-                </h3>
-                <p className="text-[#858585]">
-                  Choose a conversation from the list or start a new one
-                </p>
+                <h3 className="mb-2 text-sm font-medium">Select a conversation</h3>
+                <p className="text-[#858585]">Choose a conversation from the list or start a new one</p>
               </div>
             </div>
           )}
@@ -872,10 +804,7 @@ export default function ParentMessagesPage() {
       </div>
 
       {/* New Conversation Dialog */}
-      <Dialog
-        open={isNewConversationOpen}
-        onOpenChange={setIsNewConversationOpen}
-      >
+      <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
@@ -907,19 +836,11 @@ export default function ParentMessagesPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsNewConversationOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsNewConversationOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={createNewConversation}
-              disabled={isCreatingConversation || !selectedUserId}
-            >
-              {isCreatingConversation ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+            <Button onClick={createNewConversation} disabled={isCreatingConversation || !selectedUserId}>
+              {isCreatingConversation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Create
             </Button>
           </div>

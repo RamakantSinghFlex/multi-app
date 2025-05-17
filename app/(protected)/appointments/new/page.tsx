@@ -1,9 +1,17 @@
 "use client"
 import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import AppointmentCalendar from "@/components/appointment/appointment-calendar"
+import { useAuth } from "@/lib/auth-context"
 
 export default function NewAppointmentPage() {
   const router = useRouter()
+  const { refreshUserData } = useAuth()
+
+  // Refresh user data when the component mounts
+  useEffect(() => {
+    refreshUserData()
+  }, [])
 
   const handleCancel = () => {
     router.back()

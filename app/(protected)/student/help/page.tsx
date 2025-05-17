@@ -105,8 +105,8 @@ export default function StudentHelpPage() {
               <div className="space-y-2">
                 <h3 className="font-medium">How do I schedule a session with a tutor?</h3>
                 <p className="text-sm text-muted-foreground">
-                  You can schedule a session by going to the Appointments page and clicking on &quot;Book Appointment&quot;.
-                  Select your preferred tutor, date, and time to schedule your session.
+                  You can schedule a session by going to the Appointments page and clicking on &quot;Book
+                  Appointment&quot;. Select your preferred tutor, date, and time to schedule your session.
                 </p>
               </div>
 
@@ -114,8 +114,8 @@ export default function StudentHelpPage() {
                 <h3 className="font-medium">How do I cancel or reschedule a session?</h3>
                 <p className="text-sm text-muted-foreground">
                   You can cancel or reschedule a session from the Appointments page. Find your appointment and click
-                  &quot;Cancel&quot; or &quot;Reschedule&quot;. Please note that cancellations made less than 24 hours before the session
-                  may incur a fee.
+                  &quot;Cancel&quot; or &quot;Reschedule&quot;. Please note that cancellations made less than 24 hours
+                  before the session may incur a fee.
                 </p>
               </div>
 
