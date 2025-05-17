@@ -169,7 +169,6 @@ export default function LoginPage() {
     const searchParams = new URLSearchParams(window.location.search)
     const oauthError = searchParams.get("error")
     const verified = searchParams.get("verified")
-
     if (!hasProcessedParams.current) {
       hasProcessedParams.current = true
 
