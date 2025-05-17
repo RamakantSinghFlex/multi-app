@@ -4,9 +4,10 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Download, FileText, ImageIcon } from "lucide-react"
+import { Download, FileText, ImageIcon, Loader2 } from "lucide-react"
 import type { TwilioMessage } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
+import { formatBytes } from "@/lib/utils"
 
 interface MediaItem {
   sid: string
@@ -26,11 +27,21 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: ChatMessageProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const hasMedia = message.media && message.media.length > 0
   const media = hasMedia && message.media && message.media.length > 0 ? message.media[0] : null
 
   const isImage = media && media.contentType?.startsWith("image/")
+  const isPdf = media && media.contentType === "application/pdf"
+  const isDoc =
+    media &&
+    (media.contentType === "application/msword" ||
+      media.contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+  const isSpreadsheet =
+    media &&
+    (media.contentType === "application/vnd.ms-excel" ||
+      media.contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
   const formattedTime = message.dateCreated
     ? formatDistanceToNow(new Date(message.dateCreated), { addSuffix: true })
@@ -42,6 +53,42 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
         .map((n) => n[0])
         .join("")
     : "U"
+
+  const handleDownload = async () => {
+    if (!media?.url) return
+
+    try {
+      setIsDownloading(true)
+
+      // Fetch the file
+      const response = await fetch(media.url)
+      const blob = await response.blob()
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.style.display = "none"
+      a.href = url
+      a.download = media.filename || "download"
+      document.body.appendChild(a)
+      a.click()
+
+      // Clean up
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error("Download error:", error)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  // Get file icon based on type
+  const getFileIcon = () => {
+    if (isPdf || isDoc) return <FileText className="h-5 w-5 text-blue-500" />
+    if (isSpreadsheet) return <FileText className="h-5 w-5 text-green-500" />
+    return <FileText className="h-5 w-5 text-gray-500" />
+  }
 
   return (
     <div className={`mb-4 flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
@@ -79,16 +126,22 @@ export function ChatMessage({ message, isCurrentUser, userName, userAvatar }: Ch
             ) : (
               <Card className="flex items-center justify-between p-2">
                 <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium">{media?.filename || "Attachment"}</span>
+                  {getFileIcon()}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium truncate max-w-[180px]">
+                      {media?.filename || "Attachment"}
+                    </span>
+                    {media?.size && <span className="text-xs text-gray-500">{formatBytes(media.size)}</span>}
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"
-                  onClick={() => media?.url && window.open(media.url, "_blank")}
+                  onClick={handleDownload}
+                  disabled={isDownloading}
                 >
-                  <Download className="h-4 w-4" />
+                  {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 </Button>
               </Card>
             )}

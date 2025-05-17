@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
 import { revalidatePath } from "next/cache"
 
 export async function POST(request: NextRequest) {

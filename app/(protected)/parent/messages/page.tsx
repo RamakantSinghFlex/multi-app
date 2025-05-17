@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, PlusCircle, Send, Paperclip } from "lucide-react"
+import { Loader2, PlusCircle, Send, Paperclip, X, FileText } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,19 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Client } from "@twilio/conversations"
 import { getTwilioToken } from "@/lib/api/messages"
+
+// Utility function to format bytes
+function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return "0 Bytes"
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"]
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i]
+}
 
 // Minimal type definitions
 interface Conversation {
@@ -47,6 +60,12 @@ interface User {
   role?: string
 }
 
+interface FilePreview {
+  file: File
+  previewUrl?: string
+  type: string
+}
+
 export default function ParentMessagesPage() {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
@@ -65,6 +84,9 @@ export default function ParentMessagesPage() {
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [filePreview, setFilePreview] = useState<FilePreview | null>(null)
+  const [twilioToken, setTwilioToken] = useState<string | null>(null)
+
   // Initialize Twilio client
   const initializeTwilioClient = async () => {
     try {
@@ -82,6 +104,7 @@ export default function ParentMessagesPage() {
 
       // Get a fresh token using our helper function
       const token = await getTwilioToken()
+      setTwilioToken(token) // Store the token for later use
       console.log("Got Twilio token successfully") // Initialize the client with the token - using the exact pattern from the docs
       if (typeof window !== "undefined") {
         // Add configuration options to help with Sync errors
@@ -102,6 +125,7 @@ export default function ParentMessagesPage() {
           console.log("Token about to expire, refreshing...")
           try {
             const newToken = await getTwilioToken()
+            setTwilioToken(newToken) // Update stored token
             client.updateToken(newToken)
           } catch (err) {
             console.error("Error refreshing token:", err)
@@ -112,6 +136,7 @@ export default function ParentMessagesPage() {
           console.log("Token expired, refreshing...")
           try {
             const newToken = await getTwilioToken()
+            setTwilioToken(newToken) // Update stored token
             client.updateToken(newToken)
           } catch (err) {
             console.error("Error refreshing token:", err)
@@ -348,13 +373,15 @@ export default function ParentMessagesPage() {
         author: message.author,
         body: message.body,
         dateCreated: message.dateCreated,
-        media: message.media?.map((m: any) => ({
-          sid: m.sid,
-          filename: m.filename,
-          contentType: m.contentType,
-          size: m.size,
-          url: m.url,
-        })),
+        media: Array.isArray(message.media)
+          ? message.media.map((m: any) => ({
+              sid: m.sid,
+              filename: m.filename,
+              contentType: m.contentType,
+              size: m.size,
+              url: m.url,
+            }))
+          : [],
       }))
 
       setMessages(formattedMessages)
@@ -376,13 +403,15 @@ export default function ParentMessagesPage() {
               author: message.author,
               body: message.body,
               dateCreated: message.dateCreated,
-              media: message.media?.map((m: any) => ({
-                sid: m.sid,
-                filename: m.filename,
-                contentType: m.contentType,
-                size: m.size,
-                url: m.url,
-              })),
+              media: Array.isArray(message.media)
+                ? message.media.map((m: any) => ({
+                    sid: m.sid,
+                    filename: m.filename,
+                    contentType: m.contentType,
+                    size: m.size,
+                    url: m.url,
+                  }))
+                : [],
             },
           ]
         })
@@ -408,11 +437,15 @@ export default function ParentMessagesPage() {
 
   // Send a message
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedConversation) return
+    if ((!messageText.trim() && !filePreview) || !selectedConversation) return
 
     try {
-      await selectedConversation.sendMessage(messageText)
-      setMessageText("")
+      if (filePreview) {
+        await handleSendAttachment()
+      } else {
+        await selectedConversation.sendMessage(messageText)
+        setMessageText("")
+      }
     } catch (error) {
       console.error("Error sending message:", error)
       toast({
@@ -433,50 +466,112 @@ export default function ParentMessagesPage() {
     if (!files || files.length === 0 || !selectedConversation) return
 
     const file = files[0]
+
+    // Create preview
+    let previewUrl
+    let type = "file"
+
+    if (file.type.startsWith("image/")) {
+      previewUrl = URL.createObjectURL(file)
+      type = "image"
+    }
+
+    setFilePreview({
+      file,
+      previewUrl,
+      type,
+    })
+
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const handleCancelAttachment = () => {
+    if (filePreview?.previewUrl) {
+      URL.revokeObjectURL(filePreview.previewUrl)
+    }
+    setFilePreview(null)
+  }
+
+  const handleSendAttachment = async () => {
+    if (!filePreview || !selectedConversation || !user?.id) return
+
     setIsUploading(true)
 
     try {
       // Create a form data object for the file
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", filePreview.file)
       formData.append("conversationSid", selectedConversation.sid)
 
-      // Upload the file to your server first
+      // Add user ID directly to the form data
+      formData.append("userId", user.id.toString())
+
+      // Add message text if provided
+      if (messageText.trim()) {
+        formData.append("body", messageText.trim())
+      }
+
+      // Get all possible tokens
+      const token = twilioToken || localStorage.getItem("milestone-token") || sessionStorage.getItem("milestone-token")
+
+      // Create headers with multiple authentication methods
+      const headers: Record<string, string> = {}
+
+      // Add token as Authorization header if available
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
+      // Add user ID as a custom header for fallback
+      headers["X-User-ID"] = user.id.toString()
+
+      // Add token as a custom header for fallback
+      if (token) {
+        headers["X-Local-Storage-Token"] = token
+      }
+
+      console.log("Sending file upload request with user ID:", user.id.toString())
+
+      // Upload the file with all possible authentication methods
       const uploadResponse = await fetch("/api/twilio/upload", {
         method: "POST",
+        headers,
         body: formData,
       })
 
       if (!uploadResponse.ok) {
-        throw new Error("Failed to upload file")
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.error || "Failed to upload file")
       }
 
-      const { mediaUrl } = await uploadResponse.json()
+      const { success, messageSid } = await uploadResponse.json()
 
-      // Now send the message with the media
-      await selectedConversation.sendMessage({
-        contentType: file.type,
-        media: mediaUrl,
-        body: `Sent a file: ${file.name}`,
-      })
+      if (success) {
+        console.log("File uploaded successfully, message SID:", messageSid)
 
-      toast({
-        title: "File uploaded",
-        description: `${file.name} has been uploaded successfully.`,
-      })
+        toast({
+          title: "File sent",
+          description: `${filePreview.file.name} has been sent successfully.`,
+        })
+
+        // Clear the file preview
+        handleCancelAttachment()
+
+        // Clear message text if any
+        setMessageText("")
+      }
     } catch (error) {
       console.error("Error uploading file:", error)
       toast({
         title: "Upload failed",
-        description: "An error occurred while uploading the file.",
+        description: error instanceof Error ? error.message : "An error occurred while uploading the file.",
         variant: "destructive",
       })
     } finally {
       setIsUploading(false)
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
     }
   }
 
@@ -612,37 +707,37 @@ export default function ParentMessagesPage() {
   }, [messages])
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-4">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">Messages</h1>
         <p className="text-[#858585]">Communicate with tutors and your children</p>
       </div>
 
-      <div className="grid h-[calc(100vh-12rem)] grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid h-[calc(100vh-10rem)] grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between p-4">
+          <CardHeader className="flex flex-row items-center justify-between p-3">
             <h3 className="font-semibold">Conversations</h3>
             <Button variant="outline" size="sm" onClick={openNewConversationDialog}>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Chat
             </Button>
           </CardHeader>
-          <div className="h-[calc(100vh-18rem)] overflow-y-auto">
+          <div className="h-[calc(100vh-16rem)] overflow-y-auto">
             {isLoading ? (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#095d40]" />
+              <div className="flex h-32 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-[#095d40]" />
               </div>
             ) : conversations.length > 0 ? (
-              <div className="space-y-1 p-2">
+              <div>
                 {conversations.map((conversation) => (
                   <div
                     key={conversation.sid}
-                    className={`flex cursor-pointer items-center rounded-md p-2 hover:bg-gray-100 ${
+                    className={`flex cursor-pointer items-center border-b p-2 hover:bg-gray-100 ${
                       selectedConversation?.sid === conversation.sid ? "bg-gray-100" : ""
                     }`}
                     onClick={() => handleSelectConversation(conversation.sid)}
                   >
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-8 w-8">
                       <AvatarImage src="/placeholder.svg" alt={conversation.friendlyName} />
                       <AvatarFallback>
                         {conversation.friendlyName
@@ -652,16 +747,16 @@ export default function ParentMessagesPage() {
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="ml-3">
-                      <p className="font-medium">{conversation.friendlyName}</p>
-                      <p className="text-sm text-gray-500 truncate">{conversation.lastMessage || "No messages yet"}</p>
+                    <div className="ml-2">
+                      <p className="text-sm font-medium">{conversation.friendlyName}</p>
+                      <p className="text-xs text-gray-500 truncate">{conversation.lastMessage || "No messages yet"}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center">
-                <p className="text-center text-gray-500">
+              <div className="flex h-32 items-center justify-center">
+                <p className="text-center text-sm text-gray-500">
                   No conversations yet.
                   <br />
                   Start a new chat!
@@ -674,9 +769,9 @@ export default function ParentMessagesPage() {
         <Card className="md:col-span-2">
           {selectedConversation ? (
             <>
-              <CardHeader className="border-b pb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar>
+              <CardHeader className="border-b p-3">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder.svg" alt={selectedConversation.friendlyName} />
                     <AvatarFallback>
                       {selectedConversation.friendlyName
@@ -686,34 +781,32 @@ export default function ParentMessagesPage() {
                         .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <CardTitle className="text-sm font-medium">{selectedConversation.friendlyName}</CardTitle>
-                  </div>
+                  <CardTitle className="text-sm font-medium">{selectedConversation.friendlyName}</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="flex h-[calc(100vh-25rem)] flex-col justify-between p-0">
-                <div className="flex-1 overflow-y-auto p-4">
+              <CardContent className="flex h-[calc(100vh-22rem)] flex-col justify-between p-0">
+                <div className="flex-1 overflow-y-auto p-3">
                   {isLoadingMessages ? (
                     <div className="flex h-full items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-[#095d40]" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#095d40]" />
                     </div>
                   ) : messages.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       {messages.map((message) => (
                         <div
                           key={message.sid}
                           className={`flex ${message.author === user?.id.toString() ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
+                            className={`max-w-[75%] rounded-lg px-3 py-2 ${
                               message.author === user?.id.toString()
                                 ? "bg-[#095d40] text-white"
                                 : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            <p>{message.body}</p>
+                            {message.body && <p className="text-sm">{message.body}</p>}
                             {message.media && message.media.length > 0 && (
-                              <div className="mt-2">
+                              <div className="mt-1">
                                 {message.media.map((media) => (
                                   <div key={media.sid} className="mt-1">
                                     {media.contentType.startsWith("image/") ? (
@@ -721,7 +814,7 @@ export default function ParentMessagesPage() {
                                         <img
                                           src={media.url || "/placeholder.svg"}
                                           alt={media.filename}
-                                          className="max-h-40 rounded-md"
+                                          className="max-h-32 rounded-md"
                                         />
                                       </a>
                                     ) : (
@@ -729,9 +822,11 @@ export default function ParentMessagesPage() {
                                         href={media.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center text-blue-500 hover:underline"
+                                        className="flex items-center text-xs hover:underline"
+                                        style={{ color: message.author === user?.id.toString() ? "white" : "#095d40" }}
                                       >
-                                        {media.filename} ({Math.round(media.size / 1024)} KB)
+                                        <FileText className="mr-1 h-3 w-3" />
+                                        {media.filename} ({formatBytes(media.size)})
                                       </a>
                                     )}
                                   </div>
@@ -751,11 +846,47 @@ export default function ParentMessagesPage() {
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <p className="text-[#858585]">No messages yet. Start the conversation!</p>
+                      <p className="text-sm text-[#858585]">No messages yet. Start the conversation!</p>
                     </div>
                   )}
                 </div>
-                <div className="border-t p-3">
+
+                {/* File Preview Area */}
+                {filePreview && (
+                  <div className="border-t border-gray-200 bg-gray-50 p-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {filePreview.type === "image" ? (
+                          <div className="relative h-12 w-12 overflow-hidden rounded-md">
+                            <img
+                              src={filePreview.previewUrl || "/placeholder.svg"}
+                              alt="Preview"
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gray-200">
+                            <FileText className="h-6 w-6 text-gray-500" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs font-medium">{filePreview.file.name}</p>
+                          <p className="text-xs text-gray-500">{formatBytes(filePreview.file.size)}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelAttachment}
+                        className="h-6 w-6 rounded-full p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t p-2">
                   <div className="flex items-center gap-2">
                     <input
                       type="file"
@@ -769,24 +900,26 @@ export default function ParentMessagesPage() {
                       variant="ghost"
                       size="icon"
                       onClick={handleAttachmentClick}
-                      disabled={!selectedConversation || isUploading}
-                      className="h-9 w-9"
+                      disabled={!selectedConversation || isUploading || !!filePreview}
+                      className="h-8 w-8"
                     >
                       {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                     </Button>
                     <Input
-                      placeholder="Type a message..."
+                      placeholder={filePreview ? "Add a caption..." : "Type a message..."}
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       onKeyDown={handleKeyPress}
+                      disabled={isUploading}
+                      className="h-8 text-sm"
                     />
                     <Button
                       size="icon"
                       onClick={handleSendMessage}
-                      disabled={!messageText.trim()}
-                      className="bg-[#095d40] hover:bg-[#02342e]"
+                      disabled={(!messageText.trim() && !filePreview) || isUploading}
+                      className="h-8 w-8 bg-[#095d40] hover:bg-[#02342e]"
                     >
-                      <Send className="h-4 w-4" />
+                      {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
@@ -795,8 +928,8 @@ export default function ParentMessagesPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h3 className="mb-2 text-sm font-medium">Select a conversation</h3>
-                <p className="text-[#858585]">Choose a conversation from the list or start a new one</p>
+                <h3 className="mb-1 text-sm font-medium">Select a conversation</h3>
+                <p className="text-xs text-[#858585]">Choose a conversation from the list or start a new one</p>
               </div>
             </div>
           )}
@@ -805,11 +938,11 @@ export default function ParentMessagesPage() {
 
       {/* New Conversation Dialog */}
       <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-3 py-3">
             <div className="grid gap-2">
               <Label htmlFor="user">Select User</Label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>

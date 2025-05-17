@@ -2,13 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { useState, useEffect, useCallback } from "react"
-import {
-  BellDot,
-  LogOut,
-  MessageCircleMore,
-  Paperclip,
-  Plus,
-} from "lucide-react"
+import { BellDot, LogOut, MessageCircleMore, Paperclip, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { handleLogout } from "@/lib/utils/auth-utils"
@@ -31,9 +25,7 @@ interface ParentSidebarProps {
   isMobile?: boolean
 }
 
-export default function ParentSidebar({
-  isMobile = false,
-}: ParentSidebarProps) {
+export default function ParentSidebar({ isMobile = false }: ParentSidebarProps) {
   const { logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
@@ -53,7 +45,7 @@ export default function ParentSidebar({
         }
       }
     },
-    [isMobile]
+    [isMobile],
   )
 
   // Load collapsed state from localStorage on mount
@@ -125,7 +117,7 @@ export default function ParentSidebar({
       className={cn(
         "border-r border-[#e8e8e8] bg-white transition-all duration-300 sidebar-transition",
         isMobile ? "h-full w-full border-r-0" : "h-screen",
-        !isMobile && (collapsed ? "w-24" : "w-64")
+        !isMobile && (collapsed ? "w-24" : "w-64"),
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-[#e8e8e8] px-4">
@@ -143,12 +135,7 @@ export default function ParentSidebar({
           </div>
         )}
         {!isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-[#545454]"
-            onClick={toggleSidebar}
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-[#545454]" onClick={toggleSidebar}>
             {collapsed ? (
               <Image
                 src={sidebarIcon || "/placeholder.svg"}
@@ -158,12 +145,7 @@ export default function ParentSidebar({
                 className="rotate-180"
               />
             ) : (
-              <Image
-                src={sidebarIcon || "/placeholder.svg"}
-                alt="Sidebar Open"
-                width={20}
-                height={20}
-              />
+              <Image src={sidebarIcon || "/placeholder.svg"} alt="Sidebar Open" width={20} height={20} />
             )}
           </Button>
         )}
@@ -183,7 +165,7 @@ export default function ParentSidebar({
                     isActive
                       ? "bg-[#e6f5ef] text-[#095d40] font-medium"
                       : "text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
-                    collapsed && !isMobile && "justify-center px-2"
+                    collapsed && !isMobile && "justify-center px-2",
                   )}
                 >
                   <Image
@@ -206,7 +188,7 @@ export default function ParentSidebar({
                 <h3
                   className={cn(
                     "px-3 text-xs font-medium text-[#858585] uppercase tracking-wider",
-                    collapsed && !isMobile && "sr-only"
+                    collapsed && !isMobile && "sr-only",
                   )}
                 >
                   Quick Actions
@@ -216,7 +198,7 @@ export default function ParentSidebar({
                   className={cn(
                     "w-full rounded-lg py-2 px-3 text-sm text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
                     collapsed ? "flex justify-center" : "flex justify-start",
-                    collapsed && !isMobile && "px-2"
+                    collapsed && !isMobile && "px-2",
                   )}
                 >
                   <Plus className={cn("h-5 w-5", !collapsed && "mr-3")} />
@@ -227,7 +209,7 @@ export default function ParentSidebar({
                   className={cn(
                     "w-full rounded-lg py-2 px-3 text-sm text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
                     collapsed ? "flex justify-center" : "flex justify-start",
-                    collapsed && !isMobile && "px-2"
+                    collapsed && !isMobile && "px-2",
                   )}
                 >
                   <Paperclip className={cn("h-5 w-5", !collapsed && "mr-3")} />
@@ -238,12 +220,10 @@ export default function ParentSidebar({
                   className={cn(
                     "w-full rounded-lg py-2 px-3 text-sm text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
                     collapsed ? "flex justify-center" : "flex justify-start",
-                    collapsed && !isMobile && "px-2"
+                    collapsed && !isMobile && "px-2",
                   )}
                 >
-                  <MessageCircleMore
-                    className={cn("h-5 w-5", !collapsed && "mr-3")}
-                  />
+                  <MessageCircleMore className={cn("h-5 w-5", !collapsed && "mr-3")} />
                   {(!collapsed || isMobile) && <span>Messages</span>}
                 </Button>
                 <Button
@@ -251,7 +231,7 @@ export default function ParentSidebar({
                   className={cn(
                     "w-full rounded-lg py-2 px-3 text-sm text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
                     collapsed ? "flex justify-center" : "flex justify-start",
-                    collapsed && !isMobile && "px-2"
+                    collapsed && !isMobile && "px-2",
                   )}
                 >
                   <BellDot className={cn("h-5 w-5", !collapsed && "mr-3")} />
@@ -267,13 +247,11 @@ export default function ParentSidebar({
             variant="ghost"
             className={cn(
               "w-full rounded-lg py-2 px-3 text-sm text-[#545454] hover:bg-[#f4f4f4] hover:text-[#333333]",
-              collapsed && !isMobile ? "justify-center" : "justify-start"
+              collapsed && !isMobile ? "justify-center" : "justify-start",
             )}
             onClick={() => handleLogout(logout)}
           >
-            <LogOut
-              className={cn("h-5 w-5", (!collapsed || isMobile) && "mr-3")}
-            />
+            <LogOut className={cn("h-5 w-5", (!collapsed || isMobile) && "mr-3")} />
             {(!collapsed || isMobile) && <span>Logout</span>}
           </Button>
         </div>
