@@ -65,14 +65,7 @@ export default function LoginPage() {
       // Check if there's a redirect path
       if (redirectPath) {
         router.push(redirectPath)
-      }
-
-      // If user is logging in for the first time (after email verification)
-      // else if (user && user.needsOnboarding) {
-      //   router.push("/onboarding")
-      //   return
-      // }
-      else {
+      } else {
         // Redirect based on user roles
         if (user.roles && user.roles.length > 0) {
           const primaryRole = user.roles[0]
