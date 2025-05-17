@@ -28,12 +28,8 @@ const PersonalDetails = ({
         Personal Details
       </h2>
 
-      <FormGroup label="Salutation">
-        <Select
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-[90px]"
-        >
+      <FormGroup label="Salutation" className="w-[90px]">
+        <Select value={title} onChange={(e) => setTitle(e.target.value)}>
           <option>Mr.</option>
           <option>Ms.</option>
           <option>Mrs.</option>

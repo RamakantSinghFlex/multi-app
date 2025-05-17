@@ -1,4 +1,6 @@
 import { getMediaUrl } from "@/lib/api/media"
+import { useAuth } from "@/lib/auth-context"
+import { patchUser } from "@/lib/api/users"
 
 const roles = [
   { label: "I'm a Parent", value: "parent" },
@@ -8,10 +10,26 @@ const roles = [
 
 const RoleSelection = ({ onNext }: { onNext: () => void }) => {
   const backgroundImageUrl = getMediaUrl("profile-setup-image.jpg")
+  const { user } = useAuth()
 
   const handleSelect = (role: string) => {
     console.log("Selected role:", role)
-    onNext()
+    if (user) {
+      patchUser(user.id, { role })
+        .then((response) => {
+          if (response.error) {
+            console.error("Error updating user role:", response.error)
+          } else {
+            console.log("User role updated successfully:", response.data)
+            setTimeout(() => {
+              onNext()
+            }, 2000)
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating user role:", error)
+        })
+    }
   }
 
   const isDisabled = (role: string) => role !== "parent"
